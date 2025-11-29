@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
@@ -10,6 +10,9 @@ import BudgetScreen from '../screens/BudgetScreen';
 import ExpenseScreen from '../screens/ExpenseScreen';
 import PackingScreen from '../screens/PackingScreen';
 import MapScreen from '../screens/MapScreen';
+import HistoryScreen from '../screens/HistoryScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import FloatingFooter from '../components/FloatingFooter';
 import { useTravelContext } from '../context/TravelContext';
 
 const Tab = createBottomTabNavigator();
@@ -21,53 +24,58 @@ const COLORS = {
   textMuted: '#666666',
 };
 
-function MainTabs() {
+function TripTabs({ onBackToHome }) {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: COLORS.green,
-        tabBarInactiveTintColor: COLORS.textMuted,
-        tabBarIcon: ({ focused }) => {
-          let emoji = '🏠';
-          if (route.name === 'Budget') emoji = '💰';
-          if (route.name === 'Expenses') emoji = '💳';
-          if (route.name === 'Packing') emoji = '🎒';
-          if (route.name === 'Map') emoji = '🗺️';
-          return (
-            <View style={[styles.iconWrap, focused && styles.iconActive]}>
-              <Text style={styles.icon}>{emoji}</Text>
-            </View>
-          );
-        },
-      })}
-    >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Budget" component={BudgetScreen} />
-      <Tab.Screen name="Expenses" component={ExpenseScreen} />
-      <Tab.Screen name="Packing" component={PackingScreen} />
-      <Tab.Screen name="Map" component={MapScreen} />
-    </Tab.Navigator>
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarStyle: styles.tabBar,
+          tabBarActiveTintColor: COLORS.green,
+          tabBarInactiveTintColor: COLORS.textMuted,
+          tabBarIcon: ({ focused }) => {
+            let emoji = '🏠';
+            if (route.name === 'Budget') emoji = '💰';
+            if (route.name === 'Expenses') emoji = '💳';
+            if (route.name === 'Packing') emoji = '🎒';
+            if (route.name === 'Itinerary') emoji = '🗺️';
+            return (
+              <View style={[styles.iconWrap, focused && styles.iconActive]}>
+                <Text style={styles.icon}>{emoji}</Text>
+              </View>
+            );
+          },
+        })}
+      >
+        <Tab.Screen name="Dashboard">
+          {() => <HomeScreen onBackToHome={onBackToHome} />}
+        </Tab.Screen>
+        <Tab.Screen name="Budget" component={BudgetScreen} />
+        <Tab.Screen name="Expenses" component={ExpenseScreen} />
+        <Tab.Screen name="Packing" component={PackingScreen} />
+        <Tab.Screen name="Itinerary" component={MapScreen} />
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
 
-export default function AppNavigator() {
-  const [screen, setScreen] = useState('welcome'); // 'welcome', 'setup', 'main'
-  const { setTripInfo, setBudget } = useTravelContext();
+// Import Text for Tab icons
+import { Text } from 'react-native';
 
-  const handlePlanTrip = () => {
-    setScreen('setup');
-  };
+export default function AppNavigator() {
+  const [screen, setScreen] = useState('welcome');
+  const [activeTab, setActiveTab] = useState('home');
+  const { setTripInfo, setBudget, tripInfo } = useTravelContext();
+
+  const handlePlanTrip = () => setScreen('setup');
 
   const handleJoinTrip = (code) => {
-    // In real app, fetch trip data from server using code
     console.log('Joining trip with code:', code);
-    setScreen('main');
+    setScreen('trip');
+    setActiveTab('trip');
   };
 
   const handleSetupComplete = (tripData) => {
-    // Save trip data to context
     setTripInfo({
       destination: tripData.destination,
       startDate: tripData.startDate,
@@ -75,43 +83,62 @@ export default function AppNavigator() {
       name: tripData.name,
       participants: tripData.participants,
     });
-    setBudget(prev => ({
-      ...prev,
-      total: parseFloat(tripData.budget) || 0,
-    }));
-    setScreen('main');
+    setBudget(prev => ({ ...prev, total: parseFloat(tripData.budget) || 0 }));
+    setScreen('trip');
+    setActiveTab('trip');
   };
 
-  const handleBackToWelcome = () => {
-    setScreen('welcome');
+  const handleBackToWelcome = () => setScreen('welcome');
+
+  const handleTabPress = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'home') setScreen('welcome');
+    else if (tab === 'trip') setScreen('trip');
+    else if (tab === 'history') setScreen('history');
+    else if (tab === 'profile') setScreen('profile');
   };
 
-  if (screen === 'welcome') {
-    return (
-      <WelcomeScreen 
-        onPlanTrip={handlePlanTrip}
-        onJoinTrip={handleJoinTrip}
-      />
-    );
-  }
+  const renderScreen = () => {
+    switch (screen) {
+      case 'welcome':
+        return (
+          <WelcomeScreen 
+            onPlanTrip={handlePlanTrip}
+            onJoinTrip={handleJoinTrip}
+          />
+        );
+      case 'setup':
+        return (
+          <TripSetupScreen 
+            onComplete={handleSetupComplete}
+            onBack={handleBackToWelcome}
+          />
+        );
+      case 'trip':
+        return <TripTabs onBackToHome={() => handleTabPress('home')} />;
+      case 'history':
+        return <HistoryScreen onBack={() => handleTabPress('home')} />;
+      case 'profile':
+        return <ProfileScreen onBack={() => handleTabPress('home')} />;
+      default:
+        return null;
+    }
+  };
 
-  if (screen === 'setup') {
-    return (
-      <TripSetupScreen 
-        onComplete={handleSetupComplete}
-        onBack={handleBackToWelcome}
-      />
-    );
-  }
+  const showFooter = screen !== 'setup';
 
   return (
-    <NavigationContainer>
-      <MainTabs />
-    </NavigationContainer>
+    <View style={styles.container}>
+      {renderScreen()}
+      {showFooter && (
+        <FloatingFooter activeTab={activeTab} onTabPress={handleTabPress} />
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000000' },
   tabBar: {
     backgroundColor: '#000000',
     borderTopColor: '#1a1a1a',
@@ -120,14 +147,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     paddingTop: 10,
   },
-  iconWrap: {
-    padding: 8,
-    borderRadius: 12,
-  },
-  iconActive: {
-    backgroundColor: COLORS.greenMuted,
-  },
-  icon: {
-    fontSize: 22,
-  },
+  iconWrap: { padding: 8, borderRadius: 12 },
+  iconActive: { backgroundColor: COLORS.greenMuted },
+  icon: { fontSize: 22 },
 });
