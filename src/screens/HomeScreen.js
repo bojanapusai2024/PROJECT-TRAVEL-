@@ -20,7 +20,7 @@ const COLORS = {
 };
 
 export default function HomeScreen() {
-  const { tripInfo, setTripInfo, budget, getTotalExpenses, getRemainingBudget, packingItems } = useTravelContext();
+  const { tripInfo, setTripInfo, budget, getTotalExpenses, getRemainingBudget, packingItems, itinerary } = useTravelContext();
   const [isEditing, setIsEditing] = useState(false);
 
   const packedCount = packingItems.filter(item => item.packed).length;
@@ -32,8 +32,13 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>Hello, Traveler</Text>
-          <Text style={styles.title}>Where to next? ✈️</Text>
+          <View>
+            <Text style={styles.greeting}>Your Trip</Text>
+            <Text style={styles.title}>Dashboard ✈️</Text>
+          </View>
+          <View style={styles.tripBadge}>
+            <Text style={styles.tripBadgeText}>PLANNING</Text>
+          </View>
         </View>
 
         {/* Destination Card */}
@@ -50,7 +55,7 @@ export default function HomeScreen() {
               />
               <View style={styles.dateInputRow}>
                 <TextInput
-                  style={[styles.dateInput]}
+                  style={styles.dateInput}
                   placeholder="Start date"
                   placeholderTextColor={COLORS.textMuted}
                   value={tripInfo.startDate}
@@ -60,7 +65,7 @@ export default function HomeScreen() {
                   <Text style={styles.dateArrowText}>→</Text>
                 </View>
                 <TextInput
-                  style={[styles.dateInput]}
+                  style={styles.dateInput}
                   placeholder="End date"
                   placeholderTextColor={COLORS.textMuted}
                   value={tripInfo.endDate}
@@ -80,7 +85,7 @@ export default function HomeScreen() {
               <View style={styles.dateDisplay}>
                 <View style={styles.dateBadge}>
                   <Text style={styles.dateBadgeText}>
-                    {tripInfo.startDate || 'Start'} — {tripInfo.endDate || 'End'}
+                    📅 {tripInfo.startDate || 'Start'} — {tripInfo.endDate || 'End'}
                   </Text>
                 </View>
               </View>
@@ -132,9 +137,6 @@ export default function HomeScreen() {
                 <Text style={styles.miniStatValue}>{packedCount}/{totalItems}</Text>
                 <Text style={styles.miniStatLabel}>Items Packed</Text>
               </View>
-              <View style={styles.miniProgress}>
-                <View style={[styles.miniProgressFill, { height: `${totalItems > 0 ? (packedCount/totalItems)*100 : 0}%` }]} />
-              </View>
             </View>
             
             <View style={styles.miniStatCard}>
@@ -142,45 +144,22 @@ export default function HomeScreen() {
                 <Text style={styles.miniStatEmoji}>📍</Text>
               </View>
               <View style={styles.miniStatContent}>
-                <Text style={styles.miniStatValue}>0</Text>
+                <Text style={styles.miniStatValue}>{itinerary.length}</Text>
                 <Text style={styles.miniStatLabel}>Stops Planned</Text>
-              </View>
-              <View style={styles.miniProgress}>
-                <View style={[styles.miniProgressFill, { height: '0%' }]} />
               </View>
             </View>
           </View>
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.actionsContainer}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.actionsGrid}>
-            {[
-              { icon: '💸', label: 'Add Expense' },
-              { icon: '📦', label: 'Add Item' },
-              { icon: '🗺️', label: 'Plan Route' },
-              { icon: '📊', label: 'View Stats' },
-            ].map((action, index) => (
-              <TouchableOpacity key={index} style={styles.actionCard} activeOpacity={0.7}>
-                <View style={styles.actionIconBg}>
-                  <Text style={styles.actionIcon}>{action.icon}</Text>
-                </View>
-                <Text style={styles.actionLabel}>{action.label}</Text>
-              </TouchableOpacity>
-            ))}
+        {/* Trip Code Card */}
+        <View style={styles.shareCard}>
+          <View style={styles.shareContent}>
+            <Text style={styles.shareTitle}>Share Trip</Text>
+            <Text style={styles.shareDescription}>Invite friends with this code</Text>
           </View>
-        </View>
-
-        {/* Tip Card */}
-        <View style={styles.tipCard}>
-          <View style={styles.tipHeader}>
-            <Text style={styles.tipIcon}>💡</Text>
-            <Text style={styles.tipTitle}>Pro Tip</Text>
+          <View style={styles.codeContainer}>
+            <Text style={styles.tripCode}>ABC123</Text>
           </View>
-          <Text style={styles.tipText}>
-            Set your budget before adding expenses to track your spending effectively.
-          </Text>
         </View>
 
         <View style={{ height: 30 }} />
@@ -195,6 +174,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 10,
@@ -207,9 +189,23 @@ const styles = StyleSheet.create({
   },
   title: {
     color: COLORS.text,
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     marginTop: 4,
+  },
+  tripBadge: {
+    backgroundColor: COLORS.greenMuted,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.greenBorder,
+  },
+  tripBadgeText: {
+    color: COLORS.green,
+    fontSize: 11,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
   destinationCard: {
     marginHorizontal: 20,
@@ -239,7 +235,7 @@ const styles = StyleSheet.create({
   },
   destinationName: {
     color: COLORS.text,
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 'bold',
     marginTop: 8,
   },
@@ -335,7 +331,7 @@ const styles = StyleSheet.create({
   },
   budgetAmount: {
     color: COLORS.text,
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: 'bold',
     marginTop: 4,
   },
@@ -344,7 +340,7 @@ const styles = StyleSheet.create({
   },
   percentageText: {
     color: COLORS.green,
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
   },
   percentageLabel: {
@@ -375,7 +371,7 @@ const styles = StyleSheet.create({
   },
   budgetStatValue: {
     color: COLORS.text,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   budgetStatLabel: {
@@ -403,18 +399,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.greenBorder,
-    overflow: 'hidden',
   },
   miniStatIcon: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     backgroundColor: COLORS.greenMuted,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   miniStatEmoji: {
-    fontSize: 18,
+    fontSize: 20,
   },
   miniStatContent: {
     marginLeft: 12,
@@ -430,79 +425,43 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
   },
-  miniProgress: {
-    width: 4,
-    height: 40,
-    backgroundColor: COLORS.cardLight,
-    borderRadius: 2,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-  },
-  miniProgressFill: {
-    width: '100%',
-    backgroundColor: COLORS.green,
-    borderRadius: 2,
-  },
-  actionsContainer: {
-    marginTop: 30,
-    paddingHorizontal: 20,
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  actionCard: {
-    width: (width - 52) / 2,
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: COLORS.greenBorder,
-  },
-  actionIconBg: {
-    width: 48,
-    height: 48,
-    backgroundColor: COLORS.greenMuted,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  actionIcon: {
-    fontSize: 22,
-  },
-  actionLabel: {
-    color: COLORS.text,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  tipCard: {
+  shareCard: {
     marginHorizontal: 20,
-    marginTop: 30,
-    backgroundColor: COLORS.greenMuted,
-    borderRadius: 16,
+    marginTop: 24,
+    backgroundColor: COLORS.card,
+    borderRadius: 20,
     padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: COLORS.greenBorder,
   },
-  tipHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
+  shareContent: {
+    flex: 1,
   },
-  tipIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  tipTitle: {
-    color: COLORS.green,
-    fontSize: 14,
+  shareTitle: {
+    color: COLORS.text,
+    fontSize: 16,
     fontWeight: 'bold',
   },
-  tipText: {
-    color: COLORS.textLight,
-    fontSize: 14,
-    lineHeight: 20,
+  shareDescription: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  codeContainer: {
+    backgroundColor: COLORS.greenMuted,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.green,
+  },
+  tripCode: {
+    color: COLORS.green,
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 2,
   },
 });
