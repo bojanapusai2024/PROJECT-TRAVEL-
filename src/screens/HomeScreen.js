@@ -30,14 +30,18 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* Header - Updated */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Your Trip</Text>
+            <Text style={styles.greeting}>{tripInfo.name || 'Your Trip'}</Text>
             <Text style={styles.title}>Dashboard ✈️</Text>
           </View>
           <View style={styles.tripBadge}>
-            <Text style={styles.tripBadgeText}>PLANNING</Text>
+            <Text style={styles.tripBadgeText}>
+              {tripInfo.participants?.length > 0 
+                ? `${tripInfo.participants.length + 1} travelers` 
+                : 'SOLO'}
+            </Text>
           </View>
         </View>
 
@@ -105,13 +109,13 @@ export default function HomeScreen() {
                 <Text style={styles.budgetAmount}>${budget.total.toLocaleString()}</Text>
               </View>
               <View style={styles.budgetPercentage}>
-                <Text style={styles.percentageText}>{spentPercentage.toFixed(0)}%</Text>
+                <Text style={styles.percentageText}>{(budget.total > 0 ? (getTotalExpenses() / budget.total) * 100 : 0).toFixed(0)}%</Text>
                 <Text style={styles.percentageLabel}>spent</Text>
               </View>
             </View>
             <View style={styles.progressContainer}>
               <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${Math.min(spentPercentage, 100)}%` }]} />
+                <View style={[styles.progressFill, { width: `${Math.min(budget.total > 0 ? (getTotalExpenses() / budget.total) * 100 : 0, 100)}%` }]} />
               </View>
             </View>
             <View style={styles.budgetFooter}>
@@ -134,7 +138,7 @@ export default function HomeScreen() {
                 <Text style={styles.miniStatEmoji}>🎒</Text>
               </View>
               <View style={styles.miniStatContent}>
-                <Text style={styles.miniStatValue}>{packedCount}/{totalItems}</Text>
+                <Text style={styles.miniStatValue}>{packingItems.filter(i => i.packed).length}/{packingItems.length}</Text>
                 <Text style={styles.miniStatLabel}>Items Packed</Text>
               </View>
             </View>
@@ -158,7 +162,7 @@ export default function HomeScreen() {
             <Text style={styles.shareDescription}>Invite friends with this code</Text>
           </View>
           <View style={styles.codeContainer}>
-            <Text style={styles.tripCode}>ABC123</Text>
+            <Text style={styles.tripCode}>{tripInfo.tripCode || 'ABC123'}</Text>
           </View>
         </View>
 

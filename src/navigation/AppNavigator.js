@@ -4,11 +4,13 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import WelcomeScreen from '../screens/WelcomeScreen';
+import TripSetupScreen from '../screens/TripSetupScreen';
 import HomeScreen from '../screens/HomeScreen';
 import BudgetScreen from '../screens/BudgetScreen';
 import ExpenseScreen from '../screens/ExpenseScreen';
 import PackingScreen from '../screens/PackingScreen';
 import MapScreen from '../screens/MapScreen';
+import { useTravelContext } from '../context/TravelContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -51,26 +53,53 @@ function MainTabs() {
 }
 
 export default function AppNavigator() {
-  const [hasTrip, setHasTrip] = useState(false);
-  const [tripMode, setTripMode] = useState(null); // 'plan' or 'join'
+  const [screen, setScreen] = useState('welcome'); // 'welcome', 'setup', 'main'
+  const { setTripInfo, setBudget } = useTravelContext();
 
   const handlePlanTrip = () => {
-    setTripMode('plan');
-    setHasTrip(true);
+    setScreen('setup');
   };
 
   const handleJoinTrip = (code) => {
-    setTripMode('join');
-    setHasTrip(true);
-    // In real app, validate code and fetch trip data
+    // In real app, fetch trip data from server using code
     console.log('Joining trip with code:', code);
+    setScreen('main');
   };
 
-  if (!hasTrip) {
+  const handleSetupComplete = (tripData) => {
+    // Save trip data to context
+    setTripInfo({
+      destination: tripData.destination,
+      startDate: tripData.startDate,
+      endDate: tripData.endDate,
+      name: tripData.name,
+      participants: tripData.participants,
+    });
+    setBudget(prev => ({
+      ...prev,
+      total: parseFloat(tripData.budget) || 0,
+    }));
+    setScreen('main');
+  };
+
+  const handleBackToWelcome = () => {
+    setScreen('welcome');
+  };
+
+  if (screen === 'welcome') {
     return (
       <WelcomeScreen 
         onPlanTrip={handlePlanTrip}
         onJoinTrip={handleJoinTrip}
+      />
+    );
+  }
+
+  if (screen === 'setup') {
+    return (
+      <TripSetupScreen 
+        onComplete={handleSetupComplete}
+        onBack={handleBackToWelcome}
       />
     );
   }
