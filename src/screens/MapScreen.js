@@ -10,14 +10,31 @@ import { useTheme } from '../context/ThemeContext';
 const { width } = Dimensions.get('window');
 
 const STOP_TYPES = [
-  { key: 'flight', label: 'Flight', icon: '✈️', color: '#87CEEB' },
-  { key: 'hotel', label: 'Hotel', icon: '🏨', color: '#DDA0DD' },
-  { key: 'attraction', label: 'Attraction', icon: '🏛️', color: '#00FF7F' },
-  { key: 'restaurant', label: 'Restaurant', icon: '🍽️', color: '#FFD700' },
-  { key: 'activity', label: 'Activity', icon: '🎯', color: '#FF6B6B' },
-  { key: 'transport', label: 'Transport', icon: '🚗', color: '#FFA500' },
-  { key: 'shopping', label: 'Shopping', icon: '🛍️', color: '#FF69B4' },
-  { key: 'photo', label: 'Photo Spot', icon: '📸', color: '#00CED1' },
+  { key: 'flight', label: 'Flight', icon: '✈️', color: '#87CEEB', category: 'transport' },
+  { key: 'hotel', label: 'Hotel', icon: '🏨', color: '#DDA0DD', category: 'accommodation' },
+  { key: 'checkin', label: 'Check-in', icon: '🔑', color: '#9370DB', category: 'accommodation' },
+  { key: 'checkout', label: 'Check-out', icon: '🚪', color: '#8A2BE2', category: 'accommodation' },
+  { key: 'attraction', label: 'Attraction', icon: '🏛️', color: '#00FF7F', category: 'activity' },
+  { key: 'restaurant', label: 'Restaurant', icon: '🍽️', color: '#FFD700', category: 'meal' },
+  { key: 'breakfast', label: 'Breakfast', icon: '🥐', color: '#FFA07A', category: 'meal' },
+  { key: 'lunch', label: 'Lunch', icon: '🥗', color: '#98FB98', category: 'meal' },
+  { key: 'dinner', label: 'Dinner', icon: '🍝', color: '#FF6347', category: 'meal' },
+  { key: 'activity', label: 'Activity', icon: '🎯', color: '#FF6B6B', category: 'activity' },
+  { key: 'transport', label: 'Transport', icon: '🚗', color: '#FFA500', category: 'transport' },
+  { key: 'train', label: 'Train', icon: '🚆', color: '#4682B4', category: 'transport' },
+  { key: 'bus', label: 'Bus', icon: '🚌', color: '#32CD32', category: 'transport' },
+  { key: 'shopping', label: 'Shopping', icon: '🛍️', color: '#FF69B4', category: 'activity' },
+  { key: 'photo', label: 'Photo Spot', icon: '📸', color: '#00CED1', category: 'activity' },
+  { key: 'relaxation', label: 'Relaxation', icon: '🧘', color: '#DEB887', category: 'activity' },
+];
+
+const TIME_SLOTS = [
+  { key: 'early', label: 'Early Morning', time: '06:00 AM', icon: '🌅' },
+  { key: 'morning', label: 'Morning', time: '09:00 AM', icon: '☀️' },
+  { key: 'midday', label: 'Midday', time: '12:00 PM', icon: '🌞' },
+  { key: 'afternoon', label: 'Afternoon', time: '03:00 PM', icon: '🌤️' },
+  { key: 'evening', label: 'Evening', time: '06:00 PM', icon: '🌆' },
+  { key: 'night', label: 'Night', time: '09:00 PM', icon: '🌙' },
 ];
 
 // Helper to generate days between two dates
@@ -72,8 +89,10 @@ export default function MapScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
   const [activeDay, setActiveDay] = useState(1);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [newStop, setNewStop] = useState({ 
-    name: '', type: 'attraction', dayNumber: 1, time: '', notes: '', location: '' 
+    name: '', type: 'activity', dayNumber: 1, time: '', notes: '', location: '', 
+    duration: '', cost: '', bookingRef: '' 
   });
   
   const scrollViewRef = useRef(null);
@@ -81,21 +100,17 @@ export default function MapScreen() {
   const pulseAnim = useState(new Animated.Value(1))[0];
 
   const tripDays = useMemo(() => generateDays(tripInfo.startDate, tripInfo.endDate), [tripInfo.startDate, tripInfo.endDate]);
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, { toValue: 1, duration: 3000, useNativeDriver: true }),
-        Animated.timing(floatAnim, { toValue: 0, duration: 3000, useNativeDriver: true }),
-      ])
-    ).start();
-    
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.1, duration: 1500, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
-      ])
-    ).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(floatAnim, { toValue: 1, duration: 3000, useNativeDriver: true }),
+      Animated.timing(floatAnim, { toValue: 0, duration: 3000, useNativeDriver: true }),
+    ])).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(pulseAnim, { toValue: 1.1, duration: 1500, useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+    ])).start();
   }, []);
 
   const floatTranslate = floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -12] });
@@ -103,31 +118,91 @@ export default function MapScreen() {
   const handleAddStop = () => {
     if (newStop.name.trim()) {
       addItineraryItem({ ...newStop, dayNumber: selectedDay?.dayNumber || 1, latitude: 0, longitude: 0 });
-      setNewStop({ name: '', type: 'attraction', dayNumber: 1, time: '', notes: '', location: '' });
+      setNewStop({ name: '', type: 'activity', dayNumber: 1, time: '', notes: '', location: '', duration: '', cost: '', bookingRef: '' });
       setModalVisible(false);
       setSelectedDay(null);
     }
   };
 
-  const openAddModal = (day) => { setSelectedDay(day); setNewStop({ ...newStop, dayNumber: day.dayNumber }); setModalVisible(true); };
-  const getStopType = (key) => STOP_TYPES.find(t => t.key === key) || STOP_TYPES[2];
-  const getStopsForDay = (dayNumber) => itinerary.filter(s => s.dayNumber === dayNumber).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-  const totalStops = itinerary.length;
+  const openAddModal = (day) => { 
+    setSelectedDay(day); 
+    setNewStop({ ...newStop, dayNumber: day.dayNumber }); 
+    setModalVisible(true); 
+  };
 
-  // Dynamic styles based on theme
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const getStopType = (key) => STOP_TYPES.find(t => t.key === key) || STOP_TYPES[4];
+  
+  const getStopsForDay = (dayNumber) => {
+    return itinerary
+      .filter(s => s.dayNumber === dayNumber)
+      .sort((a, b) => {
+        const timeA = a.time || '99:99';
+        const timeB = b.time || '99:99';
+        return timeA.localeCompare(timeB);
+      });
+  };
+
+  const getCategoryStats = (dayNumber) => {
+    const stops = getStopsForDay(dayNumber);
+    return {
+      transport: stops.filter(s => getStopType(s.type).category === 'transport').length,
+      accommodation: stops.filter(s => getStopType(s.type).category === 'accommodation').length,
+      activity: stops.filter(s => getStopType(s.type).category === 'activity').length,
+      meal: stops.filter(s => getStopType(s.type).category === 'meal').length,
+    };
+  };
+
+  const totalStops = itinerary.length;
+  const participantCount = (tripInfo.participants?.length || 0) + 1;
+
+  const filteredTypes = selectedCategory === 'all' 
+    ? STOP_TYPES 
+    : STOP_TYPES.filter(t => t.category === selectedCategory);
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Itinerary</Text>
-          <View style={styles.headerStats}>
-            <View style={styles.statBadge}><Text style={styles.statIcon}>📅</Text><Text style={styles.statText}>{tripDays.length} Days</Text></View>
-            <View style={styles.statBadge}><Text style={styles.statIcon}>📍</Text><Text style={styles.statText}>{totalStops} Stops</Text></View>
+        <Text style={styles.headerTitle}>Itinerary</Text>
+        <Text style={styles.headerSubtitle}>
+          {tripInfo.destination || 'Your Trip'} • {tripDays.length} Days
+        </Text>
+      </View>
+
+      {/* Trip Summary Card */}
+      <View style={styles.summaryCard}>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryIcon}>📅</Text>
+            <View>
+              <Text style={styles.summaryLabel}>Duration</Text>
+              <Text style={styles.summaryValue}>{tripDays.length} Days</Text>
+            </View>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryIcon}>👥</Text>
+            <View>
+              <Text style={styles.summaryLabel}>Travelers</Text>
+              <Text style={styles.summaryValue}>{participantCount} {participantCount === 1 ? 'Person' : 'People'}</Text>
+            </View>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryIcon}>📍</Text>
+            <View>
+              <Text style={styles.summaryLabel}>Activities</Text>
+              <Text style={styles.summaryValue}>{totalStops} Planned</Text>
+            </View>
           </View>
         </View>
+        {tripInfo.startDate && tripInfo.endDate && (
+          <View style={styles.dateRange}>
+            <Text style={styles.dateRangeText}>
+              🛫 {tripInfo.startDate}  →  {tripInfo.endDate} 🛬
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Day Selector */}
@@ -135,12 +210,27 @@ export default function MapScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.daySelectorScroll}>
           {tripDays.map((day) => {
             const isActive = activeDay === day.dayNumber;
-            const hasStops = getStopsForDay(day.dayNumber).length > 0;
+            const dayStops = getStopsForDay(day.dayNumber);
+            const hasStops = dayStops.length > 0;
             return (
-              <TouchableOpacity key={day.dayNumber} style={[styles.dayPill, isActive && styles.dayPillActive]} onPress={() => setActiveDay(day.dayNumber)}>
-                <Text style={[styles.dayPillNumber, isActive && styles.dayPillNumberActive]}>{day.dayNumber}</Text>
-                <Text style={[styles.dayPillLabel, isActive && styles.dayPillLabelActive]}>{day.shortDay || 'Day'}</Text>
-                {hasStops && <View style={[styles.dayPillDot, isActive && styles.dayPillDotActive]} />}
+              <TouchableOpacity 
+                key={day.dayNumber} 
+                style={[styles.dayPill, isActive && styles.dayPillActive]} 
+                onPress={() => setActiveDay(day.dayNumber)}
+              >
+                <Text style={[styles.dayPillNumber, isActive && styles.dayPillNumberActive]}>
+                  {day.dayNumber}
+                </Text>
+                <Text style={[styles.dayPillLabel, isActive && styles.dayPillLabelActive]}>
+                  {day.shortDay || 'Day'}
+                </Text>
+                {hasStops && (
+                  <View style={[styles.dayPillBadge, isActive && styles.dayPillBadgeActive]}>
+                    <Text style={[styles.dayPillBadgeText, isActive && styles.dayPillBadgeTextActive]}>
+                      {dayStops.length}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             );
           })}
@@ -148,32 +238,23 @@ export default function MapScreen() {
       </View>
 
       <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false} style={styles.mainScroll}>
-        {/* Trip Overview Card */}
-        {tripInfo.startDate && tripInfo.endDate && (
-          <View style={styles.overviewCard}>
-            <View style={styles.overviewGlow} />
-            <View style={styles.overviewContent}>
-              <View style={styles.overviewIcon}><Animated.Text style={[styles.overviewEmoji, { transform: [{ translateY: floatTranslate }] }]}>🌍</Animated.Text></View>
-              <View style={styles.overviewInfo}>
-                <Text style={styles.overviewDestination}>{tripInfo.destination || 'Your Trip'}</Text>
-                <Text style={styles.overviewDates}>{tripInfo.startDate} → {tripInfo.endDate}</Text>
-              </View>
-            </View>
-            <View style={styles.overviewProgress}>
-              <View style={styles.progressBar}><View style={[styles.progressFill, { width: `${Math.min((totalStops / (tripDays.length * 3)) * 100, 100)}%` }]} /></View>
-              <Text style={styles.progressText}>{totalStops} activities planned</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Hero when no stops */}
+        {/* Empty Hero */}
         {totalStops === 0 && (
           <View style={styles.emptyHero}>
             <Animated.View style={[styles.emptyHeroContent, { transform: [{ translateY: floatTranslate }] }]}>
-              <View style={styles.emptyHeroGlobe}><Text style={styles.emptyHeroEmoji}>🗺️</Text><Animated.View style={[styles.emptyHeroRing, { transform: [{ scale: pulseAnim }] }]} /><View style={styles.emptyHeroRing2} /></View>
+              <View style={styles.emptyHeroGlobe}>
+                <Text style={styles.emptyHeroEmoji}>🗺️</Text>
+                <Animated.View style={[styles.emptyHeroRing, { transform: [{ scale: pulseAnim }] }]} />
+              </View>
             </Animated.View>
-            <Text style={styles.emptyHeroTitle}>Plan Your Adventure</Text>
-            <Text style={styles.emptyHeroText}>Add activities to each day of your trip</Text>
+            <Text style={styles.emptyHeroTitle}>Plan Your Perfect Day</Text>
+            <Text style={styles.emptyHeroText}>Add transportation, meals, activities & more</Text>
+            <View style={styles.emptyHeroTips}>
+              <View style={styles.tipItem}><Text style={styles.tipIcon}>✈️</Text><Text style={styles.tipText}>Transport</Text></View>
+              <View style={styles.tipItem}><Text style={styles.tipIcon}>🏨</Text><Text style={styles.tipText}>Stay</Text></View>
+              <View style={styles.tipItem}><Text style={styles.tipIcon}>🍽️</Text><Text style={styles.tipText}>Meals</Text></View>
+              <View style={styles.tipItem}><Text style={styles.tipIcon}>🎯</Text><Text style={styles.tipText}>Activities</Text></View>
+            </View>
           </View>
         )}
 
@@ -183,17 +264,24 @@ export default function MapScreen() {
             const dayStops = getStopsForDay(day.dayNumber);
             const hasStops = dayStops.length > 0;
             const isLastDay = dayIndex === tripDays.length - 1;
+            const stats = getCategoryStats(day.dayNumber);
             
             return (
               <View key={day.dayNumber} style={styles.daySection}>
-                {/* Day Header Card */}
                 <View style={styles.dayCard}>
+                  {/* Day Badge Column */}
                   <View style={styles.dayCardLeft}>
-                    <View style={[styles.dayBadge, hasStops && styles.dayBadgeActive]}><Text style={[styles.dayBadgeText, hasStops && styles.dayBadgeTextActive]}>{day.dayNumber}</Text></View>
+                    <View style={[styles.dayBadge, hasStops && styles.dayBadgeActive]}>
+                      <Text style={[styles.dayBadgeText, hasStops && styles.dayBadgeTextActive]}>
+                        {day.dayNumber}
+                      </Text>
+                    </View>
                     {!isLastDay && <View style={styles.dayConnector} />}
                   </View>
                   
+                  {/* Day Content */}
                   <View style={styles.dayCardContent}>
+                    {/* Day Header */}
                     <View style={styles.dayCardHeader}>
                       <View>
                         <Text style={styles.dayCardTitle}>Day {day.dayNumber}</Text>
@@ -206,15 +294,43 @@ export default function MapScreen() {
                       </TouchableOpacity>
                     </View>
 
+                    {/* Day Stats Mini */}
+                    {hasStops && (
+                      <View style={styles.dayStats}>
+                        {stats.transport > 0 && (
+                          <View style={styles.dayStatItem}>
+                            <Text style={styles.dayStatIcon}>🚗</Text>
+                            <Text style={styles.dayStatCount}>{stats.transport}</Text>
+                          </View>
+                        )}
+                        {stats.accommodation > 0 && (
+                          <View style={styles.dayStatItem}>
+                            <Text style={styles.dayStatIcon}>🏨</Text>
+                            <Text style={styles.dayStatCount}>{stats.accommodation}</Text>
+                          </View>
+                        )}
+                        {stats.meal > 0 && (
+                          <View style={styles.dayStatItem}>
+                            <Text style={styles.dayStatIcon}>🍽️</Text>
+                            <Text style={styles.dayStatCount}>{stats.meal}</Text>
+                          </View>
+                        )}
+                        {stats.activity > 0 && (
+                          <View style={styles.dayStatItem}>
+                            <Text style={styles.dayStatIcon}>🎯</Text>
+                            <Text style={styles.dayStatCount}>{stats.activity}</Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+
                     {/* Stops */}
                     {dayStops.length === 0 ? (
                       <TouchableOpacity style={styles.emptyCard} onPress={() => openAddModal(day)}>
-                        <View style={styles.emptyCardIcon}>
-                          <Text style={styles.emptyCardEmoji}>✨</Text>
-                        </View>
+                        <View style={styles.emptyCardIcon}><Text style={styles.emptyCardEmoji}>✨</Text></View>
                         <View style={styles.emptyCardText}>
-                          <Text style={styles.emptyCardTitle}>No activities yet</Text>
-                          <Text style={styles.emptyCardSubtitle}>Tap to add your first activity</Text>
+                          <Text style={styles.emptyCardTitle}>No activities planned</Text>
+                          <Text style={styles.emptyCardSubtitle}>Tap to add transport, meals, or activities</Text>
                         </View>
                       </TouchableOpacity>
                     ) : (
@@ -225,16 +341,23 @@ export default function MapScreen() {
                           
                           return (
                             <View key={stop.id} style={styles.stopWrapper}>
-                              {/* Time indicator */}
+                              {/* Time Column */}
                               <View style={styles.stopTimeContainer}>
                                 <Text style={styles.stopTimeText}>{stop.time || '--:--'}</Text>
-                                {!isLast && <View style={styles.stopTimeLine} />}
+                                {!isLast && <View style={[styles.stopTimeLine, { backgroundColor: type.color + '40' }]} />}
                               </View>
                               
                               {/* Stop Card */}
                               <View style={[styles.stopCard, { borderLeftColor: type.color }]}>
+                                {/* Category Tag */}
+                                <View style={[styles.categoryTag, { backgroundColor: type.color + '20' }]}>
+                                  <Text style={[styles.categoryTagText, { color: type.color }]}>
+                                    {type.category.toUpperCase()}
+                                  </Text>
+                                </View>
+
                                 <View style={styles.stopCardHeader}>
-                                  <View style={[styles.stopIconContainer, { backgroundColor: type.color + '20' }]}>
+                                  <View style={[styles.stopIconContainer, { backgroundColor: type.color + '25' }]}>
                                     <Text style={styles.stopIconEmoji}>{type.icon}</Text>
                                   </View>
                                   <View style={styles.stopCardInfo}>
@@ -243,12 +366,12 @@ export default function MapScreen() {
                                       <View style={[styles.stopTypeBadge, { backgroundColor: type.color + '15' }]}>
                                         <Text style={[styles.stopTypeBadgeText, { color: type.color }]}>{type.label}</Text>
                                       </View>
+                                      {stop.duration && (
+                                        <Text style={styles.stopDuration}>⏱️ {stop.duration}</Text>
+                                      )}
                                     </View>
                                   </View>
-                                  <TouchableOpacity 
-                                    style={styles.stopDeleteBtn}
-                                    onPress={() => deleteItineraryItem(stop.id)}
-                                  >
+                                  <TouchableOpacity style={styles.stopDeleteBtn} onPress={() => deleteItineraryItem(stop.id)}>
                                     <Text style={styles.stopDeleteIcon}>×</Text>
                                   </TouchableOpacity>
                                 </View>
@@ -257,6 +380,20 @@ export default function MapScreen() {
                                   <View style={styles.stopDetailRow}>
                                     <Text style={styles.stopDetailIcon}>📍</Text>
                                     <Text style={styles.stopDetailText}>{stop.location}</Text>
+                                  </View>
+                                )}
+
+                                {stop.cost && (
+                                  <View style={styles.stopDetailRow}>
+                                    <Text style={styles.stopDetailIcon}>💰</Text>
+                                    <Text style={styles.stopDetailText}>${stop.cost}</Text>
+                                  </View>
+                                )}
+
+                                {stop.bookingRef && (
+                                  <View style={styles.stopDetailRow}>
+                                    <Text style={styles.stopDetailIcon}>🎫</Text>
+                                    <Text style={styles.stopDetailText}>Ref: {stop.bookingRef}</Text>
                                   </View>
                                 )}
                                 
@@ -281,13 +418,10 @@ export default function MapScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Floating Add Button */}
-      <TouchableOpacity 
-        style={styles.fab}
-        onPress={() => openAddModal(tripDays.find(d => d.dayNumber === activeDay) || tripDays[0])}
-      >
+      {/* FAB */}
+      <TouchableOpacity style={styles.fab} onPress={() => openAddModal(tripDays.find(d => d.dayNumber === activeDay) || tripDays[0])}>
         <Text style={styles.fabIcon}>+</Text>
-        <Text style={styles.fabText}>Add</Text>
+        <Text style={styles.fabText}>Add Activity</Text>
       </TouchableOpacity>
 
       {/* Add Stop Modal */}
@@ -298,11 +432,11 @@ export default function MapScreen() {
             
             <View style={styles.modalHeader}>
               <View style={styles.modalHeaderInfo}>
-                <Text style={styles.modalTitle}>New Activity</Text>
+                <Text style={styles.modalTitle}>Add to Itinerary</Text>
                 {selectedDay && (
                   <View style={styles.modalDayBadge}>
                     <Text style={styles.modalDayText}>Day {selectedDay.dayNumber}</Text>
-                    {selectedDay.dateString && <Text style={styles.modalDateText}>{selectedDay.dateString}</Text>}
+                    {selectedDay.dateString && <Text style={styles.modalDateText}> • {selectedDay.fullDate || selectedDay.dateString}</Text>}
                   </View>
                 )}
               </View>
@@ -312,44 +446,26 @@ export default function MapScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Activity Name *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g., Visit Eiffel Tower"
-                  placeholderTextColor={colors.textMuted}
-                  value={newStop.name}
-                  onChangeText={(t) => setNewStop({...newStop, name: t})}
-                />
+              {/* Category Filter */}
+              <View style={styles.categoryFilter}>
+                {['all', 'transport', 'accommodation', 'meal', 'activity'].map(cat => (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[styles.categoryChip, selectedCategory === cat && styles.categoryChipActive]}
+                    onPress={() => setSelectedCategory(cat)}
+                  >
+                    <Text style={[styles.categoryChipText, selectedCategory === cat && styles.categoryChipTextActive]}>
+                      {cat === 'all' ? '🌟 All' : cat === 'transport' ? '🚗 Transport' : cat === 'accommodation' ? '🏨 Stay' : cat === 'meal' ? '🍽️ Meals' : '🎯 Activities'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
 
-              <View style={styles.inputRow}>
-                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                  <Text style={styles.inputLabel}>Time</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="10:00 AM"
-                    placeholderTextColor={colors.textMuted}
-                    value={newStop.time}
-                    onChangeText={(t) => setNewStop({...newStop, time: t})}
-                  />
-                </View>
-                <View style={[styles.inputGroup, { flex: 1.5 }]}>
-                  <Text style={styles.inputLabel}>Location</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Address or place"
-                    placeholderTextColor={colors.textMuted}
-                    value={newStop.location}
-                    onChangeText={(t) => setNewStop({...newStop, location: t})}
-                  />
-                </View>
-              </View>
-
+              {/* Type Selection */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Type</Text>
                 <View style={styles.typeGrid}>
-                  {STOP_TYPES.map(type => (
+                  {filteredTypes.map(type => (
                     <TouchableOpacity
                       key={type.key}
                       style={[styles.typeChip, newStop.type === type.key && { backgroundColor: type.color, borderColor: type.color }]}
@@ -362,24 +478,72 @@ export default function MapScreen() {
                 </View>
               </View>
 
+              {/* Name */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Notes</Text>
+                <Text style={styles.inputLabel}>Name / Description *</Text>
                 <TextInput
-                  style={[styles.input, styles.notesInput]}
-                  placeholder="Any additional details..."
+                  style={styles.input}
+                  placeholder="e.g., Flight to Paris, Eiffel Tower Visit"
                   placeholderTextColor={colors.textMuted}
-                  value={newStop.notes}
-                  onChangeText={(t) => setNewStop({...newStop, notes: t})}
-                  multiline
+                  value={newStop.name}
+                  onChangeText={(t) => setNewStop({...newStop, name: t})}
                 />
               </View>
 
-              <TouchableOpacity 
-                style={[styles.submitButton, !newStop.name.trim() && styles.submitButtonDisabled]} 
-                onPress={handleAddStop}
-                disabled={!newStop.name.trim()}
-              >
-                <Text style={styles.submitButtonText}>Add Activity</Text>
+              {/* Time & Duration Row */}
+              <View style={styles.inputRow}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.inputLabel}>Time</Text>
+                  <TextInput style={styles.input} placeholder="09:00 AM" placeholderTextColor={colors.textMuted} value={newStop.time} onChangeText={(t) => setNewStop({...newStop, time: t})} />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>Duration</Text>
+                  <TextInput style={styles.input} placeholder="2 hours" placeholderTextColor={colors.textMuted} value={newStop.duration} onChangeText={(t) => setNewStop({...newStop, duration: t})} />
+                </View>
+              </View>
+
+              {/* Quick Time Selection */}
+              <View style={styles.quickTimeContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {TIME_SLOTS.map(slot => (
+                    <TouchableOpacity 
+                      key={slot.key} 
+                      style={[styles.quickTimeChip, newStop.time === slot.time && styles.quickTimeChipActive]}
+                      onPress={() => setNewStop({...newStop, time: slot.time})}
+                    >
+                      <Text style={styles.quickTimeIcon}>{slot.icon}</Text>
+                      <Text style={[styles.quickTimeText, newStop.time === slot.time && styles.quickTimeTextActive]}>{slot.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* Location */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>📍 Location</Text>
+                <TextInput style={styles.input} placeholder="Address or place name" placeholderTextColor={colors.textMuted} value={newStop.location} onChangeText={(t) => setNewStop({...newStop, location: t})} />
+              </View>
+
+              {/* Cost & Booking Row */}
+              <View style={styles.inputRow}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.inputLabel}>💰 Cost</Text>
+                  <TextInput style={styles.input} placeholder="$50" placeholderTextColor={colors.textMuted} keyboardType="numeric" value={newStop.cost} onChangeText={(t) => setNewStop({...newStop, cost: t})} />
+                </View>
+                <View style={[styles.inputGroup, { flex: 1.5 }]}>
+                  <Text style={styles.inputLabel}>🎫 Booking Reference</Text>
+                  <TextInput style={styles.input} placeholder="ABC123" placeholderTextColor={colors.textMuted} value={newStop.bookingRef} onChangeText={(t) => setNewStop({...newStop, bookingRef: t})} />
+                </View>
+              </View>
+
+              {/* Notes */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>📝 Notes</Text>
+                <TextInput style={[styles.input, styles.notesInput]} placeholder="Additional details, tips, reminders..." placeholderTextColor={colors.textMuted} value={newStop.notes} onChangeText={(t) => setNewStop({...newStop, notes: t})} multiline />
+              </View>
+
+              <TouchableOpacity style={[styles.submitButton, !newStop.name.trim() && styles.submitButtonDisabled]} onPress={handleAddStop} disabled={!newStop.name.trim()}>
+                <Text style={styles.submitButtonText}>Add to Day {selectedDay?.dayNumber}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -391,110 +555,155 @@ export default function MapScreen() {
 
 const createStyles = (colors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  headerLeft: {},
+  
+  // Header
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   headerTitle: { color: colors.text, fontSize: 28, fontWeight: 'bold' },
-  headerStats: { flexDirection: 'row', marginTop: 8, gap: 12 },
-  statBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primaryMuted, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: colors.primaryBorder },
-  statIcon: { fontSize: 12, marginRight: 6 },
-  statText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
-  daySelectorContainer: { marginBottom: 16 },
-  daySelectorScroll: { paddingHorizontal: 20, gap: 10 },
-  dayPill: { alignItems: 'center', backgroundColor: colors.card, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 14, borderWidth: 1, borderColor: colors.primaryBorder, minWidth: 56 },
+  headerSubtitle: { color: colors.primary, fontSize: 14, marginTop: 4 },
+
+  // Summary Card
+  summaryCard: { marginHorizontal: 20, backgroundColor: colors.card, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.primaryBorder },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  summaryItem: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  summaryIcon: { fontSize: 20, marginRight: 8 },
+  summaryLabel: { color: colors.textMuted, fontSize: 10, textTransform: 'uppercase' },
+  summaryValue: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  summaryDivider: { width: 1, backgroundColor: colors.primaryBorder, marginHorizontal: 8 },
+  dateRange: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.primaryBorder, alignItems: 'center' },
+  dateRangeText: { color: colors.primary, fontSize: 13, fontWeight: '500' },
+
+  // Day Selector
+  daySelectorContainer: { marginBottom: 12 },
+  daySelectorScroll: { paddingHorizontal: 20, gap: 8 },
+  dayPill: { alignItems: 'center', backgroundColor: colors.card, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.primaryBorder, minWidth: 52 },
   dayPillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  dayPillNumber: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
+  dayPillNumber: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
   dayPillNumberActive: { color: colors.bg },
-  dayPillLabel: { color: colors.textMuted, fontSize: 10, marginTop: 2 },
+  dayPillLabel: { color: colors.textMuted, fontSize: 9, marginTop: 2 },
   dayPillLabelActive: { color: colors.bg },
-  dayPillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary, marginTop: 4 },
-  dayPillDotActive: { backgroundColor: colors.bg },
+  dayPillBadge: { backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2, marginTop: 4 },
+  dayPillBadgeActive: { backgroundColor: colors.bg },
+  dayPillBadgeText: { color: colors.bg, fontSize: 10, fontWeight: 'bold' },
+  dayPillBadgeTextActive: { color: colors.primary },
+
   mainScroll: { flex: 1 },
-  overviewCard: { marginHorizontal: 20, backgroundColor: colors.card, borderRadius: 20, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: colors.primaryBorder, overflow: 'hidden' },
-  overviewGlow: { position: 'absolute', top: -40, right: -40, width: 120, height: 120, backgroundColor: colors.primary, opacity: 0.08, borderRadius: 60 },
-  overviewContent: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  overviewIcon: { width: 50, height: 50, borderRadius: 15, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
-  overviewEmoji: { fontSize: 26 },
-  overviewInfo: { flex: 1, marginLeft: 14 },
-  overviewDestination: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
-  overviewDates: { color: colors.primary, fontSize: 13, marginTop: 4 },
-  overviewProgress: {},
-  progressBar: { height: 6, backgroundColor: colors.cardLight, borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 3 },
-  progressText: { color: colors.textMuted, fontSize: 11, marginTop: 8, textAlign: 'center' },
-  emptyHero: { alignItems: 'center', paddingVertical: 30 },
+
+  // Empty Hero
+  emptyHero: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
   emptyHeroContent: { marginBottom: 20 },
   emptyHeroGlobe: { width: 100, height: 100, alignItems: 'center', justifyContent: 'center' },
   emptyHeroEmoji: { fontSize: 50, zIndex: 2 },
   emptyHeroRing: { position: 'absolute', width: 90, height: 90, borderRadius: 45, borderWidth: 2, borderColor: colors.primary, opacity: 0.4 },
-  emptyHeroRing2: { position: 'absolute', width: 110, height: 110, borderRadius: 55, borderWidth: 1, borderColor: colors.primaryBorder, opacity: 0.3 },
-  emptyHeroTitle: { color: colors.text, fontSize: 22, fontWeight: 'bold' },
-  emptyHeroText: { color: colors.textMuted, fontSize: 14, marginTop: 8 },
+  emptyHeroTitle: { color: colors.text, fontSize: 22, fontWeight: 'bold', textAlign: 'center' },
+  emptyHeroText: { color: colors.textMuted, fontSize: 14, marginTop: 8, textAlign: 'center' },
+  emptyHeroTips: { flexDirection: 'row', marginTop: 24, gap: 16 },
+  tipItem: { alignItems: 'center' },
+  tipIcon: { fontSize: 24 },
+  tipText: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
+
+  // Timeline
   timeline: { paddingHorizontal: 20 },
   daySection: { marginBottom: 8 },
   dayCard: { flexDirection: 'row' },
-  dayCardLeft: { alignItems: 'center', width: 44 },
-  dayBadge: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.primaryBorder, alignItems: 'center', justifyContent: 'center' },
+  dayCardLeft: { alignItems: 'center', width: 40 },
+  dayBadge: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.primaryBorder, alignItems: 'center', justifyContent: 'center' },
   dayBadgeActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  dayBadgeText: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  dayBadgeText: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
   dayBadgeTextActive: { color: colors.bg },
-  dayConnector: { width: 2, flex: 1, backgroundColor: colors.primaryBorder, marginVertical: 6 },
-  dayCardContent: { flex: 1, marginLeft: 14, paddingBottom: 20 },
-  dayCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  dayCardTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
-  dayCardDate: { color: colors.primary, fontSize: 13, marginTop: 2 },
-  addButton: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder, alignItems: 'center', justifyContent: 'center' },
-  addButtonIcon: { color: colors.primary, fontSize: 22, marginTop: -1 },
-  emptyCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder, borderStyle: 'dashed' },
-  emptyCardIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
-  emptyCardEmoji: { fontSize: 20 },
-  emptyCardText: { marginLeft: 14 },
-  emptyCardTitle: { color: colors.textMuted, fontSize: 14, fontWeight: '500' },
-  emptyCardSubtitle: { color: colors.textLight, fontSize: 12, marginTop: 2 },
-  stopsTimeline: { gap: 12 },
+  dayConnector: { width: 2, flex: 1, backgroundColor: colors.primaryBorder, marginVertical: 4 },
+  dayCardContent: { flex: 1, marginLeft: 12, paddingBottom: 16 },
+  dayCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  dayCardTitle: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  dayCardDate: { color: colors.primary, fontSize: 12, marginTop: 2 },
+  addButton: { width: 32, height: 32, borderRadius: 8, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder, alignItems: 'center', justifyContent: 'center' },
+  addButtonIcon: { color: colors.primary, fontSize: 20 },
+
+  // Day Stats
+  dayStats: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  dayStatItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardLight, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  dayStatIcon: { fontSize: 12, marginRight: 4 },
+  dayStatCount: { color: colors.text, fontSize: 12, fontWeight: '600' },
+
+  // Empty Card
+  emptyCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.primaryBorder, borderStyle: 'dashed' },
+  emptyCardIcon: { width: 40, height: 40, borderRadius: 10, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
+  emptyCardEmoji: { fontSize: 18 },
+  emptyCardText: { marginLeft: 12 },
+  emptyCardTitle: { color: colors.textMuted, fontSize: 13, fontWeight: '500' },
+  emptyCardSubtitle: { color: colors.textLight, fontSize: 11, marginTop: 2 },
+
+  // Stops Timeline
+  stopsTimeline: { gap: 10 },
   stopWrapper: { flexDirection: 'row' },
-  stopTimeContainer: { width: 50, alignItems: 'center' },
-  stopTimeText: { color: colors.primary, fontSize: 11, fontWeight: '600' },
-  stopTimeLine: { width: 1, flex: 1, backgroundColor: colors.primaryBorder, marginTop: 6, marginBottom: -6 },
-  stopCard: { flex: 1, backgroundColor: colors.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: colors.primaryBorder, borderLeftWidth: 3, marginLeft: 8 },
-  stopCardHeader: { flexDirection: 'row', alignItems: 'flex-start' },
-  stopIconContainer: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  stopIconEmoji: { fontSize: 18 },
-  stopCardInfo: { flex: 1, marginLeft: 12 },
-  stopCardName: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  stopCardMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 8 },
-  stopTypeBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  stopTypeBadgeText: { fontSize: 11, fontWeight: '600' },
+  stopTimeContainer: { width: 48, alignItems: 'center' },
+  stopTimeText: { color: colors.primary, fontSize: 10, fontWeight: '600' },
+  stopTimeLine: { width: 2, flex: 1, marginTop: 4, marginBottom: -4, borderRadius: 1 },
+  
+  stopCard: { flex: 1, backgroundColor: colors.card, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: colors.primaryBorder, borderLeftWidth: 3, marginLeft: 6 },
+  categoryTag: { position: 'absolute', top: 8, right: 8, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  categoryTagText: { fontSize: 8, fontWeight: '700', letterSpacing: 0.5 },
+  stopCardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 4 },
+  stopIconContainer: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  stopIconEmoji: { fontSize: 16 },
+  stopCardInfo: { flex: 1, marginLeft: 10 },
+  stopCardName: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  stopCardMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8, flexWrap: 'wrap' },
+  stopTypeBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  stopTypeBadgeText: { fontSize: 10, fontWeight: '600' },
+  stopDuration: { color: colors.textMuted, fontSize: 10 },
   stopDeleteBtn: { padding: 4 },
-  stopDeleteIcon: { color: colors.textMuted, fontSize: 20 },
-  stopDetailRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
-  stopDetailIcon: { fontSize: 12, marginRight: 6 },
-  stopDetailText: { color: colors.textMuted, fontSize: 12, flex: 1 },
-  stopNotesContainer: { marginTop: 10, backgroundColor: colors.cardLight, padding: 10, borderRadius: 8 },
-  stopNotes: { color: colors.textLight, fontSize: 12, lineHeight: 18 },
-  fab: { position: 'absolute', bottom: 20, right: 20, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary, paddingVertical: 14, paddingHorizontal: 20, borderRadius: 16, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
-  fabIcon: { color: colors.bg, fontSize: 20, fontWeight: 'bold', marginRight: 6 },
-  fabText: { color: colors.bg, fontSize: 15, fontWeight: 'bold' },
+  stopDeleteIcon: { color: colors.textMuted, fontSize: 18 },
+  stopDetailRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  stopDetailIcon: { fontSize: 11, marginRight: 6 },
+  stopDetailText: { color: colors.textMuted, fontSize: 11, flex: 1 },
+  stopNotesContainer: { marginTop: 8, backgroundColor: colors.cardLight, padding: 8, borderRadius: 6 },
+  stopNotes: { color: colors.textLight, fontSize: 11, lineHeight: 16 },
+
+  // FAB
+  fab: { position: 'absolute', bottom: 20, right: 20, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary, paddingVertical: 12, paddingHorizontal: 18, borderRadius: 14, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
+  fabIcon: { color: colors.bg, fontSize: 18, fontWeight: 'bold', marginRight: 6 },
+  fabText: { color: colors.bg, fontSize: 14, fontWeight: 'bold' },
+
+  // Modal
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.8)' },
-  modalContent: { backgroundColor: colors.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 12, paddingHorizontal: 24, paddingBottom: 24, maxHeight: '85%' },
+  modalContent: { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 12, paddingHorizontal: 20, paddingBottom: 20, maxHeight: '90%' },
   modalHandle: { width: 40, height: 4, backgroundColor: colors.textMuted, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
   modalHeaderInfo: {},
-  modalTitle: { color: colors.text, fontSize: 24, fontWeight: 'bold' },
-  modalDayBadge: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 8 },
-  modalDayText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
-  modalDateText: { color: colors.textMuted, fontSize: 14 },
-  modalClose: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.cardLight, borderRadius: 10 },
-  modalCloseText: { color: colors.textMuted, fontSize: 22 },
-  inputGroup: { marginBottom: 16 },
-  inputLabel: { color: colors.textMuted, fontSize: 13, marginBottom: 8, fontWeight: '500' },
+  modalTitle: { color: colors.text, fontSize: 22, fontWeight: 'bold' },
+  modalDayBadge: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  modalDayText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
+  modalDateText: { color: colors.textMuted, fontSize: 13 },
+  modalClose: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.cardLight, borderRadius: 8 },
+  modalCloseText: { color: colors.textMuted, fontSize: 20 },
+
+  // Category Filter
+  categoryFilter: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  categoryChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.cardLight, borderWidth: 1, borderColor: colors.primaryBorder },
+  categoryChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  categoryChipText: { color: colors.text, fontSize: 12 },
+  categoryChipTextActive: { color: colors.bg, fontWeight: '600' },
+
+  inputGroup: { marginBottom: 14 },
+  inputLabel: { color: colors.textMuted, fontSize: 12, marginBottom: 6, fontWeight: '500' },
   inputRow: { flexDirection: 'row' },
-  input: { backgroundColor: colors.cardLight, color: colors.text, padding: 16, borderRadius: 12, fontSize: 15, borderWidth: 1, borderColor: colors.primaryBorder },
-  notesInput: { height: 80, textAlignVertical: 'top' },
-  typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  typeChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardLight, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.primaryBorder },
-  typeChipIcon: { fontSize: 14, marginRight: 6 },
-  typeChipText: { color: colors.text, fontSize: 12, fontWeight: '500' },
-  submitButton: { backgroundColor: colors.primary, padding: 18, borderRadius: 14, alignItems: 'center', marginTop: 8, marginBottom: 20 },
+  input: { backgroundColor: colors.cardLight, color: colors.text, padding: 14, borderRadius: 10, fontSize: 14, borderWidth: 1, borderColor: colors.primaryBorder },
+  notesInput: { height: 70, textAlignVertical: 'top' },
+  
+  // Quick Time
+  quickTimeContainer: { marginBottom: 14 },
+  quickTimeChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardLight, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginRight: 8, borderWidth: 1, borderColor: colors.primaryBorder },
+  quickTimeChipActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primary },
+  quickTimeIcon: { fontSize: 14, marginRight: 6 },
+  quickTimeText: { color: colors.textMuted, fontSize: 11 },
+  quickTimeTextActive: { color: colors.primary, fontWeight: '600' },
+
+  typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  typeChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardLight, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.primaryBorder },
+  typeChipIcon: { fontSize: 12, marginRight: 4 },
+  typeChipText: { color: colors.text, fontSize: 11, fontWeight: '500' },
+
+  submitButton: { backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8, marginBottom: 20 },
   submitButtonDisabled: { opacity: 0.5 },
-  submitButtonText: { color: colors.bg, fontSize: 17, fontWeight: 'bold' },
+  submitButtonText: { color: colors.bg, fontSize: 16, fontWeight: 'bold' },
 });
