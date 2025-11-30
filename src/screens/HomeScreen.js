@@ -5,7 +5,7 @@ import { useTravelContext } from '../context/TravelContext';
 import { useTheme } from '../context/ThemeContext';
 
 export default function HomeScreen({ onBackToHome }) {
-  const { tripInfo, setTripInfo, budget, getTotalExpenses, getRemainingBudget, packingItems, itinerary } = useTravelContext();
+  const { tripInfo, setTripInfo, budget, getTotalExpenses, getRemainingBudget, packingItems, itinerary, expenses } = useTravelContext();
   const { colors } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
 
@@ -27,6 +27,22 @@ export default function HomeScreen({ onBackToHome }) {
   const spentPercentage = budget.total > 0 ? (getTotalExpenses() / budget.total) * 100 : 0;
   const participantCount = (tripInfo.participants?.length || 0) + 1;
   const remainingBudget = getRemainingBudget();
+
+  // Get recent expenses
+  const recentExpenses = expenses.slice(-4).reverse();
+
+  // Get category info for expenses
+  const getCategoryInfo = (key) => {
+    const categories = {
+      accommodation: { emoji: '🏨', color: '#8B5CF6' },
+      transport: { emoji: '🚗', color: '#3B82F6' },
+      food: { emoji: '🍽️', color: '#F59E0B' },
+      activities: { emoji: '🎭', color: '#10B981' },
+      shopping: { emoji: '🛍️', color: '#EC4899' },
+      other: { emoji: '📦', color: '#6B7280' },
+    };
+    return categories[key] || categories.other;
+  };
 
   // Calculate days until trip
   const getDaysUntilTrip = () => {
@@ -83,7 +99,7 @@ export default function HomeScreen({ onBackToHome }) {
           )}
         </Animated.View>
 
-        {/* Hero Card */}
+        {/* Hero Card - Softer colors */}
         <Animated.View style={[styles.heroCard, { transform: [{ scale: scaleAnim }] }]}>
           <View style={styles.heroGlow} />
           <View style={styles.heroHeader}>
@@ -174,28 +190,63 @@ export default function HomeScreen({ onBackToHome }) {
         </View>
 
         {/* Activity Overview */}
-        <Animated.View style={[styles.activitySection, { opacity: fadeAnim }]}>
+        <Animated.View style={[styles.overviewSection, { opacity: fadeAnim }]}>
           <Text style={styles.sectionTitle}>📍 Activity Overview</Text>
-          <View style={styles.activityCard}>
+          <View style={styles.overviewCard}>
             {itinerary.length === 0 ? (
-              <View style={styles.emptyActivity}>
-                <Text style={styles.emptyActivityEmoji}>🗺️</Text>
-                <Text style={styles.emptyActivityText}>No activities planned yet</Text>
-                <Text style={styles.emptyActivityHint}>Go to Itinerary to add activities</Text>
+              <View style={styles.emptyOverview}>
+                <Text style={styles.emptyOverviewEmoji}>🗺️</Text>
+                <Text style={styles.emptyOverviewText}>No activities planned yet</Text>
+                <Text style={styles.emptyOverviewHint}>Go to Itinerary to add activities</Text>
               </View>
             ) : (
-              <View style={styles.activityList}>
+              <View style={styles.overviewList}>
                 {itinerary.slice(0, 4).map((item, index) => (
-                  <View key={item.id} style={styles.activityItem}>
-                    <View style={styles.activityDayBadge}>
-                      <Text style={styles.activityDayText}>D{item.dayNumber}</Text>
+                  <View key={item.id} style={[styles.overviewItem, index < Math.min(itinerary.length, 4) - 1 && styles.overviewItemBorder]}>
+                    <View style={styles.overviewDayBadge}>
+                      <Text style={styles.overviewDayText}>D{item.dayNumber}</Text>
                     </View>
-                    <Text style={styles.activityName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={styles.activityTime}>{item.time || '--:--'}</Text>
+                    <Text style={styles.overviewName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.overviewTime}>{item.time || '--:--'}</Text>
                   </View>
                 ))}
                 {itinerary.length > 4 && (
-                  <Text style={styles.moreActivities}>+{itinerary.length - 4} more activities</Text>
+                  <Text style={styles.moreItems}>+{itinerary.length - 4} more activities</Text>
+                )}
+              </View>
+            )}
+          </View>
+        </Animated.View>
+
+        {/* Expense Logs - NEW SECTION */}
+        <Animated.View style={[styles.overviewSection, { opacity: fadeAnim }]}>
+          <Text style={styles.sectionTitle}>💳 Recent Expenses</Text>
+          <View style={styles.overviewCard}>
+            {expenses.length === 0 ? (
+              <View style={styles.emptyOverview}>
+                <Text style={styles.emptyOverviewEmoji}>💸</Text>
+                <Text style={styles.emptyOverviewText}>No expenses logged yet</Text>
+                <Text style={styles.emptyOverviewHint}>Go to Expenses to start tracking</Text>
+              </View>
+            ) : (
+              <View style={styles.overviewList}>
+                {recentExpenses.map((expense, index) => {
+                  const categoryInfo = getCategoryInfo(expense.category);
+                  return (
+                    <View key={expense.id} style={[styles.expenseItem, index < recentExpenses.length - 1 && styles.overviewItemBorder]}>
+                      <View style={[styles.expenseIconBg, { backgroundColor: categoryInfo.color + '20' }]}>
+                        <Text style={styles.expenseIcon}>{categoryInfo.emoji}</Text>
+                      </View>
+                      <View style={styles.expenseInfo}>
+                        <Text style={styles.expenseName} numberOfLines={1}>{expense.title}</Text>
+                        <Text style={styles.expenseDate}>{expense.date}</Text>
+                      </View>
+                      <Text style={styles.expenseAmount}>-${expense.amount}</Text>
+                    </View>
+                  );
+                })}
+                {expenses.length > 4 && (
+                  <Text style={styles.moreItems}>+{expenses.length - 4} more expenses</Text>
                 )}
               </View>
             )}
@@ -227,26 +278,6 @@ export default function HomeScreen({ onBackToHome }) {
           </Animated.View>
         )}
 
-        {/* Quick Actions */}
-        <Animated.View style={[styles.quickActions, { opacity: fadeAnim }]}>
-          <Text style={styles.sectionTitle}>⚡ Quick Actions</Text>
-          <View style={styles.actionsGrid}>
-            {[
-              { icon: '💳', label: 'Add Expense', color: '#F59E0B' },
-              { icon: '🎒', label: 'Pack Item', color: '#10B981' },
-              { icon: '📍', label: 'Add Activity', color: '#3B82F6' },
-              { icon: '📤', label: 'Share Trip', color: '#8B5CF6' },
-            ].map((action, index) => (
-              <TouchableOpacity key={index} style={styles.actionButton}>
-                <View style={[styles.actionIconBg, { backgroundColor: action.color + '20' }]}>
-                  <Text style={styles.actionIcon}>{action.icon}</Text>
-                </View>
-                <Text style={styles.actionLabel}>{action.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </Animated.View>
-
         <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaView>
@@ -268,24 +299,33 @@ const createStyles = (colors) => StyleSheet.create({
   statusEmoji: { fontSize: 16, marginRight: 8 },
   statusText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
 
-  // Hero Card
-  heroCard: { marginHorizontal: 20, backgroundColor: colors.primary, borderRadius: 24, padding: 20, marginBottom: 20, overflow: 'hidden' },
-  heroGlow: { position: 'absolute', top: -50, right: -50, width: 150, height: 150, backgroundColor: '#FFFFFF', opacity: 0.1, borderRadius: 75 },
+  // Hero Card - Softer gradient using card colors
+  heroCard: { 
+    marginHorizontal: 20, 
+    backgroundColor: colors.card, 
+    borderRadius: 24, 
+    padding: 20, 
+    marginBottom: 20, 
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: colors.primaryBorder,
+  },
+  heroGlow: { position: 'absolute', top: -50, right: -50, width: 150, height: 150, backgroundColor: colors.primary, opacity: 0.08, borderRadius: 75 },
   heroHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  heroIconBg: { width: 56, height: 56, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  heroIconBg: { width: 56, height: 56, borderRadius: 18, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
   heroIcon: { fontSize: 28 },
   heroInfo: { marginLeft: 14, flex: 1 },
-  heroDestination: { color: colors.bg, fontSize: 22, fontWeight: 'bold' },
-  heroDates: { color: 'rgba(0,0,0,0.5)', fontSize: 13, marginTop: 4 },
-  heroStats: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 16 },
+  heroDestination: { color: colors.text, fontSize: 22, fontWeight: 'bold' },
+  heroDates: { color: colors.primary, fontSize: 13, marginTop: 4 },
+  heroStats: { flexDirection: 'row', backgroundColor: colors.cardLight, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
   heroStatItem: { flex: 1, alignItems: 'center' },
-  heroStatValue: { color: colors.bg, fontSize: 22, fontWeight: 'bold' },
-  heroStatLabel: { color: 'rgba(0,0,0,0.5)', fontSize: 11, marginTop: 2 },
-  heroStatDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
-  tripCodeSection: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.15)' },
-  tripCodeLabel: { color: 'rgba(0,0,0,0.5)', fontSize: 11, marginBottom: 8 },
-  tripCodeBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12, padding: 12 },
-  tripCode: { flex: 1, color: colors.bg, fontSize: 20, fontWeight: 'bold', letterSpacing: 3 },
+  heroStatValue: { color: colors.text, fontSize: 22, fontWeight: 'bold' },
+  heroStatLabel: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
+  heroStatDivider: { width: 1, backgroundColor: colors.primaryBorder },
+  tripCodeSection: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.primaryBorder },
+  tripCodeLabel: { color: colors.textMuted, fontSize: 11, marginBottom: 8 },
+  tripCodeBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primaryMuted, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: colors.primaryBorder },
+  tripCode: { flex: 1, color: colors.primary, fontSize: 20, fontWeight: 'bold', letterSpacing: 3 },
   copyButton: { padding: 4 },
   copyButtonText: { fontSize: 18 },
 
@@ -314,20 +354,30 @@ const createStyles = (colors) => StyleSheet.create({
   // Section Title
   sectionTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
 
-  // Activity Section
-  activitySection: { paddingHorizontal: 20, marginBottom: 20 },
-  activityCard: { backgroundColor: colors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
-  emptyActivity: { alignItems: 'center', paddingVertical: 20 },
-  emptyActivityEmoji: { fontSize: 32, marginBottom: 8 },
-  emptyActivityText: { color: colors.textMuted, fontSize: 14 },
-  emptyActivityHint: { color: colors.textLight, fontSize: 12, marginTop: 4 },
-  activityList: { gap: 10 },
-  activityItem: { flexDirection: 'row', alignItems: 'center' },
-  activityDayBadge: { backgroundColor: colors.primaryMuted, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginRight: 10 },
-  activityDayText: { color: colors.primary, fontSize: 11, fontWeight: '700' },
-  activityName: { flex: 1, color: colors.text, fontSize: 14 },
-  activityTime: { color: colors.textMuted, fontSize: 12 },
-  moreActivities: { color: colors.primary, fontSize: 13, fontWeight: '500', textAlign: 'center', marginTop: 8 },
+  // Overview Section (Activity & Expenses)
+  overviewSection: { paddingHorizontal: 20, marginBottom: 20 },
+  overviewCard: { backgroundColor: colors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
+  emptyOverview: { alignItems: 'center', paddingVertical: 20 },
+  emptyOverviewEmoji: { fontSize: 32, marginBottom: 8 },
+  emptyOverviewText: { color: colors.textMuted, fontSize: 14 },
+  emptyOverviewHint: { color: colors.textLight, fontSize: 12, marginTop: 4 },
+  overviewList: { gap: 0 },
+  overviewItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  overviewItemBorder: { borderBottomWidth: 1, borderBottomColor: colors.primaryBorder },
+  overviewDayBadge: { backgroundColor: colors.primaryMuted, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginRight: 12 },
+  overviewDayText: { color: colors.primary, fontSize: 11, fontWeight: '700' },
+  overviewName: { flex: 1, color: colors.text, fontSize: 14 },
+  overviewTime: { color: colors.textMuted, fontSize: 12 },
+  moreItems: { color: colors.primary, fontSize: 13, fontWeight: '500', textAlign: 'center', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.primaryBorder },
+
+  // Expense Items
+  expenseItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  expenseIconBg: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  expenseIcon: { fontSize: 18 },
+  expenseInfo: { flex: 1 },
+  expenseName: { color: colors.text, fontSize: 14, fontWeight: '500' },
+  expenseDate: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
+  expenseAmount: { color: '#EF4444', fontSize: 15, fontWeight: 'bold' },
 
   // Participants
   participantsSection: { paddingHorizontal: 20, marginBottom: 20 },
@@ -337,12 +387,4 @@ const createStyles = (colors) => StyleSheet.create({
   participantAvatar: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.cardLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   participantInitial: { color: colors.text, fontSize: 14, fontWeight: '600' },
   participantName: { color: colors.text, fontSize: 15 },
-
-  // Quick Actions
-  quickActions: { paddingHorizontal: 20 },
-  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  actionButton: { width: '47%', backgroundColor: colors.card, borderRadius: 16, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
-  actionIconBg: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  actionIcon: { fontSize: 22 },
-  actionLabel: { color: colors.text, fontSize: 13, fontWeight: '500' },
 });
