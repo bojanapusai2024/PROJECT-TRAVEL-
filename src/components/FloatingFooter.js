@@ -1,27 +1,34 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
-const TABS = [
-  { key: 'home', label: 'Home', icon: '🏠' },
-  { key: 'trip', label: 'Trip', icon: '✈️' },
-  { key: 'history', label: 'History', icon: '📜' },
-  { key: 'profile', label: 'Profile', icon: '👤' },
-];
+const { width } = Dimensions.get('window');
 
 export default function FloatingFooter({ activeTab, onTabPress }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
+  const tabs = [
+    { key: 'home', icon: '🏠', label: 'Home' },
+    { key: 'trip', icon: '✈️', label: 'My Trip' },
+  ];
+
   return (
     <View style={styles.container}>
       <View style={styles.footer}>
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           return (
-            <TouchableOpacity key={tab.key} style={[styles.tab, isActive && styles.tabActive]} onPress={() => onTabPress(tab.key)} activeOpacity={0.7}>
-              <View style={[styles.iconContainer, isActive && styles.iconContainerActive]}><Text style={styles.icon}>{tab.icon}</Text></View>
-              <Text style={[styles.label, isActive && styles.labelActive]}>{tab.label}</Text>
+            <TouchableOpacity
+              key={tab.key}
+              style={[styles.tab, isActive && styles.tabActive]}
+              onPress={() => onTabPress(tab.key)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.tabIcon}>{tab.icon}</Text>
+              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                {tab.label}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -31,13 +38,47 @@ export default function FloatingFooter({ activeTab, onTabPress }) {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-  container: { position: 'absolute', bottom: 20, left: 20, right: 20 },
-  footer: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: 24, padding: 8, borderWidth: 1, borderColor: colors.primaryBorder, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 18 },
-  tabActive: { backgroundColor: colors.primaryMuted },
-  iconContainer: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  iconContainerActive: { backgroundColor: colors.primary },
-  icon: { fontSize: 20 },
-  label: { fontSize: 11, color: colors.textMuted, fontWeight: '500' },
-  labelActive: { color: colors.primary, fontWeight: '600' },
+  container: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  footer: {
+    flexDirection: 'row',
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    gap: 8,
+  },
+  tabActive: {
+    backgroundColor: colors.primary,
+  },
+  tabIcon: {
+    fontSize: 20,
+  },
+  tabLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textMuted,
+  },
+  tabLabelActive: {
+    color: colors.bg,
+  },
 });

@@ -10,6 +10,7 @@ import BudgetScreen from '../screens/BudgetScreen';
 import ExpenseScreen from '../screens/ExpenseScreen';
 import PackingScreen from '../screens/PackingScreen';
 import MapScreen from '../screens/MapScreen';
+import FloatingFooter from '../components/FloatingFooter';
 import { useTravelContext } from '../context/TravelContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -17,14 +18,20 @@ const Tab = createBottomTabNavigator();
 
 function TripTabs({ onBackToHome }) {
   const { colors } = useTheme();
-  const styles = useMemo(() => createTabStyles(colors), [colors]);
 
   return (
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
-          tabBarStyle: styles.tabBar,
+          tabBarStyle: {
+            backgroundColor: colors.bg,
+            borderTopColor: colors.primaryBorder,
+            borderTopWidth: 1,
+            height: 70,
+            paddingBottom: 10,
+            paddingTop: 10,
+          },
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
           tabBarIcon: ({ focused }) => {
@@ -34,8 +41,11 @@ function TripTabs({ onBackToHome }) {
             if (route.name === 'Packing') emoji = '🎒';
             if (route.name === 'Itinerary') emoji = '🗺️';
             return (
-              <View style={[styles.iconWrap, focused && styles.iconActive]}>
-                <Text style={styles.icon}>{emoji}</Text>
+              <View style={[
+                { padding: 8, borderRadius: 12 },
+                focused && { backgroundColor: colors.primaryMuted }
+              ]}>
+                <Text style={{ fontSize: 22 }}>{emoji}</Text>
               </View>
             );
           },
@@ -55,6 +65,7 @@ function TripTabs({ onBackToHome }) {
 
 export default function AppNavigator() {
   const [screen, setScreen] = useState('welcome');
+  const [activeTab, setActiveTab] = useState('home');
   const { setTripInfo, setBudget } = useTravelContext();
   const { colors } = useTheme();
 
@@ -63,6 +74,7 @@ export default function AppNavigator() {
   const handleJoinTrip = (code) => {
     console.log('Joining trip with code:', code);
     setScreen('trip');
+    setActiveTab('trip');
   };
 
   const handleSetupComplete = (tripData) => {
@@ -75,21 +87,34 @@ export default function AppNavigator() {
     });
     setBudget(prev => ({ ...prev, total: parseFloat(tripData.budget) || 0 }));
     setScreen('trip');
+    setActiveTab('trip');
   };
 
   const handleBackToWelcome = () => {
     setScreen('welcome');
+    setActiveTab('home');
   };
 
+  const handleTabPress = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'home') setScreen('welcome');
+    else if (tab === 'trip') setScreen('trip');
+  };
+
+  // Welcome screen with floating footer
   if (screen === 'welcome') {
     return (
-      <WelcomeScreen 
-        onPlanTrip={handlePlanTrip}
-        onJoinTrip={handleJoinTrip}
-      />
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        <WelcomeScreen 
+          onPlanTrip={handlePlanTrip}
+          onJoinTrip={handleJoinTrip}
+        />
+        <FloatingFooter activeTab={activeTab} onTabPress={handleTabPress} />
+      </View>
     );
   }
 
+  // Setup screen - no footer
   if (screen === 'setup') {
     return (
       <TripSetupScreen 
@@ -99,6 +124,7 @@ export default function AppNavigator() {
     );
   }
 
+  // Trip tabs - uses bottom tab navigator
   return <TripTabs onBackToHome={handleBackToWelcome} />;
 }
 
