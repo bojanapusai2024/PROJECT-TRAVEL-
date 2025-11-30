@@ -3,88 +3,38 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ThemeContext = createContext(null);
 
-export const THEMES = {
-  default: {
-    id: 'default',
-    name: 'Neon Green',
-    preview: ['#000000', '#00FF7F'],
-    colors: {
-      bg: '#000000',
-      card: '#0A0A0A',
-      cardLight: '#111111',
-      cardDark: '#050505',
-      primary: '#00FF7F',
-      primaryDark: '#00CC66',
-      primaryMuted: 'rgba(0, 255, 127, 0.1)',
-      primaryBorder: 'rgba(0, 255, 127, 0.3)',
-      text: '#FFFFFF',
-      textMuted: '#666666',
-      textLight: '#888888',
-      accent: '#00FF7F',
-      danger: '#FF4444',
-    }
-  },
-  lavender: {
-    id: 'lavender',
-    name: 'Lavender Dream',
-    preview: ['#2C2C2C', '#B39CD0'],
-    colors: {
-      bg: '#2C2C2C',
-      card: '#363636',
-      cardLight: '#404040',
-      cardDark: '#222222',
-      primary: '#B39CD0',
-      primaryDark: '#9A7FC0',
-      primaryMuted: 'rgba(179, 156, 208, 0.15)',
-      primaryBorder: 'rgba(179, 156, 208, 0.3)',
-      text: '#E4E4E4',
-      textMuted: '#A8A8A8',
-      textLight: '#BEBEBE',
-      accent: '#A8DADC',
-      accent2: '#FFC1CC',
-      danger: '#FF6B6B',
-    }
-  },
-  midnight: {
-    id: 'midnight',
-    name: 'Midnight',
-    preview: ['#222831', '#DFD0B8'],
-    colors: {
-      bg: '#222831',
-      card: '#393E46',
-      cardLight: '#4A5059',
-      cardDark: '#1A1F26',
-      primary: '#DFD0B8',
-      primaryDark: '#C9BAA2',
-      primaryMuted: 'rgba(223, 208, 184, 0.15)',
-      primaryBorder: 'rgba(223, 208, 184, 0.3)',
-      text: '#FFFFFF',
-      textMuted: '#948979',
-      textLight: '#A9A090',
-      accent: '#DFD0B8',
-      danger: '#FF6B6B',
-    }
-  },
-  sunset: {
-    id: 'sunset',
-    name: 'Sunset',
-    preview: ['#FAF3E1', '#FF6D1F'],
-    colors: {
-      bg: '#FAF3E1',
-      card: '#FFFFFF',
-      cardLight: '#F5E7C6',
-      cardDark: '#EDE6D4',
-      primary: '#FF6D1F',
-      primaryDark: '#E55A10',
-      primaryMuted: 'rgba(255, 109, 31, 0.12)',
-      primaryBorder: 'rgba(255, 109, 31, 0.25)',
-      text: '#222222',
-      textMuted: '#666666',
-      textLight: '#888888',
-      accent: '#FF6D1F',
-      danger: '#DC3545',
-    }
-  },
+// Premium Midnight Dark Theme
+const darkColors = {
+  bg: '#0D0D0F',              // Deep black with slight blue
+  card: '#16161A',            // Elevated surface
+  cardLight: '#1E1E24',       // Lighter card
+  primary: '#00E676',         // Vibrant green
+  primaryMuted: 'rgba(0, 230, 118, 0.12)',
+  primaryBorder: 'rgba(0, 230, 118, 0.25)',
+  secondary: '#FF6B6B',       // Coral accent
+  text: '#FAFAFA',            // Pure white text
+  textMuted: '#71717A',       // Zinc gray
+  textLight: '#52525B',       // Darker muted
+  success: '#22C55E',
+  warning: '#F59E0B',
+  error: '#EF4444',
+};
+
+// Clean Light Theme
+const lightColors = {
+  bg: '#F8FAFC',              // Soft white
+  card: '#FFFFFF',            // Pure white cards
+  cardLight: '#F1F5F9',       // Slight gray
+  primary: '#059669',         // Emerald green
+  primaryMuted: 'rgba(5, 150, 105, 0.1)',
+  primaryBorder: 'rgba(5, 150, 105, 0.2)',
+  secondary: '#F43F5E',       // Rose accent
+  text: '#0F172A',            // Dark slate
+  textMuted: '#64748B',       // Slate gray
+  textLight: '#94A3B8',       // Light slate
+  success: '#22C55E',
+  warning: '#F59E0B',
+  error: '#EF4444',
 };
 
 export const useTheme = () => {
@@ -96,7 +46,7 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [currentTheme, setCurrentTheme] = useState('default');
+  const [isDark, setIsDark] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -105,9 +55,9 @@ export const ThemeProvider = ({ children }) => {
 
   const loadTheme = async () => {
     try {
-      const savedTheme = await AsyncStorage.getItem('appTheme');
-      if (savedTheme && THEMES[savedTheme]) {
-        setCurrentTheme(savedTheme);
+      const savedTheme = await AsyncStorage.getItem('theme');
+      if (savedTheme !== null) {
+        setIsDark(savedTheme === 'dark');
       }
     } catch (error) {
       console.log('Error loading theme:', error);
@@ -116,29 +66,27 @@ export const ThemeProvider = ({ children }) => {
     }
   };
 
-  const changeTheme = async (themeId) => {
-    if (THEMES[themeId]) {
-      setCurrentTheme(themeId);
-      try {
-        await AsyncStorage.setItem('appTheme', themeId);
-      } catch (error) {
-        console.log('Error saving theme:', error);
-      }
+  const toggleTheme = async () => {
+    try {
+      const newTheme = !isDark;
+      setIsDark(newTheme);
+      await AsyncStorage.setItem('theme', newTheme ? 'dark' : 'light');
+    } catch (error) {
+      console.log('Error saving theme:', error);
     }
   };
 
-  const theme = THEMES[currentTheme];
-  const colors = theme.colors;
+  const colors = isDark ? darkColors : lightColors;
+
+  const value = {
+    isDark,
+    toggleTheme,
+    colors,
+    isLoaded,
+  };
 
   return (
-    <ThemeContext.Provider value={{ 
-      currentTheme, 
-      changeTheme, 
-      theme, 
-      colors, 
-      themes: THEMES,
-      isLoaded 
-    }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
@@ -10,7 +10,6 @@ import BudgetScreen from '../screens/BudgetScreen';
 import ExpenseScreen from '../screens/ExpenseScreen';
 import PackingScreen from '../screens/PackingScreen';
 import MapScreen from '../screens/MapScreen';
-import HistoryScreen from '../screens/HistoryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import FloatingFooter from '../components/FloatingFooter';
 import { useTravelContext } from '../context/TravelContext';
@@ -101,7 +100,6 @@ export default function AppNavigator() {
     setActiveTab(tab);
     if (tab === 'home') setScreen('welcome');
     else if (tab === 'trip') setScreen('trip');
-    else if (tab === 'history') setScreen('history');
     else if (tab === 'profile') setScreen('profile');
   };
 
@@ -130,8 +128,6 @@ export default function AppNavigator() {
             onJoinTrip={handleJoinTrip}
           />
         );
-      case 'history':
-        return <HistoryScreen />;
       case 'profile':
         return <ProfileScreen />;
       default:

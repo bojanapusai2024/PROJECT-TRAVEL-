@@ -9,7 +9,6 @@ export default function FloatingFooter({ activeTab, onTabPress }) {
   const tabs = [
     { key: 'home', icon: '🏠', label: 'Home' },
     { key: 'trip', icon: '✈️', label: 'My Trip' },
-    { key: 'history', icon: '📜', label: 'History' },
     { key: 'profile', icon: '👤', label: 'Profile' },
   ];
 
@@ -58,17 +57,17 @@ const createStyles = (colors) => StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 16,
   },
   tabActive: {
     backgroundColor: colors.primary,
   },
   tabIcon: {
-    fontSize: 20,
+    fontSize: 22,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: colors.textMuted,
     marginTop: 4,
