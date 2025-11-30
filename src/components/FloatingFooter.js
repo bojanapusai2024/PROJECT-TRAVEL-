@@ -1,8 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-
-const { width } = Dimensions.get('window');
 
 export default function FloatingFooter({ activeTab, onTabPress }) {
   const { colors } = useTheme();
@@ -11,6 +9,8 @@ export default function FloatingFooter({ activeTab, onTabPress }) {
   const tabs = [
     { key: 'home', icon: '🏠', label: 'Home' },
     { key: 'trip', icon: '✈️', label: 'My Trip' },
+    { key: 'history', icon: '📜', label: 'History' },
+    { key: 'profile', icon: '👤', label: 'Profile' },
   ];
 
   return (
@@ -39,33 +39,27 @@ export default function FloatingFooter({ activeTab, onTabPress }) {
 
 const createStyles = (colors) => StyleSheet.create({
   container: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
+    backgroundColor: colors.bg,
+    borderTopWidth: 1,
+    borderTopColor: colors.primaryBorder,
+    paddingBottom: 20,
+    paddingTop: 10,
+    paddingHorizontal: 16,
   },
   footer: {
     flexDirection: 'row',
     backgroundColor: colors.card,
-    borderRadius: 24,
-    padding: 8,
+    borderRadius: 20,
+    padding: 6,
     borderWidth: 1,
     borderColor: colors.primaryBorder,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
   },
   tab: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 16,
   },
   tabActive: {
     backgroundColor: colors.primary,
@@ -74,9 +68,10 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 20,
   },
   tabLabel: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '600',
     color: colors.textMuted,
+    marginTop: 4,
   },
   tabLabelActive: {
     color: colors.bg,

@@ -10,6 +10,8 @@ import BudgetScreen from '../screens/BudgetScreen';
 import ExpenseScreen from '../screens/ExpenseScreen';
 import PackingScreen from '../screens/PackingScreen';
 import MapScreen from '../screens/MapScreen';
+import HistoryScreen from '../screens/HistoryScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 import FloatingFooter from '../components/FloatingFooter';
 import { useTravelContext } from '../context/TravelContext';
 import { useTheme } from '../context/ThemeContext';
@@ -99,20 +101,9 @@ export default function AppNavigator() {
     setActiveTab(tab);
     if (tab === 'home') setScreen('welcome');
     else if (tab === 'trip') setScreen('trip');
+    else if (tab === 'history') setScreen('history');
+    else if (tab === 'profile') setScreen('profile');
   };
-
-  // Welcome screen with floating footer
-  if (screen === 'welcome') {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.bg }}>
-        <WelcomeScreen 
-          onPlanTrip={handlePlanTrip}
-          onJoinTrip={handleJoinTrip}
-        />
-        <FloatingFooter activeTab={activeTab} onTabPress={handleTabPress} />
-      </View>
-    );
-  }
 
   // Setup screen - no footer
   if (screen === 'setup') {
@@ -124,8 +115,43 @@ export default function AppNavigator() {
     );
   }
 
-  // Trip tabs - uses bottom tab navigator
-  return <TripTabs onBackToHome={handleBackToWelcome} />;
+  // Trip tabs - uses bottom tab navigator (no main footer)
+  if (screen === 'trip') {
+    return <TripTabs onBackToHome={handleBackToWelcome} />;
+  }
+
+  // Screens with main footer
+  const renderScreen = () => {
+    switch (screen) {
+      case 'welcome':
+        return (
+          <WelcomeScreen 
+            onPlanTrip={handlePlanTrip}
+            onJoinTrip={handleJoinTrip}
+          />
+        );
+      case 'history':
+        return <HistoryScreen />;
+      case 'profile':
+        return <ProfileScreen />;
+      default:
+        return (
+          <WelcomeScreen 
+            onPlanTrip={handlePlanTrip}
+            onJoinTrip={handleJoinTrip}
+          />
+        );
+    }
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View style={{ flex: 1 }}>
+        {renderScreen()}
+      </View>
+      <FloatingFooter activeTab={activeTab} onTabPress={handleTabPress} />
+    </View>
+  );
 }
 
 const createTabStyles = (colors) => StyleSheet.create({

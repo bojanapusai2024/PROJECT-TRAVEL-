@@ -182,7 +182,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip }) {
         </Animated.View>
 
         {/* Bottom spacing for footer */}
-        <View style={{ height: 100 }} />
+        <View style={{ height: 20 }} />
       </ScrollView>
 
       {/* Join Trip Modal */}

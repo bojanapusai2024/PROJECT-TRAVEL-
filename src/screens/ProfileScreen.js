@@ -1,233 +1,132 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Animated } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme, THEMES } from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 
-export default function ProfileScreen({ onBack }) {
-  const { colors, currentTheme, changeTheme, themes } = useTheme();
-  const [showThemeModal, setShowThemeModal] = useState(false);
+export default function ProfileScreen() {
+  const { colors, isDark, toggleTheme } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const styles = createStyles(colors);
-
-  const MENU_ITEMS = [
-    { icon: '👤', label: 'Edit Profile', subtitle: 'Update your details', action: null },
-    { icon: '🔔', label: 'Notifications', subtitle: 'Manage alerts', action: null },
-    { icon: '💳', label: 'Payment Methods', subtitle: 'Cards & wallets', action: null },
-    { icon: '🌍', label: 'Currency', subtitle: 'USD ($)', action: null },
-    { icon: '🎨', label: 'Appearance', subtitle: themes[currentTheme].name, action: () => setShowThemeModal(true) },
-    { icon: '🔒', label: 'Privacy', subtitle: 'Security settings', action: null },
-    { icon: '❓', label: 'Help & Support', subtitle: 'FAQs & contact', action: null },
+  const settingsItems = [
+    { icon: '🔔', label: 'Notifications', type: 'toggle', value: true },
+    { icon: '💱', label: 'Currency', type: 'value', value: 'USD' },
+    { icon: '🌐', label: 'Language', type: 'value', value: 'English' },
+    { icon: '📤', label: 'Export Data', type: 'action' },
+    { icon: '🗑️', label: 'Clear All Data', type: 'action', danger: true },
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Profile</Text>
-          <View style={{ width: 44 }} />
+          <Text style={styles.title}>Profile 👤</Text>
+          <Text style={styles.subtitle}>Settings & Preferences</Text>
         </View>
 
         {/* Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarEmoji}>👤</Text>
+            <Text style={styles.avatarEmoji}>🧑‍✈️</Text>
           </View>
-          <Text style={styles.profileName}>Traveler</Text>
-          <Text style={styles.profileEmail}>traveler@email.com</Text>
-          <View style={styles.profileStats}>
-            <View style={styles.profileStat}>
-              <Text style={styles.profileStatValue}>3</Text>
-              <Text style={styles.profileStatLabel}>Trips</Text>
-            </View>
-            <View style={styles.profileStatDivider} />
-            <View style={styles.profileStat}>
-              <Text style={styles.profileStatValue}>5</Text>
-              <Text style={styles.profileStatLabel}>Countries</Text>
-            </View>
-            <View style={styles.profileStatDivider} />
-            <View style={styles.profileStat}>
-              <Text style={styles.profileStatValue}>20</Text>
-              <Text style={styles.profileStatLabel}>Days</Text>
-            </View>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>Traveler</Text>
+            <Text style={styles.profileEmail}>traveler@travelmate.app</Text>
           </View>
+          <TouchableOpacity style={styles.editButton}>
+            <Text style={styles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Menu */}
-        <View style={styles.menuSection}>
-          {MENU_ITEMS.map((item, index) => (
+        {/* Theme Toggle */}
+        <View style={styles.themeCard}>
+          <View style={styles.themeInfo}>
+            <Text style={styles.themeIcon}>{isDark ? '🌙' : '☀️'}</Text>
+            <View>
+              <Text style={styles.themeLabel}>Dark Mode</Text>
+              <Text style={styles.themeDescription}>
+                {isDark ? 'Currently using dark theme' : 'Currently using light theme'}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={isDark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: colors.cardLight, true: colors.primary }}
+            thumbColor={colors.text}
+          />
+        </View>
+
+        {/* Settings */}
+        <Text style={styles.sectionTitle}>Settings</Text>
+        <View style={styles.settingsCard}>
+          {settingsItems.map((item, index) => (
             <TouchableOpacity 
               key={index} 
-              style={styles.menuItem} 
-              activeOpacity={0.7}
-              onPress={item.action}
+              style={[styles.settingItem, index < settingsItems.length - 1 && styles.settingItemBorder]}
             >
-              <View style={styles.menuIcon}>
-                <Text style={styles.menuEmoji}>{item.icon}</Text>
-              </View>
-              <View style={styles.menuContent}>
-                <Text style={styles.menuLabel}>{item.label}</Text>
-                <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
-              </View>
-              <Text style={styles.menuArrow}>→</Text>
+              <Text style={styles.settingIcon}>{item.icon}</Text>
+              <Text style={[styles.settingLabel, item.danger && styles.settingLabelDanger]}>
+                {item.label}
+              </Text>
+              {item.type === 'value' && (
+                <Text style={styles.settingValue}>{item.value}</Text>
+              )}
+              {item.type === 'toggle' && (
+                <Switch
+                  value={item.value}
+                  trackColor={{ false: colors.cardLight, true: colors.primary }}
+                  thumbColor={colors.text}
+                />
+              )}
+              {item.type === 'action' && (
+                <Text style={styles.settingArrow}>→</Text>
+              )}
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Logout */}
-        <TouchableOpacity style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.version}>Version 1.0.0</Text>
-        <View style={{ height: 120 }} />
-      </ScrollView>
-
-      {/* Theme Selection Modal */}
-      <Modal
-        animationType="slide"
-        transparent
-        visible={showThemeModal}
-        onRequestClose={() => setShowThemeModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHandle} />
-            
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Choose Theme</Text>
-              <TouchableOpacity onPress={() => setShowThemeModal(false)} style={styles.modalClose}>
-                <Text style={styles.modalCloseText}>×</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.modalSubtitle}>Select your preferred appearance</Text>
-
-            <View style={styles.themeGrid}>
-              {Object.values(themes).map((themeOption) => {
-                const isActive = currentTheme === themeOption.id;
-                return (
-                  <TouchableOpacity
-                    key={themeOption.id}
-                    style={[styles.themeCard, isActive && styles.themeCardActive]}
-                    onPress={() => {
-                      changeTheme(themeOption.id);
-                      setShowThemeModal(false);
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    {/* Theme Preview */}
-                    <View style={styles.themePreview}>
-                      <View style={[styles.themePreviewBg, { backgroundColor: themeOption.colors.bg }]}>
-                        <View style={[styles.themePreviewCard, { backgroundColor: themeOption.colors.card, borderColor: themeOption.colors.primaryBorder }]}>
-                          <View style={[styles.themePreviewAccent, { backgroundColor: themeOption.colors.primary }]} />
-                          <View style={styles.themePreviewLines}>
-                            <View style={[styles.themePreviewLine, { backgroundColor: themeOption.colors.text }]} />
-                            <View style={[styles.themePreviewLine, styles.themePreviewLineShort, { backgroundColor: themeOption.colors.textMuted }]} />
-                          </View>
-                        </View>
-                        <View style={[styles.themePreviewButton, { backgroundColor: themeOption.colors.primary }]} />
-                      </View>
-                    </View>
-
-                    {/* Theme Name */}
-                    <View style={styles.themeInfo}>
-                      <Text style={[styles.themeName, isActive && styles.themeNameActive]}>{themeOption.name}</Text>
-                      {isActive && (
-                        <View style={styles.activeIndicator}>
-                          <Text style={styles.activeCheck}>✓</Text>
-                        </View>
-                      )}
-                    </View>
-
-                    {/* Color Dots */}
-                    <View style={styles.colorDots}>
-                      <View style={[styles.colorDot, { backgroundColor: themeOption.preview[0] }]} />
-                      <View style={[styles.colorDot, { backgroundColor: themeOption.preview[1] }]} />
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
+        {/* App Info */}
+        <View style={styles.appInfo}>
+          <Text style={styles.appName}>TravelMate</Text>
+          <Text style={styles.appVersion}>Version 1.0.0</Text>
         </View>
-      </Modal>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const createStyles = (colors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  scrollContent: { paddingHorizontal: 20 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, marginBottom: 20 },
-  backButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
-  backButtonText: { color: colors.primary, fontSize: 24, fontWeight: 'bold' },
-  title: { color: colors.text, fontSize: 20, fontWeight: 'bold' },
-  
-  profileCard: { backgroundColor: colors.card, borderRadius: 24, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder, marginBottom: 24 },
-  avatar: { width: 80, height: 80, borderRadius: 24, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primary, marginBottom: 16 },
-  avatarEmoji: { fontSize: 40 },
-  profileName: { color: colors.text, fontSize: 22, fontWeight: 'bold' },
-  profileEmail: { color: colors.textMuted, fontSize: 14, marginTop: 4 },
-  profileStats: { flexDirection: 'row', marginTop: 20, paddingTop: 20, borderTopWidth: 1, borderTopColor: colors.primaryBorder, width: '100%' },
-  profileStat: { flex: 1, alignItems: 'center' },
-  profileStatValue: { color: colors.primary, fontSize: 22, fontWeight: 'bold' },
-  profileStatLabel: { color: colors.textMuted, fontSize: 12, marginTop: 4 },
-  profileStatDivider: { width: 1, backgroundColor: colors.primaryBorder },
-  
-  menuSection: { marginBottom: 24 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.primaryBorder },
-  menuIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
-  menuEmoji: { fontSize: 20 },
-  menuContent: { flex: 1, marginLeft: 14 },
-  menuLabel: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  menuSubtitle: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  menuArrow: { color: colors.primary, fontSize: 18 },
-  
-  logoutButton: { backgroundColor: 'rgba(255,68,68,0.1)', borderRadius: 14, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,68,68,0.3)' },
-  logoutText: { color: '#FF4444', fontSize: 16, fontWeight: '600' },
-  version: { color: colors.textMuted, fontSize: 12, textAlign: 'center', marginTop: 20 },
-
-  // Modal
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.8)' },
-  modalContent: { backgroundColor: colors.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '80%' },
-  modalHandle: { width: 40, height: 4, backgroundColor: colors.textMuted, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  modalTitle: { color: colors.text, fontSize: 24, fontWeight: 'bold' },
-  modalClose: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.cardLight, borderRadius: 10 },
-  modalCloseText: { color: colors.textMuted, fontSize: 22 },
-  modalSubtitle: { color: colors.textMuted, fontSize: 14, marginBottom: 24 },
-
-  // Theme Grid
-  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  themeCard: { 
-    width: '47%', 
-    backgroundColor: colors.cardLight, 
-    borderRadius: 16, 
-    padding: 12, 
-    borderWidth: 2, 
-    borderColor: colors.primaryBorder 
-  },
-  themeCardActive: { borderColor: colors.primary, borderWidth: 2 },
-  
-  themePreview: { marginBottom: 12, borderRadius: 10, overflow: 'hidden' },
-  themePreviewBg: { padding: 10, height: 80, justifyContent: 'space-between' },
-  themePreviewCard: { backgroundColor: '#1a1a1a', borderRadius: 8, padding: 8, flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
-  themePreviewAccent: { width: 24, height: 24, borderRadius: 6 },
-  themePreviewLines: { marginLeft: 8, flex: 1 },
-  themePreviewLine: { height: 4, borderRadius: 2, marginBottom: 4, width: '80%' },
-  themePreviewLineShort: { width: '50%' },
-  themePreviewButton: { height: 16, borderRadius: 8, width: '40%', alignSelf: 'center' },
-
-  themeInfo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  themeName: { color: colors.text, fontSize: 14, fontWeight: '600' },
-  themeNameActive: { color: colors.primary },
-  activeIndicator: { width: 20, height: 20, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  activeCheck: { color: colors.bg, fontSize: 12, fontWeight: 'bold' },
-  
-  colorDots: { flexDirection: 'row', gap: 6 },
-  colorDot: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)' },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 20 },
+  header: { paddingTop: 20, marginBottom: 24 },
+  title: { color: colors.text, fontSize: 32, fontWeight: 'bold' },
+  subtitle: { color: colors.textMuted, fontSize: 14, marginTop: 4 },
+  profileCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 20, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: colors.primaryBorder },
+  avatar: { width: 60, height: 60, borderRadius: 20, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
+  avatarEmoji: { fontSize: 30 },
+  profileInfo: { flex: 1, marginLeft: 16 },
+  profileName: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
+  profileEmail: { color: colors.textMuted, fontSize: 13, marginTop: 4 },
+  editButton: { backgroundColor: colors.primaryMuted, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: colors.primaryBorder },
+  editButtonText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
+  themeCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.card, borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: colors.primaryBorder },
+  themeInfo: { flexDirection: 'row', alignItems: 'center' },
+  themeIcon: { fontSize: 24, marginRight: 14 },
+  themeLabel: { color: colors.text, fontSize: 16, fontWeight: '600' },
+  themeDescription: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  sectionTitle: { color: colors.text, fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
+  settingsCard: { backgroundColor: colors.card, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: colors.primaryBorder },
+  settingItem: { flexDirection: 'row', alignItems: 'center', padding: 16 },
+  settingItemBorder: { borderBottomWidth: 1, borderBottomColor: colors.primaryBorder },
+  settingIcon: { fontSize: 20, marginRight: 14 },
+  settingLabel: { flex: 1, color: colors.text, fontSize: 15 },
+  settingLabelDanger: { color: '#EF4444' },
+  settingValue: { color: colors.textMuted, fontSize: 14 },
+  settingArrow: { color: colors.textMuted, fontSize: 18 },
+  appInfo: { alignItems: 'center', marginTop: 40 },
+  appName: { color: colors.textMuted, fontSize: 16, fontWeight: '600' },
+  appVersion: { color: colors.textMuted, fontSize: 12, marginTop: 4 },
 });
