@@ -71,7 +71,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* Header with Profile */}
       <View style={styles.topBar}>
         <View style={styles.logoContainer}>
@@ -88,17 +88,19 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
         </Pressable>
       </View>
 
-      {/* Background Elements */}
-      <View style={styles.bgElements}>
+      {/* Background Elements - Fixed position */}
+      <View style={styles.bgElements} pointerEvents="none">
         <View style={[styles.bgCircle, styles.bgCircle1]} />
         <View style={[styles.bgCircle, styles.bgCircle2]} />
         <View style={[styles.bgCircle, styles.bgCircle3]} />
       </View>
 
       <ScrollView 
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        bounces={true}
+        bounces={false}
+        overScrollMode="never"
       >
         {/* Traveler Illustration */}
         <Animated.View style={[styles.illustrationSection, { opacity: fadeAnim }]}>
@@ -267,8 +269,6 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           <Text style={styles.footerText}>TravelMate</Text>
           <Text style={styles.footerVersion}>Version 1.0.0</Text>
         </View>
-
-        <View style={{ height: 40 }} />
       </ScrollView>
 
       {/* Join Trip Modal */}
@@ -310,10 +310,20 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 }
 
 const createStyles = (colors) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { 
+    flex: 1, 
+    backgroundColor: colors.bg,
+  },
   
   // Top Bar
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+  topBar: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    paddingVertical: 12,
+    backgroundColor: colors.bg,
+  },
   logoContainer: { flexDirection: 'row', alignItems: 'center' },
   logoEmoji: { fontSize: 28, marginRight: 8 },
   logoText: { fontSize: 22, fontWeight: 'bold', color: colors.text },
@@ -322,17 +332,43 @@ const createStyles = (colors) => StyleSheet.create({
   profileAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primary },
   profileEmoji: { fontSize: 22 },
 
-  scrollContent: { flexGrow: 1, paddingBottom: 20 },
+  // ScrollView
+  scrollView: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
+  scrollContent: { 
+    flexGrow: 1,
+    paddingBottom: 40,
+    backgroundColor: colors.bg,
+  },
   
-  // Background
-  bgElements: { position: 'absolute', width: '100%', height: '100%', zIndex: -1 },
-  bgCircle: { position: 'absolute', borderRadius: 999, backgroundColor: colors.primary, opacity: 0.04 },
+  // Background - Fixed behind content
+  bgElements: { 
+    position: 'absolute', 
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+    overflow: 'hidden',
+  },
+  bgCircle: { 
+    position: 'absolute', 
+    borderRadius: 999, 
+    backgroundColor: colors.primary, 
+    opacity: 0.04,
+  },
   bgCircle1: { width: 400, height: 400, top: -100, right: -150 },
-  bgCircle2: { width: 300, height: 300, bottom: 200, left: -150 },
-  bgCircle3: { width: 200, height: 200, bottom: 50, right: -50 },
+  bgCircle2: { width: 300, height: 300, top: 400, left: -150 },
+  bgCircle3: { width: 200, height: 200, top: 700, right: -50 },
 
   // Illustration Section
-  illustrationSection: { alignItems: 'center', paddingVertical: 30 },
+  illustrationSection: { 
+    alignItems: 'center', 
+    paddingVertical: 20,
+    backgroundColor: colors.bg,
+  },
   illustrationContainer: { width: 220, height: 220, alignItems: 'center', justifyContent: 'center' },
   outerRing: { position: 'absolute', width: 200, height: 200, borderRadius: 100, borderWidth: 2, borderColor: colors.primary, opacity: 0.3, borderStyle: 'dashed' },
   middleRing: { position: 'absolute', width: 160, height: 160, borderRadius: 80, borderWidth: 1, borderColor: colors.primaryBorder, opacity: 0.5 },
@@ -346,7 +382,11 @@ const createStyles = (colors) => StyleSheet.create({
   floatingEmoji: { fontSize: 22 },
 
   // Actions Container
-  actionsContainer: { paddingHorizontal: 20, gap: 14 },
+  actionsContainer: { 
+    paddingHorizontal: 20, 
+    gap: 14,
+    backgroundColor: colors.bg,
+  },
 
   // Card Press State
   cardPressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
@@ -385,7 +425,11 @@ const createStyles = (colors) => StyleSheet.create({
   arrowTextSecondary: { fontSize: 18, color: colors.primary, fontWeight: 'bold' },
 
   // Features Section
-  featuresSection: { marginTop: 40, paddingHorizontal: 20 },
+  featuresSection: { 
+    marginTop: 40, 
+    paddingHorizontal: 20,
+    backgroundColor: colors.bg,
+  },
   featuresTitle: { fontSize: 22, fontWeight: 'bold', color: colors.text, textAlign: 'center' },
   featuresSubtitle: { fontSize: 14, color: colors.textMuted, textAlign: 'center', marginTop: 6, marginBottom: 24 },
   featuresGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
@@ -396,7 +440,11 @@ const createStyles = (colors) => StyleSheet.create({
   featureDesc: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
 
   // Why Section
-  whySection: { marginTop: 30, paddingHorizontal: 20 },
+  whySection: { 
+    marginTop: 30, 
+    paddingHorizontal: 20,
+    backgroundColor: colors.bg,
+  },
   whyTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 16 },
   whyList: { backgroundColor: colors.card, borderRadius: 20, padding: 6, borderWidth: 1, borderColor: colors.primaryBorder },
   whyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: colors.primaryBorder },
@@ -404,7 +452,12 @@ const createStyles = (colors) => StyleSheet.create({
   whyItemText: { fontSize: 15, color: colors.text, flex: 1 },
 
   // Footer
-  footer: { alignItems: 'center', marginTop: 40, paddingVertical: 20 },
+  footer: { 
+    alignItems: 'center', 
+    marginTop: 40, 
+    paddingVertical: 20,
+    backgroundColor: colors.bg,
+  },
   footerLogo: { fontSize: 32 },
   footerText: { fontSize: 16, fontWeight: 'bold', color: colors.textMuted, marginTop: 8 },
   footerVersion: { fontSize: 12, color: colors.textLight, marginTop: 4 },
