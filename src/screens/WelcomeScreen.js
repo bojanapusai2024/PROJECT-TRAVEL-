@@ -154,18 +154,21 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
         {/* Action Cards */}
         <View style={styles.actionsContainer}>
-          {/* Current Trip Card - RESTORED */}
+          {/* Current Trip Card - SOFTER COLORS */}
           {hasActiveTrip && (
             <Animated.View style={{ transform: [{ scale: scaleAnim1 }] }}>
-              <Pressable style={({ pressed }) => [styles.currentTripCard, pressed && { opacity: 0.9 }]} onPress={onMyTrip}>
+              <Pressable style={({ pressed }) => [styles.currentTripCard, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]} onPress={onMyTrip}>
                 <View style={styles.currentTripGlow} />
                 
+                {/* Header Row */}
                 <View style={styles.currentTripHeader}>
                   <View style={styles.currentTripIconBg}>
                     <Text style={styles.currentTripIcon}>🧳</Text>
                   </View>
                   <View style={styles.currentTripInfo}>
-                    <Text style={styles.currentTripLabel}>CURRENT TRIP</Text>
+                    <View style={styles.currentTripBadge}>
+                      <Text style={styles.currentTripBadgeText}>CURRENT TRIP</Text>
+                    </View>
                     <Text style={styles.currentTripName}>{tripInfo.destination || tripInfo.name || 'My Trip'}</Text>
                   </View>
                   <View style={styles.currentTripArrow}>
@@ -173,28 +176,57 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
                   </View>
                 </View>
 
+                {/* Dates */}
                 {tripInfo.startDate && tripInfo.endDate && (
                   <View style={styles.currentTripDates}>
-                    <Text style={styles.currentTripDateIcon}>📅</Text>
-                    <Text style={styles.currentTripDateText}>{tripInfo.startDate} → {tripInfo.endDate}</Text>
+                    <View style={styles.dateChip}>
+                      <Text style={styles.dateChipEmoji}>📅</Text>
+                      <Text style={styles.dateChipText}>{tripInfo.startDate}</Text>
+                    </View>
+                    <Text style={styles.dateArrow}>→</Text>
+                    <View style={styles.dateChip}>
+                      <Text style={styles.dateChipText}>{tripInfo.endDate}</Text>
+                    </View>
                   </View>
                 )}
 
+                {/* Stats */}
                 <View style={styles.currentTripStats}>
                   <View style={styles.tripStatItem}>
-                    <Text style={styles.tripStatValue}>{participantCount}</Text>
-                    <Text style={styles.tripStatLabel}>Travelers</Text>
+                    <View style={styles.tripStatIconBg}>
+                      <Text style={styles.tripStatEmoji}>👥</Text>
+                    </View>
+                    <View>
+                      <Text style={styles.tripStatValue}>{participantCount}</Text>
+                      <Text style={styles.tripStatLabel}>Travelers</Text>
+                    </View>
                   </View>
                   <View style={styles.tripStatDivider} />
                   <View style={styles.tripStatItem}>
-                    <Text style={styles.tripStatValue}>{tripDays}</Text>
-                    <Text style={styles.tripStatLabel}>Days</Text>
+                    <View style={styles.tripStatIconBg}>
+                      <Text style={styles.tripStatEmoji}>📆</Text>
+                    </View>
+                    <View>
+                      <Text style={styles.tripStatValue}>{tripDays}</Text>
+                      <Text style={styles.tripStatLabel}>Days</Text>
+                    </View>
                   </View>
                   <View style={styles.tripStatDivider} />
                   <View style={styles.tripStatItem}>
-                    <Text style={styles.tripStatValue}>${lastExpense ? lastExpense.amount : 0}</Text>
-                    <Text style={styles.tripStatLabel}>Last Spent</Text>
+                    <View style={styles.tripStatIconBg}>
+                      <Text style={styles.tripStatEmoji}>💳</Text>
+                    </View>
+                    <View>
+                      <Text style={styles.tripStatValue}>${lastExpense ? lastExpense.amount : 0}</Text>
+                      <Text style={styles.tripStatLabel}>Last Spent</Text>
+                    </View>
                   </View>
+                </View>
+
+                {/* Continue Button */}
+                <View style={styles.continueBtn}>
+                  <Text style={styles.continueBtnText}>Continue Planning</Text>
+                  <Text style={styles.continueBtnArrow}>→</Text>
                 </View>
               </Pressable>
             </Animated.View>
@@ -420,26 +452,148 @@ const createStyles = (colors) => StyleSheet.create({
   cardPressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
   buttonPressed: { opacity: 0.8 },
 
-  // Current Trip Card
-  currentTripCard: { backgroundColor: colors.primary, borderRadius: 24, padding: 20, overflow: 'hidden', shadowColor: colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 8 },
-  currentTripGlow: { position: 'absolute', top: -40, right: -40, width: 150, height: 150, backgroundColor: '#FFFFFF', opacity: 0.15, borderRadius: 75 },
-  currentTripHeader: { flexDirection: 'row', alignItems: 'center' },
-  currentTripIconBg: { width: 50, height: 50, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
+  // Current Trip Card - SOFTER COLORS
+  currentTripCard: { 
+    backgroundColor: colors.card, 
+    borderRadius: 24, 
+    padding: 20, 
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: colors.primaryBorder,
+  },
+  currentTripGlow: { 
+    position: 'absolute', 
+    top: -60, 
+    right: -60, 
+    width: 180, 
+    height: 180, 
+    backgroundColor: colors.primary, 
+    opacity: 0.06, 
+    borderRadius: 90,
+  },
+  currentTripHeader: { 
+    flexDirection: 'row', 
+    alignItems: 'center',
+  },
+  currentTripIconBg: { 
+    width: 52, 
+    height: 52, 
+    borderRadius: 16, 
+    backgroundColor: colors.primaryMuted, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
   currentTripIcon: { fontSize: 26 },
   currentTripInfo: { flex: 1, marginLeft: 14 },
-  currentTripLabel: { fontSize: 10, color: 'rgba(0,0,0,0.5)', fontWeight: '700', letterSpacing: 1 },
-  currentTripName: { fontSize: 20, fontWeight: 'bold', color: colors.bg, marginTop: 2 },
-  currentTripArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center' },
-  arrowText: { fontSize: 18, color: colors.bg, fontWeight: 'bold' },
-  currentTripDates: { flexDirection: 'row', alignItems: 'center', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.2)' },
-  currentTripDateIcon: { fontSize: 16, marginRight: 8 },
-  currentTripDateText: { fontSize: 14, color: 'rgba(0,0,0,0.6)', fontWeight: '500' },
-  currentTripStats: { flexDirection: 'row', marginTop: 16, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 14 },
-  tripStatItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  tripStatEmoji: { fontSize: 18, marginRight: 8 },
-  tripStatValue: { fontSize: 16, fontWeight: 'bold', color: colors.bg },
-  tripStatLabel: { fontSize: 10, color: 'rgba(0,0,0,0.5)' },
-  tripStatDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.3)', marginHorizontal: 8 },
+  currentTripBadge: { 
+    backgroundColor: colors.primary + '20', 
+    paddingHorizontal: 10, 
+    paddingVertical: 4, 
+    borderRadius: 6, 
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
+  currentTripBadgeText: { 
+    fontSize: 9, 
+    color: colors.primary, 
+    fontWeight: '700', 
+    letterSpacing: 1,
+  },
+  currentTripName: { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    color: colors.text,
+  },
+  currentTripArrow: { 
+    width: 40, 
+    height: 40, 
+    borderRadius: 12, 
+    backgroundColor: colors.primaryMuted, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  arrowText: { fontSize: 18, color: colors.primary, fontWeight: 'bold' },
+  
+  // Dates
+  currentTripDates: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginTop: 16, 
+    paddingTop: 16, 
+    borderTopWidth: 1, 
+    borderTopColor: colors.primaryBorder,
+    gap: 10,
+  },
+  dateChip: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: colors.cardLight, 
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  dateChipEmoji: { fontSize: 14, marginRight: 6 },
+  dateChipText: { fontSize: 13, color: colors.text, fontWeight: '500' },
+  dateArrow: { color: colors.textMuted, fontSize: 14 },
+
+  // Stats
+  currentTripStats: { 
+    flexDirection: 'row', 
+    marginTop: 16, 
+    backgroundColor: colors.cardLight, 
+    borderRadius: 16, 
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  tripStatItem: { 
+    flex: 1, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    gap: 10,
+  },
+  tripStatIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tripStatEmoji: { fontSize: 16 },
+  tripStatValue: { fontSize: 17, fontWeight: 'bold', color: colors.text },
+  tripStatLabel: { fontSize: 10, color: colors.textMuted, marginTop: 1 },
+  tripStatDivider: { width: 1, height: 36, backgroundColor: colors.primaryBorder },
+
+  // Continue Button
+  continueBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    backgroundColor: colors.primary,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  continueBtnText: {
+    color: colors.bg,
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  continueBtnArrow: {
+    color: colors.bg,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 
   // Option Cards
   optionCard: { backgroundColor: colors.card, borderRadius: 20, padding: 18, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder, overflow: 'hidden' },
