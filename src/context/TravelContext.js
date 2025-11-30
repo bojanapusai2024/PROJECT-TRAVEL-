@@ -8,9 +8,9 @@ const CURRENCIES = [
   { code: 'EUR', symbol: '€', name: 'Euro', flag: '🇪🇺' },
   { code: 'GBP', symbol: '£', name: 'British Pound', flag: '🇬🇧' },
   { code: 'JPY', symbol: '¥', name: 'Japanese Yen', flag: '🇯🇵' },
-  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', flag: '🇨🇳' },
   { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham', flag: '🇦🇪' },
   { code: 'THB', symbol: '฿', name: 'Thai Baht', flag: '🇹🇭' },
+  { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar', flag: '🇸🇬' },
 ];
 
 export function TravelProvider({ children }) {
@@ -30,9 +30,7 @@ export function TravelProvider({ children }) {
   const [packingItems, setPackingItems] = useState([]);
   const [itinerary, setItinerary] = useState([]);
   const [tripHistory, setTripHistory] = useState([]);
-  
-  // Default currency is now Indian Rupee (first in list)
-  const [currency, setCurrency] = useState(CURRENCIES[0]);
+  const [currency, setCurrency] = useState(CURRENCIES[0]); // INR default
 
   const addExpense = (expense) => {
     setExpenses(prev => [...prev, { ...expense, id: Date.now().toString() }]);
@@ -43,18 +41,19 @@ export function TravelProvider({ children }) {
   };
 
   const getTotalExpenses = () => {
-    return expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    return expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
   };
 
   const getExpensesByCategory = () => {
     return expenses.reduce((acc, e) => {
-      acc[e.category] = (acc[e.category] || 0) + e.amount;
+      const amount = parseFloat(e.amount) || 0;
+      acc[e.category] = (acc[e.category] || 0) + amount;
       return acc;
     }, {});
   };
 
   const getRemainingBudget = () => {
-    return budget.total - getTotalExpenses();
+    return (budget.total || 0) - getTotalExpenses();
   };
 
   const addPackingItem = (item) => {
@@ -99,7 +98,6 @@ export function TravelProvider({ children }) {
         packingItemsCount: packingItems.length,
         currency: currency.code,
       };
-      
       setTripHistory(prev => [completedTrip, ...prev]);
       clearTrip();
     }
@@ -127,12 +125,11 @@ export function TravelProvider({ children }) {
   };
 
   const formatCurrency = (amount) => {
-    const num = Number(amount) || 0;
+    const num = parseFloat(amount) || 0;
     if (currency.code === 'INR') {
-      // Indian number formatting (lakhs, crores)
-      return `${currency.symbol}${num.toLocaleString('en-IN')}`;
+      return `${currency.symbol}${num.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
     }
-    return `${currency.symbol}${num.toLocaleString()}`;
+    return `${currency.symbol}${num.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
   };
 
   return (
