@@ -43,9 +43,7 @@ export default function PackingScreen() {
   
   const [modalVisible, setModalVisible] = useState(false);
   const [filterCategory, setFilterCategory] = useState('all');
-  const [showPacked, setShowPacked] = useState(true);
   const [newItem, setNewItem] = useState({ name: '', category: 'essentials', quantity: '1', notes: '' });
-  const [searchQuery, setSearchQuery] = useState('');
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -78,12 +76,10 @@ export default function PackingScreen() {
 
   const getCategoryInfo = (key) => PACKING_CATEGORIES.find(c => c.key === key) || PACKING_CATEGORIES[7];
 
-  // Filter and group items
+  // Filter and group items (removed showPacked filter)
   const filteredItems = packingItems.filter(item => {
     const matchesCategory = filterCategory === 'all' || item.category === filterCategory;
-    const matchesSearch = !searchQuery || item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPacked = showPacked || !item.packed;
-    return matchesCategory && matchesSearch && matchesPacked;
+    return matchesCategory;
   });
 
   const groupedItems = PACKING_CATEGORIES.reduce((acc, cat) => {
@@ -111,9 +107,6 @@ export default function PackingScreen() {
             {tripInfo.destination ? `For ${tripInfo.destination}` : 'Pack smart, travel light'}
           </Text>
         </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)}>
-          <Text style={styles.addBtnText}>+ Add</Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -171,31 +164,6 @@ export default function PackingScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </View>
-
-        {/* Search & Filters */}
-        <View style={styles.searchSection}>
-          <View style={styles.searchBox}>
-            <Text style={styles.searchIcon}>🔍</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search items..."
-              placeholderTextColor={colors.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Text style={styles.searchClear}>✕</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
-          <TouchableOpacity 
-            style={[styles.filterToggle, !showPacked && styles.filterToggleActive]}
-            onPress={() => setShowPacked(!showPacked)}
-          >
-            <Text style={styles.filterToggleText}>{showPacked ? '👁️' : '👁️‍🗨️'}</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Quick Add Section */}
@@ -338,7 +306,6 @@ export default function PackingScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              {/* Item Name */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Item Name *</Text>
                 <TextInput
@@ -350,7 +317,6 @@ export default function PackingScreen() {
                 />
               </View>
 
-              {/* Category */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Category</Text>
                 <View style={styles.categoryGrid}>
@@ -372,7 +338,6 @@ export default function PackingScreen() {
                 </View>
               </View>
 
-              {/* Quantity */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Quantity</Text>
                 <View style={styles.quantityRow}>
@@ -397,7 +362,6 @@ export default function PackingScreen() {
                 </View>
               </View>
 
-              {/* Notes */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Notes (optional)</Text>
                 <TextInput
@@ -410,7 +374,6 @@ export default function PackingScreen() {
                 />
               </View>
 
-              {/* Quick Add in Modal */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Quick Add</Text>
                 <View style={styles.quickAddModalItems}>
@@ -426,7 +389,6 @@ export default function PackingScreen() {
                 </View>
               </View>
 
-              {/* Submit */}
               <TouchableOpacity
                 style={[styles.submitBtn, !newItem.name.trim() && { opacity: 0.5 }]}
                 onPress={handleAddItem}
@@ -449,11 +411,9 @@ const createStyles = (colors) => StyleSheet.create({
   scrollContent: { paddingBottom: 20 },
   
   // Header
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
   headerTitle: { color: colors.text, fontSize: 24, fontWeight: 'bold' },
   headerSubtitle: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
-  addBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
-  addBtnText: { color: colors.bg, fontSize: 14, fontWeight: 'bold' },
 
   // Progress Card
   progressCard: { marginHorizontal: 20, backgroundColor: colors.card, borderRadius: 20, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: colors.primaryBorder },
@@ -479,16 +439,6 @@ const createStyles = (colors) => StyleSheet.create({
   categoryPillLabel: { color: colors.text, fontSize: 12, fontWeight: '600' },
   categoryPillCount: { color: colors.textMuted, fontSize: 10, marginTop: 2 },
   categoryCheck: { color: '#10B981', fontSize: 14, marginLeft: 8 },
-
-  // Search
-  searchSection: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 16, gap: 10 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 12, paddingHorizontal: 14, borderWidth: 1, borderColor: colors.primaryBorder },
-  searchIcon: { fontSize: 16, marginRight: 10 },
-  searchInput: { flex: 1, color: colors.text, fontSize: 14, paddingVertical: 12 },
-  searchClear: { color: colors.textMuted, fontSize: 16, padding: 4 },
-  filterToggle: { width: 46, height: 46, borderRadius: 12, backgroundColor: colors.card, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
-  filterToggleActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primary },
-  filterToggleText: { fontSize: 18 },
 
   // Quick Add Section
   quickAddSection: { paddingHorizontal: 20, marginBottom: 20 },
