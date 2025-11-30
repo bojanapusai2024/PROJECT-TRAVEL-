@@ -1,10 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Modal, TextInput, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import { useTravelContext } from '../context/TravelContext';
 
 export default function ProfileScreen({ onBack }) {
   const { colors, isDark, toggleTheme } = useTheme();
+  const { tripHistory, deleteTripFromHistory } = useTravelContext();
+  
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [userName, setUserName] = useState('Traveler');
@@ -101,26 +104,65 @@ export default function ProfileScreen({ onBack }) {
           </View>
         </View>
 
-        {/* Trip History Section */}
-        <TouchableOpacity style={styles.historyCard} onPress={() => setShowHistoryModal(true)}>
-          <View style={styles.historyHeader}>
-            <View style={styles.historyIcon}>
-              <Text style={styles.historyIconEmoji}>📜</Text>
-            </View>
-            <View style={styles.historyInfo}>
-              <Text style={styles.historyTitle}>Trip History</Text>
-              <Text style={styles.historySubtitle}>{totalTrips} past adventures</Text>
-            </View>
-            <Text style={styles.historyArrow}>→</Text>
-          </View>
-          <View style={styles.tripPreview}>
-            {pastTrips.slice(0, 3).map((trip, index) => (
-              <View key={trip.id} style={[styles.tripPreviewItem, index > 0 && { marginLeft: -12 }]}>
-                <Text style={styles.tripPreviewEmoji}>{trip.emoji}</Text>
+        {/* Trip History - Updated */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📜 Trip History</Text>
+          
+          {tripHistory.length === 0 ? (
+            <View style={styles.emptyHistory}>
+              <View style={styles.emptyHistoryIconBg}>
+                <Text style={styles.emptyHistoryIcon}>🗺️</Text>
               </View>
-            ))}
-          </View>
-        </TouchableOpacity>
+              <Text style={styles.emptyHistoryTitle}>No completed trips yet</Text>
+              <Text style={styles.emptyHistoryText}>
+                Your completed trips will appear here
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.historyList}>
+              {tripHistory.map((trip, index) => (
+                <View key={trip.id} style={styles.historyCard}>
+                  <View style={styles.historyHeader}>
+                    <View style={styles.historyIconBg}>
+                      <Text style={styles.historyIcon}>✈️</Text>
+                    </View>
+                    <View style={styles.historyInfo}>
+                      <Text style={styles.historyDestination}>{trip.destination}</Text>
+                      <Text style={styles.historyDates}>{trip.startDate} → {trip.endDate}</Text>
+                    </View>
+                    <Pressable 
+                      style={styles.historyDeleteBtn}
+                      onPress={() => deleteTripFromHistory(trip.id)}
+                    >
+                      <Text style={styles.historyDeleteText}>🗑️</Text>
+                    </Pressable>
+                  </View>
+                  
+                  <View style={styles.historyStats}>
+                    <View style={styles.historyStatItem}>
+                      <Text style={styles.historyStatValue}>${trip.totalSpent}</Text>
+                      <Text style={styles.historyStatLabel}>Spent</Text>
+                    </View>
+                    <View style={styles.historyStatDivider} />
+                    <View style={styles.historyStatItem}>
+                      <Text style={styles.historyStatValue}>{trip.activitiesCount}</Text>
+                      <Text style={styles.historyStatLabel}>Activities</Text>
+                    </View>
+                    <View style={styles.historyStatDivider} />
+                    <View style={styles.historyStatItem}>
+                      <Text style={styles.historyStatValue}>{(trip.participants?.length || 0) + 1}</Text>
+                      <Text style={styles.historyStatLabel}>Travelers</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.historyFooter}>
+                    <Text style={styles.historyCompleted}>✅ Completed {trip.completedDate}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
 
         {/* Theme Toggle */}
         <View style={styles.sectionHeader}>
@@ -333,60 +375,73 @@ const createStyles = (colors) => StyleSheet.create({
   statValue: { color: colors.primary, fontSize: 22, fontWeight: 'bold' },
   statLabel: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
 
-  // History Card
-  historyCard: { backgroundColor: colors.card, borderRadius: 20, padding: 20, marginBottom: 24, borderWidth: 1, borderColor: colors.primaryBorder },
-  historyHeader: { flexDirection: 'row', alignItems: 'center' },
-  historyIcon: { width: 48, height: 48, borderRadius: 14, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
-  historyIconEmoji: { fontSize: 24 },
-  historyInfo: { flex: 1, marginLeft: 14 },
-  historyTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
-  historySubtitle: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
-  historyArrow: { color: colors.primary, fontSize: 20, fontWeight: 'bold' },
-  tripPreview: { flexDirection: 'row', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.primaryBorder },
-  tripPreviewItem: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.cardLight, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.card },
-  tripPreviewEmoji: { fontSize: 20 },
+  // Trip History - Updated
+  section: { marginBottom: 24 },
+  sectionTitle: { color: colors.textMuted, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 },
+  emptyHistory: { 
+    backgroundColor: colors.card, 
+    borderRadius: 20, 
+    padding: 40, 
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  emptyHistoryIconBg: { 
+    width: 80, 
+    height: 80, 
+    borderRadius: 24, 
+    backgroundColor: colors.primaryMuted, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    marginBottom: 16,
+  },
+  emptyHistoryIcon: { fontSize: 36 },
+  emptyHistoryTitle: { color: colors.text, fontSize: 18, fontWeight: '600', marginBottom: 8 },
+  emptyHistoryText: { color: colors.textMuted, fontSize: 14, textAlign: 'center' },
 
-  // Sections
-  sectionHeader: { marginBottom: 12, marginTop: 8 },
-  sectionTitle: { color: colors.textMuted, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
-
-  // Theme Card
-  themeCard: { backgroundColor: colors.card, borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: colors.primaryBorder },
-  themeRow: { flexDirection: 'row', alignItems: 'center' },
-  themeIconWrap: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
-  themeIcon: { fontSize: 22 },
-  themeInfo: { flex: 1, marginLeft: 14 },
-  themeLabel: { color: colors.text, fontSize: 16, fontWeight: '600' },
-  themeDescription: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-
-  // Menu Card
-  menuCard: { backgroundColor: colors.card, borderRadius: 16, overflow: 'hidden', marginBottom: 20, borderWidth: 1, borderColor: colors.primaryBorder },
-  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16 },
-  menuItemBorder: { borderBottomWidth: 1, borderBottomColor: colors.primaryBorder },
-  menuIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.cardLight, alignItems: 'center', justifyContent: 'center' },
-  menuIcon: { fontSize: 18 },
-  menuLabel: { flex: 1, color: colors.text, fontSize: 15, marginLeft: 14 },
-  menuValue: { color: colors.textMuted, fontSize: 14 },
-  menuArrow: { color: colors.textMuted, fontSize: 18 },
-
-  // Danger Section
-  dangerSection: { gap: 12, marginBottom: 30 },
-  dangerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.3)' },
-  dangerIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(239, 68, 68, 0.2)', alignItems: 'center', justifyContent: 'center' },
-  dangerIconEmoji: { fontSize: 20 },
-  dangerInfo: { flex: 1, marginLeft: 14 },
-  dangerLabel: { color: '#EF4444', fontSize: 15, fontWeight: '600' },
-  dangerDescription: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  logoutCard: { backgroundColor: colors.card, borderColor: colors.primaryBorder },
-  logoutIcon: { backgroundColor: colors.cardLight },
-  logoutLabel: { color: colors.text },
-
-  // App Info
-  appInfo: { alignItems: 'center', paddingVertical: 24 },
-  appLogo: { fontSize: 40, marginBottom: 8 },
-  appName: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
-  appVersion: { color: colors.textMuted, fontSize: 13, marginTop: 4 },
-  appCopyright: { color: colors.textMuted, fontSize: 12, marginTop: 8, opacity: 0.6 },
+  // History List
+  historyList: { gap: 12 },
+  historyCard: { 
+    backgroundColor: colors.card, 
+    borderRadius: 18, 
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  historyHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  historyIconBg: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 14, 
+    backgroundColor: colors.primaryMuted, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+  },
+  historyIcon: { fontSize: 22 },
+  historyInfo: { flex: 1, marginLeft: 12 },
+  historyDestination: { color: colors.text, fontSize: 17, fontWeight: 'bold' },
+  historyDates: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  historyDeleteBtn: { 
+    width: 36, 
+    height: 36, 
+    borderRadius: 10, 
+    backgroundColor: colors.cardLight, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+  },
+  historyDeleteText: { fontSize: 16 },
+  historyStats: { 
+    flexDirection: 'row', 
+    backgroundColor: colors.cardLight, 
+    borderRadius: 12, 
+    padding: 12,
+  },
+  historyStatItem: { flex: 1, alignItems: 'center' },
+  historyStatValue: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  historyStatLabel: { color: colors.textMuted, fontSize: 10, marginTop: 2 },
+  historyStatDivider: { width: 1, backgroundColor: colors.primaryBorder },
+  historyFooter: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.primaryBorder },
+  historyCompleted: { color: colors.primary, fontSize: 12, fontWeight: '500' },
 
   // Modal
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.8)' },

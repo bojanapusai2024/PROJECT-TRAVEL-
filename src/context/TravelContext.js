@@ -29,14 +29,17 @@ export function TravelProvider({ children }) {
   const [packingItems, setPackingItems] = useState([]);
   const [itinerary, setItinerary] = useState([]);
   const [tripInfo, setTripInfo] = useState({
-    name: '',
     destination: '',
     startDate: '',
     endDate: '',
-    currency: 'USD',
+    name: '',
     participants: [],
-    tripCode: generateTripCode(),
+    tripCode: '',
+    tripType: '',
+    isCompleted: false,
   });
+
+  const [tripHistory, setTripHistory] = useState([]);
 
   function generateTripCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -93,6 +96,21 @@ export function TravelProvider({ children }) {
     setExpenses(prev => prev.filter(e => e.id !== id));
   };
 
+  const getTotalExpenses = () => {
+    return expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  };
+
+  const getExpensesByCategory = () => {
+    return expenses.reduce((acc, e) => {
+      acc[e.category] = (acc[e.category] || 0) + e.amount;
+      return acc;
+    }, {});
+  };
+
+  const getRemainingBudget = () => {
+    return budget.total - getTotalExpenses();
+  };
+
   const addPackingItem = (item) => {
     setPackingItems(prev => [...prev, { ...item, id: Date.now().toString(), packed: false }]);
   };
@@ -121,21 +139,29 @@ export function TravelProvider({ children }) {
     ));
   };
 
-  const getTotalExpenses = () => {
-    return expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+  // End trip and add to history
+  const endTrip = () => {
+    if (tripInfo.destination) {
+      const completedTrip = {
+        id: Date.now().toString(),
+        ...tripInfo,
+        isCompleted: true,
+        completedDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+        totalSpent: getTotalExpenses(),
+        budget: budget.total,
+        expensesCount: expenses.length,
+        activitiesCount: itinerary.length,
+        packingItemsCount: packingItems.length,
+      };
+      
+      setTripHistory(prev => [completedTrip, ...prev]);
+      
+      // Clear current trip
+      clearTrip();
+    }
   };
 
-  const getRemainingBudget = () => {
-    return budget.total - getTotalExpenses();
-  };
-
-  const getExpensesByCategory = () => {
-    return expenses.reduce((acc, exp) => {
-      acc[exp.category] = (acc[exp.category] || 0) + (exp.amount || 0);
-      return acc;
-    }, {});
-  };
-
+  // Clear current trip data
   const clearTrip = () => {
     setTripInfo({
       destination: '',
@@ -144,6 +170,8 @@ export function TravelProvider({ children }) {
       name: '',
       participants: [],
       tripCode: '',
+      tripType: '',
+      isCompleted: false,
     });
     setBudget({ total: 0, categories: {} });
     setExpenses([]);
@@ -151,15 +179,23 @@ export function TravelProvider({ children }) {
     setItinerary([]);
   };
 
+  // Delete trip from history
+  const deleteTripFromHistory = (id) => {
+    setTripHistory(prev => prev.filter(trip => trip.id !== id));
+  };
+
   const value = {
+    tripInfo, setTripInfo,
     budget, setBudget,
-    expenses, addExpense, deleteExpense,
+    expenses, addExpense, deleteExpense, getTotalExpenses, getExpensesByCategory,
     packingItems, addPackingItem, togglePackingItem, deletePackingItem,
     itinerary, addItineraryItem, deleteItineraryItem, updateItineraryItem,
-    tripInfo, setTripInfo,
-    getTotalExpenses, getRemainingBudget, getExpensesByCategory,
-    isLoaded,
+    getRemainingBudget,
     clearTrip,
+    endTrip,
+    tripHistory,
+    deleteTripFromHistory,
+    isLoaded,
   };
 
   return (

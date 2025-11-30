@@ -4,11 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTravelContext } from '../context/TravelContext';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
+import DatePickerModal from '../components/DatePickerModal';
 
 export default function HomeScreen({ onBackToHome }) {
   const { 
     tripInfo, setTripInfo, budget, setBudget, getTotalExpenses, getRemainingBudget, 
-    packingItems, itinerary, expenses, clearTrip 
+    packingItems, itinerary, expenses, clearTrip, endTrip
   } = useTravelContext();
   const { colors } = useTheme();
   const navigation = useNavigation();
@@ -19,11 +20,16 @@ export default function HomeScreen({ onBackToHome }) {
   const [showTravelersModal, setShowTravelersModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEndTripModal, setShowEndTripModal] = useState(false);
+  const [showDatesModal, setShowDatesModal] = useState(false);
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   
   // Edit states
   const [newBudget, setNewBudget] = useState(budget.total.toString());
   const [newTravelerName, setNewTravelerName] = useState('');
   const [travelers, setTravelers] = useState(tripInfo.participants || []);
+  const [editStartDate, setEditStartDate] = useState(tripInfo.startDate || '');
+  const [editEndDate, setEditEndDate] = useState(tripInfo.endDate || '');
 
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim = useState(new Animated.Value(0.9))[0];
@@ -37,6 +43,32 @@ export default function HomeScreen({ onBackToHome }) {
     ]).start();
   }, []);
 
+  // Check if trip has ended automatically
+  useEffect(() => {
+    const checkTripEnded = () => {
+      if (tripInfo.endDate && !tripInfo.isCompleted) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        try {
+          const parts = tripInfo.endDate.split(' ');
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const endDate = new Date(parseInt(parts[2]), months.indexOf(parts[1]), parseInt(parts[0]));
+          endDate.setHours(23, 59, 59, 999);
+          
+          if (today > endDate) {
+            // Trip has ended, add to history
+            handleAutoEndTrip();
+          }
+        } catch (e) {
+          console.log('Error checking trip end date:', e);
+        }
+      }
+    };
+
+    checkTripEnded();
+  }, [tripInfo.endDate]);
+
   const packedCount = packingItems.filter(item => item.packed).length;
   const totalItems = packingItems.length;
   const packingProgress = totalItems > 0 ? (packedCount / totalItems) * 100 : 0;
@@ -46,7 +78,6 @@ export default function HomeScreen({ onBackToHome }) {
   const lastExpense = expenses.length > 0 ? expenses[expenses.length - 1] : null;
   const recentExpenses = expenses.slice(-4).reverse();
 
-  // Get category info for expenses
   const getCategoryInfo = (key) => {
     const categories = {
       accommodation: { emoji: '🏨', color: '#8B5CF6' },
@@ -59,24 +90,6 @@ export default function HomeScreen({ onBackToHome }) {
     return categories[key] || categories.other;
   };
 
-  // Calculate days until trip
-  const getDaysUntilTrip = () => {
-    if (!tripInfo.startDate) return null;
-    try {
-      const parts = tripInfo.startDate.split(' ');
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const startDate = new Date(parseInt(parts[2]), months.indexOf(parts[1]), parseInt(parts[0]));
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const diffTime = startDate - today;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays;
-    } catch {
-      return null;
-    }
-  };
-
-  // Calculate trip days
   const getTripDays = () => {
     if (!tripInfo.startDate || !tripInfo.endDate) return 0;
     try {
@@ -93,18 +106,27 @@ export default function HomeScreen({ onBackToHome }) {
     }
   };
 
+  const getDaysUntilTrip = () => {
+    if (!tripInfo.startDate) return null;
+    try {
+      const parts = tripInfo.startDate.split(' ');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const startDate = new Date(parseInt(parts[2]), months.indexOf(parts[1]), parseInt(parts[0]));
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const diffTime = startDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    } catch {
+      return null;
+    }
+  };
+
   const tripDays = getTripDays();
   const daysUntil = getDaysUntilTrip();
 
-  // Navigate to Itinerary tab
-  const goToItinerary = () => {
-    navigation.navigate('Itinerary');
-  };
-
-  // Navigate to Expenses tab
-  const goToExpenses = () => {
-    navigation.navigate('Expenses');
-  };
+  const goToItinerary = () => navigation.navigate('Itinerary');
+  const goToExpenses = () => navigation.navigate('Expenses');
 
   // Trip management functions
   const handleUpdateBudget = () => {
@@ -112,6 +134,17 @@ export default function HomeScreen({ onBackToHome }) {
     if (amount > 0) {
       setBudget(prev => ({ ...prev, total: amount }));
       setShowBudgetModal(false);
+    }
+  };
+
+  const handleUpdateDates = () => {
+    if (editStartDate && editEndDate) {
+      setTripInfo(prev => ({ 
+        ...prev, 
+        startDate: editStartDate, 
+        endDate: editEndDate 
+      }));
+      setShowDatesModal(false);
     }
   };
 
@@ -130,8 +163,17 @@ export default function HomeScreen({ onBackToHome }) {
     setTripInfo(prev => ({ ...prev, participants: updatedTravelers }));
   };
 
+  const handleAutoEndTrip = () => {
+    if (endTrip) {
+      endTrip();
+    }
+    onBackToHome();
+  };
+
   const handleEndTrip = () => {
-    // Mark trip as completed and go back
+    if (endTrip) {
+      endTrip();
+    }
     setShowEndTripModal(false);
     onBackToHome();
   };
@@ -139,16 +181,6 @@ export default function HomeScreen({ onBackToHome }) {
   const handleDeleteTrip = () => {
     if (clearTrip) {
       clearTrip();
-    } else {
-      // Manual clear if clearTrip not available
-      setTripInfo({
-        destination: '',
-        startDate: '',
-        endDate: '',
-        name: '',
-        participants: [],
-      });
-      setBudget({ total: 0 });
     }
     setShowDeleteModal(false);
     onBackToHome();
@@ -238,10 +270,20 @@ export default function HomeScreen({ onBackToHome }) {
           </View>
         </Animated.View>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Add Edit Dates */}
         <Animated.View style={[styles.quickActionsSection, { opacity: fadeAnim }]}>
           <Text style={styles.sectionTitle}>⚡ Quick Actions</Text>
           <View style={styles.quickActionsGrid}>
+            <Pressable 
+              style={({ pressed }) => [styles.quickActionCard, pressed && { opacity: 0.8 }]}
+              onPress={() => { setEditStartDate(tripInfo.startDate); setEditEndDate(tripInfo.endDate); setShowDatesModal(true); }}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF620' }]}>
+                <Text style={styles.quickActionEmoji}>📅</Text>
+              </View>
+              <Text style={styles.quickActionLabel}>Edit Dates</Text>
+            </Pressable>
+
             <Pressable 
               style={({ pressed }) => [styles.quickActionCard, pressed && { opacity: 0.8 }]}
               onPress={() => setShowBudgetModal(true)}
@@ -270,16 +312,6 @@ export default function HomeScreen({ onBackToHome }) {
                 <Text style={styles.quickActionEmoji}>🏁</Text>
               </View>
               <Text style={styles.quickActionLabel}>End Trip</Text>
-            </Pressable>
-
-            <Pressable 
-              style={({ pressed }) => [styles.quickActionCard, pressed && { opacity: 0.8 }]}
-              onPress={() => setShowDeleteModal(true)}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: '#EF444420' }]}>
-                <Text style={styles.quickActionEmoji}>🗑️</Text>
-              </View>
-              <Text style={styles.quickActionLabel}>Delete</Text>
             </Pressable>
           </View>
         </Animated.View>
@@ -466,6 +498,25 @@ export default function HomeScreen({ onBackToHome }) {
             <View style={styles.settingsList}>
               <Pressable 
                 style={styles.settingsItem}
+                onPress={() => { 
+                  setShowSettingsModal(false); 
+                  setEditStartDate(tripInfo.startDate); 
+                  setEditEndDate(tripInfo.endDate); 
+                  setShowDatesModal(true); 
+                }}
+              >
+                <View style={[styles.settingsIconBg, { backgroundColor: '#8B5CF620' }]}>
+                  <Text style={styles.settingsIcon}>📅</Text>
+                </View>
+                <View style={styles.settingsInfo}>
+                  <Text style={styles.settingsLabel}>Edit Travel Dates</Text>
+                  <Text style={styles.settingsDesc}>{tripInfo.startDate} → {tripInfo.endDate}</Text>
+                </View>
+                <Text style={styles.settingsArrow}>→</Text>
+              </Pressable>
+
+              <Pressable 
+                style={styles.settingsItem}
                 onPress={() => { setShowSettingsModal(false); setShowBudgetModal(true); }}
               >
                 <View style={[styles.settingsIconBg, { backgroundColor: '#10B98120' }]}>
@@ -520,6 +571,68 @@ export default function HomeScreen({ onBackToHome }) {
                 <Text style={[styles.settingsArrow, { color: '#EF4444' }]}>→</Text>
               </Pressable>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Dates Modal */}
+      <Modal visible={showDatesModal} transparent animationType="slide" onRequestClose={() => setShowDatesModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>📅 Edit Travel Dates</Text>
+              <Pressable onPress={() => setShowDatesModal(false)} style={styles.modalCloseBtn}>
+                <Text style={styles.modalCloseBtnText}>×</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.datesEditSection}>
+              <Pressable 
+                style={styles.dateEditCard}
+                onPress={() => setShowStartDatePicker(true)}
+              >
+                <View style={styles.dateEditIcon}>
+                  <Text style={styles.dateEditEmoji}>🛫</Text>
+                </View>
+                <View style={styles.dateEditContent}>
+                  <Text style={styles.dateEditLabel}>Start Date</Text>
+                  <Text style={styles.dateEditValue}>{editStartDate || 'Select date'}</Text>
+                </View>
+                <Text style={styles.dateEditArrow}>→</Text>
+              </Pressable>
+
+              <Pressable 
+                style={styles.dateEditCard}
+                onPress={() => setShowEndDatePicker(true)}
+              >
+                <View style={styles.dateEditIcon}>
+                  <Text style={styles.dateEditEmoji}>🛬</Text>
+                </View>
+                <View style={styles.dateEditContent}>
+                  <Text style={styles.dateEditLabel}>End Date</Text>
+                  <Text style={styles.dateEditValue}>{editEndDate || 'Select date'}</Text>
+                </View>
+                <Text style={styles.dateEditArrow}>→</Text>
+              </Pressable>
+
+              {editStartDate && editEndDate && (
+                <View style={styles.durationPreview}>
+                  <Text style={styles.durationPreviewEmoji}>📆</Text>
+                  <Text style={styles.durationPreviewText}>
+                    Trip duration will be updated
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <Pressable 
+              style={[styles.saveButton, (!editStartDate || !editEndDate) && { opacity: 0.5 }]} 
+              onPress={handleUpdateDates}
+              disabled={!editStartDate || !editEndDate}
+            >
+              <Text style={styles.saveButtonText}>Save Dates</Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -674,6 +787,23 @@ export default function HomeScreen({ onBackToHome }) {
           </View>
         </View>
       </Modal>
+
+      {/* Date Pickers */}
+      <DatePickerModal
+        visible={showStartDatePicker}
+        onClose={() => setShowStartDatePicker(false)}
+        onSelect={(date) => setEditStartDate(date)}
+        selectedDate={editStartDate}
+        title="Select Start Date"
+      />
+      <DatePickerModal
+        visible={showEndDatePicker}
+        onClose={() => setShowEndDatePicker(false)}
+        onSelect={(date) => setEditEndDate(date)}
+        selectedDate={editEndDate}
+        title="Select End Date"
+        minDate={editStartDate}
+      />
     </SafeAreaView>
   );
 }
@@ -856,4 +986,39 @@ const createStyles = (colors) => StyleSheet.create({
   confirmCancelText: { color: colors.text, fontSize: 15, fontWeight: '600' },
   confirmActionBtn: { flex: 1, backgroundColor: colors.primary, borderRadius: 12, padding: 14, alignItems: 'center' },
   confirmActionText: { color: colors.bg, fontSize: 15, fontWeight: 'bold' },
+
+  // Add Date Edit styles
+  datesEditSection: { gap: 12, marginBottom: 20 },
+  dateEditCard: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: colors.cardLight, 
+    borderRadius: 14, 
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  dateEditIcon: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 14, 
+    backgroundColor: colors.primaryMuted, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  dateEditEmoji: { fontSize: 22 },
+  dateEditContent: { flex: 1, marginLeft: 14 },
+  dateEditLabel: { color: colors.textMuted, fontSize: 12 },
+  dateEditValue: { color: colors.text, fontSize: 16, fontWeight: '600', marginTop: 4 },
+  dateEditArrow: { color: colors.primary, fontSize: 18, fontWeight: 'bold' },
+  durationPreview: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: colors.primaryMuted, 
+    borderRadius: 12, 
+    padding: 12,
+    gap: 10,
+  },
+  durationPreviewEmoji: { fontSize: 18 },
+  durationPreviewText: { color: colors.primary, fontSize: 14, fontWeight: '500' },
 });
