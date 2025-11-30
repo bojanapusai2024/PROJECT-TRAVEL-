@@ -1,42 +1,19 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useState, useContext } from 'react';
 
-const TravelContext = createContext(null);
+const TravelContext = createContext();
 
 const CURRENCIES = [
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee', flag: '🇮🇳' },
   { code: 'USD', symbol: '$', name: 'US Dollar', flag: '🇺🇸' },
   { code: 'EUR', symbol: '€', name: 'Euro', flag: '🇪🇺' },
   { code: 'GBP', symbol: '£', name: 'British Pound', flag: '🇬🇧' },
   { code: 'JPY', symbol: '¥', name: 'Japanese Yen', flag: '🇯🇵' },
   { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', flag: '🇨🇳' },
-  { code: 'INR', symbol: '₹', name: 'Indian Rupee', flag: '🇮🇳' },
+  { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham', flag: '🇦🇪' },
+  { code: 'THB', symbol: '฿', name: 'Thai Baht', flag: '🇹🇭' },
 ];
 
-export const useTravelContext = () => {
-  const context = useContext(TravelContext);
-  if (!context) {
-    throw new Error('useTravelContext must be used within TravelProvider');
-  }
-  return context;
-};
-
 export function TravelProvider({ children }) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [budget, setBudget] = useState({
-    total: 0,
-    categories: {
-      accommodation: 0,
-      transport: 0,
-      food: 0,
-      activities: 0,
-      shopping: 0,
-      other: 0,
-    }
-  });
-
-  const [expenses, setExpenses] = useState([]);
-  const [packingItems, setPackingItems] = useState([]);
-  const [itinerary, setItinerary] = useState([]);
   const [tripInfo, setTripInfo] = useState({
     destination: '',
     startDate: '',
@@ -48,57 +25,14 @@ export function TravelProvider({ children }) {
     isCompleted: false,
   });
 
+  const [budget, setBudget] = useState({ total: 0, categories: {} });
+  const [expenses, setExpenses] = useState([]);
+  const [packingItems, setPackingItems] = useState([]);
+  const [itinerary, setItinerary] = useState([]);
   const [tripHistory, setTripHistory] = useState([]);
   
-  // Currency state
-  const [currency, setCurrency] = useState(CURRENCIES[0]); // Default USD
-
-  function generateTripCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
-  }
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (isLoaded) {
-      saveData();
-    }
-  }, [budget, expenses, packingItems, itinerary, tripInfo, isLoaded]);
-
-  const loadData = async () => {
-    try {
-      const data = await AsyncStorage.getItem('travelData');
-      if (data) {
-        const parsed = JSON.parse(data);
-        if (parsed.budget) setBudget(parsed.budget);
-        if (parsed.expenses) setExpenses(parsed.expenses);
-        if (parsed.packingItems) setPackingItems(parsed.packingItems);
-        if (parsed.itinerary) setItinerary(parsed.itinerary);
-        if (parsed.tripInfo) setTripInfo(parsed.tripInfo);
-      }
-    } catch (error) {
-      console.log('Error loading data:', error);
-    } finally {
-      setIsLoaded(true);
-    }
-  };
-
-  const saveData = async () => {
-    try {
-      await AsyncStorage.setItem('travelData', JSON.stringify({
-        budget, expenses, packingItems, itinerary, tripInfo
-      }));
-    } catch (error) {
-      console.log('Error saving data:', error);
-    }
-  };
+  // Default currency is now Indian Rupee (first in list)
+  const [currency, setCurrency] = useState(CURRENCIES[0]);
 
   const addExpense = (expense) => {
     setExpenses(prev => [...prev, { ...expense, id: Date.now().toString() }]);
@@ -151,7 +85,6 @@ export function TravelProvider({ children }) {
     ));
   };
 
-  // End trip and add to history
   const endTrip = () => {
     if (tripInfo.destination) {
       const completedTrip = {
@@ -168,13 +101,10 @@ export function TravelProvider({ children }) {
       };
       
       setTripHistory(prev => [completedTrip, ...prev]);
-      
-      // Clear current trip
       clearTrip();
     }
   };
 
-  // Clear current trip data
   const clearTrip = () => {
     setTripInfo({
       destination: '',
@@ -192,38 +122,45 @@ export function TravelProvider({ children }) {
     setItinerary([]);
   };
 
-  // Delete trip from history
   const deleteTripFromHistory = (id) => {
     setTripHistory(prev => prev.filter(trip => trip.id !== id));
   };
 
-  // Format amount with currency
   const formatCurrency = (amount) => {
-    return `${currency.symbol}${amount.toLocaleString()}`;
-  };
-
-  const value = {
-    tripInfo, setTripInfo,
-    budget, setBudget,
-    expenses, addExpense, deleteExpense, getTotalExpenses, getExpensesByCategory,
-    packingItems, addPackingItem, togglePackingItem, deletePackingItem,
-    itinerary, addItineraryItem, deleteItineraryItem, updateItineraryItem,
-    getRemainingBudget,
-    clearTrip,
-    endTrip,
-    tripHistory,
-    deleteTripFromHistory,
-    // Currency
-    currency,
-    setCurrency,
-    currencies: CURRENCIES,
-    formatCurrency,
-    isLoaded,
+    const num = Number(amount) || 0;
+    if (currency.code === 'INR') {
+      // Indian number formatting (lakhs, crores)
+      return `${currency.symbol}${num.toLocaleString('en-IN')}`;
+    }
+    return `${currency.symbol}${num.toLocaleString()}`;
   };
 
   return (
-    <TravelContext.Provider value={value}>
+    <TravelContext.Provider value={{
+      tripInfo, setTripInfo,
+      budget, setBudget,
+      expenses, addExpense, deleteExpense, getTotalExpenses, getExpensesByCategory,
+      packingItems, addPackingItem, togglePackingItem, deletePackingItem,
+      itinerary, addItineraryItem, deleteItineraryItem, updateItineraryItem,
+      getRemainingBudget,
+      clearTrip,
+      endTrip,
+      tripHistory,
+      deleteTripFromHistory,
+      currency,
+      setCurrency,
+      currencies: CURRENCIES,
+      formatCurrency,
+    }}>
       {children}
     </TravelContext.Provider>
   );
-};
+}
+
+export function useTravelContext() {
+  const context = useContext(TravelContext);
+  if (!context) {
+    throw new Error('useTravelContext must be used within a TravelProvider');
+  }
+  return context;
+}
