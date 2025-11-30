@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Animated, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTravelContext } from '../context/TravelContext';
 import { useTheme } from '../context/ThemeContext';
@@ -9,133 +9,245 @@ export default function HomeScreen({ onBackToHome }) {
   const { colors } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
 
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const scaleAnim = useState(new Animated.Value(0.9))[0];
+
   const styles = useMemo(() => createStyles(colors), [colors]);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, tension: 50, friction: 7, useNativeDriver: true }),
+    ]).start();
+  }, []);
 
   const packedCount = packingItems.filter(item => item.packed).length;
   const totalItems = packingItems.length;
+  const packingProgress = totalItems > 0 ? (packedCount / totalItems) * 100 : 0;
   const spentPercentage = budget.total > 0 ? (getTotalExpenses() / budget.total) * 100 : 0;
   const participantCount = (tripInfo.participants?.length || 0) + 1;
+  const remainingBudget = getRemainingBudget();
+
+  // Calculate days until trip
+  const getDaysUntilTrip = () => {
+    if (!tripInfo.startDate) return null;
+    try {
+      const parts = tripInfo.startDate.split(' ');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const startDate = new Date(parseInt(parts[2]), months.indexOf(parts[1]), parseInt(parts[0]));
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const diffTime = startDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    } catch {
+      return null;
+    }
+  };
+
+  const daysUntil = getDaysUntilTrip();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContent}
+        bounces={false}
+      >
         {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>{tripInfo.name || 'Your Trip'}</Text>
-            <Text style={styles.title}>Dashboard ✈️</Text>
+        <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.headerLabel}>YOUR TRIP</Text>
+              <Text style={styles.headerTitle}>{tripInfo.destination || 'My Adventure'}</Text>
+            </View>
+            <Pressable style={styles.backButton} onPress={onBackToHome}>
+              <Text style={styles.backButtonText}>✕</Text>
+            </Pressable>
           </View>
-          <View style={styles.tripBadge}>
-            <Text style={styles.tripBadgeText}>
-              {participantCount} {participantCount === 1 ? 'Traveler' : 'Travelers'}
-            </Text>
-          </View>
-        </View>
+          
+          {/* Trip Status Badge */}
+          {daysUntil !== null && (
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusEmoji}>
+                {daysUntil < 0 ? '✈️' : daysUntil === 0 ? '🎉' : '📅'}
+              </Text>
+              <Text style={styles.statusText}>
+                {daysUntil < 0 
+                  ? 'Trip in progress!' 
+                  : daysUntil === 0 
+                    ? 'Trip starts today!' 
+                    : `${daysUntil} days to go`}
+              </Text>
+            </View>
+          )}
+        </Animated.View>
 
-        {/* Destination Card */}
-        <View style={styles.destinationCard}>
-          {isEditing ? (
-            <View style={styles.editContainer}>
-              <TextInput
-                style={styles.destinationInput}
-                placeholder="Enter destination..."
-                placeholderTextColor={colors.textMuted}
-                value={tripInfo.destination}
-                onChangeText={(text) => setTripInfo({...tripInfo, destination: text})}
-              />
-              <View style={styles.dateInputRow}>
-                <TextInput style={styles.dateInput} placeholder="Start date" placeholderTextColor={colors.textMuted} value={tripInfo.startDate} onChangeText={(text) => setTripInfo({...tripInfo, startDate: text})} />
-                <View style={styles.dateArrow}><Text style={styles.dateArrowText}>→</Text></View>
-                <TextInput style={styles.dateInput} placeholder="End date" placeholderTextColor={colors.textMuted} value={tripInfo.endDate} onChangeText={(text) => setTripInfo({...tripInfo, endDate: text})} />
-              </View>
-              <TouchableOpacity style={styles.saveButton} onPress={() => setIsEditing(false)}>
-                <Text style={styles.saveButtonText}>Save Trip</Text>
+        {/* Hero Card */}
+        <Animated.View style={[styles.heroCard, { transform: [{ scale: scaleAnim }] }]}>
+          <View style={styles.heroGlow} />
+          <View style={styles.heroHeader}>
+            <View style={styles.heroIconBg}>
+              <Text style={styles.heroIcon}>🌍</Text>
+            </View>
+            <View style={styles.heroInfo}>
+              <Text style={styles.heroDestination}>{tripInfo.destination || 'Destination'}</Text>
+              {tripInfo.startDate && tripInfo.endDate && (
+                <Text style={styles.heroDates}>📅 {tripInfo.startDate} → {tripInfo.endDate}</Text>
+              )}
+            </View>
+          </View>
+          
+          <View style={styles.heroStats}>
+            <View style={styles.heroStatItem}>
+              <Text style={styles.heroStatValue}>{participantCount}</Text>
+              <Text style={styles.heroStatLabel}>Travelers</Text>
+            </View>
+            <View style={styles.heroStatDivider} />
+            <View style={styles.heroStatItem}>
+              <Text style={styles.heroStatValue}>{itinerary.length}</Text>
+              <Text style={styles.heroStatLabel}>Activities</Text>
+            </View>
+            <View style={styles.heroStatDivider} />
+            <View style={styles.heroStatItem}>
+              <Text style={styles.heroStatValue}>{packedCount}/{totalItems}</Text>
+              <Text style={styles.heroStatLabel}>Packed</Text>
+            </View>
+          </View>
+
+          {/* Trip Code */}
+          <View style={styles.tripCodeSection}>
+            <Text style={styles.tripCodeLabel}>Share Code</Text>
+            <View style={styles.tripCodeBox}>
+              <Text style={styles.tripCode}>{tripInfo.tripCode || 'ABC123'}</Text>
+              <TouchableOpacity style={styles.copyButton}>
+                <Text style={styles.copyButtonText}>📋</Text>
               </TouchableOpacity>
             </View>
-          ) : (
-            <TouchableOpacity onPress={() => setIsEditing(true)} activeOpacity={0.8}>
-              <Text style={styles.destinationLabel}>DESTINATION</Text>
-              <Text style={styles.destinationName}>{tripInfo.destination || 'Tap to set destination'}</Text>
-              <View style={styles.dateDisplay}>
-                <View style={styles.dateBadge}>
-                  <Text style={styles.dateBadgeText}>📅 {tripInfo.startDate || 'Start'} — {tripInfo.endDate || 'End'}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        </Animated.View>
 
-        {/* Stats */}
-        <View style={styles.statsContainer}>
-          <Text style={styles.sectionTitle}>Overview</Text>
-          
-          <View style={styles.budgetCard}>
-            <View style={styles.budgetHeader}>
-              <View>
-                <Text style={styles.budgetLabel}>TOTAL BUDGET</Text>
-                <Text style={styles.budgetAmount}>${budget.total.toLocaleString()}</Text>
+        {/* Quick Stats Grid */}
+        <View style={styles.statsGrid}>
+          {/* Budget Card */}
+          <Animated.View style={[styles.statCard, styles.statCardBudget, { opacity: fadeAnim }]}>
+            <View style={styles.statCardHeader}>
+              <View style={styles.statCardIconBg}>
+                <Text style={styles.statCardIcon}>💰</Text>
               </View>
-              <View style={styles.budgetPercentage}>
-                <Text style={styles.percentageText}>{spentPercentage.toFixed(0)}%</Text>
-                <Text style={styles.percentageLabel}>spent</Text>
-              </View>
+              <Text style={styles.statCardTitle}>Budget</Text>
             </View>
+            <Text style={styles.statCardValue}>${budget.total.toLocaleString()}</Text>
             <View style={styles.progressContainer}>
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${Math.min(spentPercentage, 100)}%` }]} />
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { width: `${Math.min(spentPercentage, 100)}%`, backgroundColor: spentPercentage > 90 ? '#EF4444' : colors.primary }]} />
+              </View>
+              <Text style={styles.progressText}>{spentPercentage.toFixed(0)}% spent</Text>
+            </View>
+            <View style={styles.statCardFooter}>
+              <View style={styles.statMini}>
+                <Text style={styles.statMiniLabel}>Spent</Text>
+                <Text style={styles.statMiniValue}>${getTotalExpenses()}</Text>
+              </View>
+              <View style={styles.statMini}>
+                <Text style={styles.statMiniLabel}>Left</Text>
+                <Text style={[styles.statMiniValue, { color: remainingBudget >= 0 ? colors.primary : '#EF4444' }]}>${remainingBudget}</Text>
               </View>
             </View>
-            <View style={styles.budgetFooter}>
-              <View style={styles.budgetStat}>
-                <Text style={styles.budgetStatValue}>${getTotalExpenses()}</Text>
-                <Text style={styles.budgetStatLabel}>Spent</Text>
-              </View>
-              <View style={styles.budgetDivider} />
-              <View style={styles.budgetStat}>
-                <Text style={[styles.budgetStatValue, { color: colors.primary }]}>${getRemainingBudget()}</Text>
-                <Text style={styles.budgetStatLabel}>Remaining</Text>
-              </View>
-            </View>
-          </View>
+          </Animated.View>
 
-          <View style={styles.miniStatsRow}>
-            <View style={styles.miniStatCard}>
-              <View style={styles.miniStatIcon}><Text style={styles.miniStatEmoji}>🎒</Text></View>
-              <View style={styles.miniStatContent}>
-                <Text style={styles.miniStatValue}>{packedCount}/{totalItems}</Text>
-                <Text style={styles.miniStatLabel}>Items Packed</Text>
+          {/* Packing Card */}
+          <Animated.View style={[styles.statCard, styles.statCardPacking, { opacity: fadeAnim }]}>
+            <View style={styles.statCardHeader}>
+              <View style={styles.statCardIconBg}>
+                <Text style={styles.statCardIcon}>🎒</Text>
               </View>
+              <Text style={styles.statCardTitle}>Packing</Text>
             </View>
-            
-            <View style={styles.miniStatCard}>
-              <View style={styles.miniStatIcon}><Text style={styles.miniStatEmoji}>📍</Text></View>
-              <View style={styles.miniStatContent}>
-                <Text style={styles.miniStatValue}>{itinerary.length}</Text>
-                <Text style={styles.miniStatLabel}>Stops Planned</Text>
-              </View>
+            <View style={styles.packingCircle}>
+              <Text style={styles.packingPercent}>{packingProgress.toFixed(0)}%</Text>
             </View>
-          </View>
+            <Text style={styles.packingStatus}>
+              {packingProgress === 100 ? '✅ All packed!' : `${totalItems - packedCount} items left`}
+            </Text>
+          </Animated.View>
         </View>
 
-        {/* Trip Code */}
-        <View style={styles.shareCard}>
-          <View style={styles.shareContent}>
-            <Text style={styles.shareTitle}>Share Trip</Text>
-            <Text style={styles.shareDescription}>Invite friends with this code</Text>
+        {/* Activity Overview */}
+        <Animated.View style={[styles.activitySection, { opacity: fadeAnim }]}>
+          <Text style={styles.sectionTitle}>📍 Activity Overview</Text>
+          <View style={styles.activityCard}>
+            {itinerary.length === 0 ? (
+              <View style={styles.emptyActivity}>
+                <Text style={styles.emptyActivityEmoji}>🗺️</Text>
+                <Text style={styles.emptyActivityText}>No activities planned yet</Text>
+                <Text style={styles.emptyActivityHint}>Go to Itinerary to add activities</Text>
+              </View>
+            ) : (
+              <View style={styles.activityList}>
+                {itinerary.slice(0, 4).map((item, index) => (
+                  <View key={item.id} style={styles.activityItem}>
+                    <View style={styles.activityDayBadge}>
+                      <Text style={styles.activityDayText}>D{item.dayNumber}</Text>
+                    </View>
+                    <Text style={styles.activityName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.activityTime}>{item.time || '--:--'}</Text>
+                  </View>
+                ))}
+                {itinerary.length > 4 && (
+                  <Text style={styles.moreActivities}>+{itinerary.length - 4} more activities</Text>
+                )}
+              </View>
+            )}
           </View>
-          <View style={styles.codeContainer}>
-            <Text style={styles.tripCode}>{tripInfo.tripCode || 'ABC123'}</Text>
-          </View>
-        </View>
+        </Animated.View>
 
-        {/* Back Button */}
-        {onBackToHome && (
-          <TouchableOpacity style={styles.backButton} onPress={onBackToHome}>
-            <Text style={styles.backButtonText}>← Back to Home</Text>
-          </TouchableOpacity>
+        {/* Participants */}
+        {tripInfo.participants && tripInfo.participants.length > 0 && (
+          <Animated.View style={[styles.participantsSection, { opacity: fadeAnim }]}>
+            <Text style={styles.sectionTitle}>👥 Travel Buddies</Text>
+            <View style={styles.participantsCard}>
+              <View style={styles.participantsList}>
+                <View style={styles.participantItem}>
+                  <View style={[styles.participantAvatar, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.participantInitial}>You</Text>
+                  </View>
+                  <Text style={styles.participantName}>You (Organizer)</Text>
+                </View>
+                {tripInfo.participants.map((p, index) => (
+                  <View key={index} style={styles.participantItem}>
+                    <View style={styles.participantAvatar}>
+                      <Text style={styles.participantInitial}>{p.name?.charAt(0) || '?'}</Text>
+                    </View>
+                    <Text style={styles.participantName}>{p.name}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </Animated.View>
         )}
 
-        <View style={{ height: 120 }} />
+        {/* Quick Actions */}
+        <Animated.View style={[styles.quickActions, { opacity: fadeAnim }]}>
+          <Text style={styles.sectionTitle}>⚡ Quick Actions</Text>
+          <View style={styles.actionsGrid}>
+            {[
+              { icon: '💳', label: 'Add Expense', color: '#F59E0B' },
+              { icon: '🎒', label: 'Pack Item', color: '#10B981' },
+              { icon: '📍', label: 'Add Activity', color: '#3B82F6' },
+              { icon: '📤', label: 'Share Trip', color: '#8B5CF6' },
+            ].map((action, index) => (
+              <TouchableOpacity key={index} style={styles.actionButton}>
+                <View style={[styles.actionIconBg, { backgroundColor: action.color + '20' }]}>
+                  <Text style={styles.actionIcon}>{action.icon}</Text>
+                </View>
+                <Text style={styles.actionLabel}>{action.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Animated.View>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -143,56 +255,94 @@ export default function HomeScreen({ onBackToHome }) {
 
 const createStyles = (colors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 20 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingTop: 20, paddingBottom: 10 },
-  greeting: { color: colors.primary, fontSize: 14, fontWeight: '600', letterSpacing: 1 },
-  title: { color: colors.text, fontSize: 28, fontWeight: 'bold', marginTop: 4 },
-  tripBadge: { backgroundColor: colors.primaryMuted, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: colors.primaryBorder },
-  tripBadgeText: { color: colors.primary, fontSize: 11, fontWeight: 'bold', letterSpacing: 1 },
-  destinationCard: { marginTop: 20, backgroundColor: colors.card, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: colors.primaryBorder },
-  destinationLabel: { color: colors.primary, fontSize: 11, fontWeight: '700', letterSpacing: 2 },
-  destinationName: { color: colors.text, fontSize: 26, fontWeight: 'bold', marginTop: 8 },
-  dateDisplay: { marginTop: 16 },
-  dateBadge: { backgroundColor: colors.primaryMuted, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.primaryBorder },
-  dateBadgeText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
-  editContainer: { gap: 12 },
-  destinationInput: { backgroundColor: colors.cardLight, color: colors.text, fontSize: 18, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: colors.primaryBorder },
-  dateInputRow: { flexDirection: 'row', alignItems: 'center' },
-  dateInput: { flex: 1, backgroundColor: colors.cardLight, color: colors.text, fontSize: 14, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.primaryBorder },
-  dateArrow: { paddingHorizontal: 12 },
-  dateArrowText: { color: colors.primary, fontSize: 18 },
-  saveButton: { backgroundColor: colors.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 4 },
-  saveButtonText: { color: colors.bg, fontSize: 16, fontWeight: 'bold' },
-  statsContainer: { marginTop: 30 },
-  sectionTitle: { color: colors.text, fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
-  budgetCard: { backgroundColor: colors.card, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: colors.primaryBorder },
-  budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  budgetLabel: { color: colors.textMuted, fontSize: 11, letterSpacing: 1.5, fontWeight: '600' },
-  budgetAmount: { color: colors.text, fontSize: 32, fontWeight: 'bold', marginTop: 4 },
-  budgetPercentage: { alignItems: 'flex-end' },
-  percentageText: { color: colors.primary, fontSize: 24, fontWeight: 'bold' },
-  percentageLabel: { color: colors.textMuted, fontSize: 12 },
-  progressContainer: { marginTop: 20 },
-  progressTrack: { height: 8, backgroundColor: colors.cardLight, borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 4 },
-  budgetFooter: { flexDirection: 'row', marginTop: 20, alignItems: 'center' },
-  budgetStat: { flex: 1 },
-  budgetStatValue: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
-  budgetStatLabel: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  budgetDivider: { width: 1, height: 40, backgroundColor: colors.primaryBorder, marginHorizontal: 20 },
-  miniStatsRow: { flexDirection: 'row', marginTop: 12, gap: 12 },
-  miniStatCard: { flex: 1, backgroundColor: colors.card, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
-  miniStatIcon: { width: 44, height: 44, backgroundColor: colors.primaryMuted, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  miniStatEmoji: { fontSize: 20 },
-  miniStatContent: { marginLeft: 12, flex: 1 },
-  miniStatValue: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
-  miniStatLabel: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
-  shareCard: { marginTop: 24, backgroundColor: colors.card, borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: colors.primaryBorder },
-  shareContent: { flex: 1 },
-  shareTitle: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
-  shareDescription: { color: colors.textMuted, fontSize: 12, marginTop: 4 },
-  codeContainer: { backgroundColor: colors.primaryMuted, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.primary },
-  tripCode: { color: colors.primary, fontSize: 18, fontWeight: 'bold', letterSpacing: 2 },
-  backButton: { marginTop: 24, padding: 16, alignItems: 'center' },
-  backButtonText: { color: colors.textMuted, fontSize: 14 },
+  scrollContent: { paddingBottom: 20 },
+
+  // Header
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  headerLabel: { color: colors.primary, fontSize: 11, fontWeight: '700', letterSpacing: 1.5 },
+  headerTitle: { color: colors.text, fontSize: 28, fontWeight: 'bold', marginTop: 4 },
+  backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
+  backButtonText: { color: colors.textMuted, fontSize: 18 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primaryMuted, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, alignSelf: 'flex-start', marginTop: 12, borderWidth: 1, borderColor: colors.primaryBorder },
+  statusEmoji: { fontSize: 16, marginRight: 8 },
+  statusText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
+
+  // Hero Card
+  heroCard: { marginHorizontal: 20, backgroundColor: colors.primary, borderRadius: 24, padding: 20, marginBottom: 20, overflow: 'hidden' },
+  heroGlow: { position: 'absolute', top: -50, right: -50, width: 150, height: 150, backgroundColor: '#FFFFFF', opacity: 0.1, borderRadius: 75 },
+  heroHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  heroIconBg: { width: 56, height: 56, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  heroIcon: { fontSize: 28 },
+  heroInfo: { marginLeft: 14, flex: 1 },
+  heroDestination: { color: colors.bg, fontSize: 22, fontWeight: 'bold' },
+  heroDates: { color: 'rgba(0,0,0,0.5)', fontSize: 13, marginTop: 4 },
+  heroStats: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 16 },
+  heroStatItem: { flex: 1, alignItems: 'center' },
+  heroStatValue: { color: colors.bg, fontSize: 22, fontWeight: 'bold' },
+  heroStatLabel: { color: 'rgba(0,0,0,0.5)', fontSize: 11, marginTop: 2 },
+  heroStatDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
+  tripCodeSection: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.15)' },
+  tripCodeLabel: { color: 'rgba(0,0,0,0.5)', fontSize: 11, marginBottom: 8 },
+  tripCodeBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12, padding: 12 },
+  tripCode: { flex: 1, color: colors.bg, fontSize: 20, fontWeight: 'bold', letterSpacing: 3 },
+  copyButton: { padding: 4 },
+  copyButtonText: { fontSize: 18 },
+
+  // Stats Grid
+  statsGrid: { flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginBottom: 20 },
+  statCard: { flex: 1, backgroundColor: colors.card, borderRadius: 20, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
+  statCardBudget: {},
+  statCardPacking: { alignItems: 'center' },
+  statCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  statCardIconBg: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
+  statCardIcon: { fontSize: 18 },
+  statCardTitle: { color: colors.textMuted, fontSize: 13, fontWeight: '600', marginLeft: 10 },
+  statCardValue: { color: colors.text, fontSize: 24, fontWeight: 'bold' },
+  progressContainer: { marginTop: 12 },
+  progressBar: { height: 6, backgroundColor: colors.cardLight, borderRadius: 3, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 3 },
+  progressText: { color: colors.textMuted, fontSize: 11, marginTop: 6 },
+  statCardFooter: { flexDirection: 'row', marginTop: 12, gap: 16 },
+  statMini: {},
+  statMiniLabel: { color: colors.textMuted, fontSize: 10 },
+  statMiniValue: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  packingCircle: { width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginVertical: 8 },
+  packingPercent: { color: colors.primary, fontSize: 22, fontWeight: 'bold' },
+  packingStatus: { color: colors.textMuted, fontSize: 12, marginTop: 8 },
+
+  // Section Title
+  sectionTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+
+  // Activity Section
+  activitySection: { paddingHorizontal: 20, marginBottom: 20 },
+  activityCard: { backgroundColor: colors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
+  emptyActivity: { alignItems: 'center', paddingVertical: 20 },
+  emptyActivityEmoji: { fontSize: 32, marginBottom: 8 },
+  emptyActivityText: { color: colors.textMuted, fontSize: 14 },
+  emptyActivityHint: { color: colors.textLight, fontSize: 12, marginTop: 4 },
+  activityList: { gap: 10 },
+  activityItem: { flexDirection: 'row', alignItems: 'center' },
+  activityDayBadge: { backgroundColor: colors.primaryMuted, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginRight: 10 },
+  activityDayText: { color: colors.primary, fontSize: 11, fontWeight: '700' },
+  activityName: { flex: 1, color: colors.text, fontSize: 14 },
+  activityTime: { color: colors.textMuted, fontSize: 12 },
+  moreActivities: { color: colors.primary, fontSize: 13, fontWeight: '500', textAlign: 'center', marginTop: 8 },
+
+  // Participants
+  participantsSection: { paddingHorizontal: 20, marginBottom: 20 },
+  participantsCard: { backgroundColor: colors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
+  participantsList: { gap: 12 },
+  participantItem: { flexDirection: 'row', alignItems: 'center' },
+  participantAvatar: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.cardLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  participantInitial: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  participantName: { color: colors.text, fontSize: 15 },
+
+  // Quick Actions
+  quickActions: { paddingHorizontal: 20 },
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  actionButton: { width: '47%', backgroundColor: colors.card, borderRadius: 16, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
+  actionIconBg: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  actionIcon: { fontSize: 22 },
+  actionLabel: { color: colors.text, fontSize: 13, fontWeight: '500' },
 });
