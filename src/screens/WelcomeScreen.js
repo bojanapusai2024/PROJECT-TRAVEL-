@@ -9,10 +9,19 @@ import { useTravelContext } from '../context/TravelContext';
 
 const { width } = Dimensions.get('window');
 
+const TRIP_TYPES = [
+  { key: 'solo', label: 'Solo Trip', emoji: '🧑', description: 'Just me, exploring the world', color: '#3B82F6' },
+  { key: 'couple', label: 'Couple Trip', emoji: '💑', description: 'Romantic getaway for two', color: '#EC4899' },
+  { key: 'friends', label: 'Friends Trip', emoji: '👥', description: 'Adventure with friends', color: '#10B981' },
+  { key: 'family', label: 'Family Trip', emoji: '👨‍👩‍👧‍👦', description: 'Quality time with family', color: '#F59E0B' },
+  { key: 'group', label: 'Group Trip', emoji: '🎉', description: 'Large group adventure', color: '#8B5CF6' },
+];
+
 export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProfile, hasActiveTrip }) {
   const { colors } = useTheme();
   const { tripInfo, getTotalExpenses, packingItems, itinerary } = useTravelContext();
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showTripTypeModal, setShowTripTypeModal] = useState(false);
   const [tripCode, setTripCode] = useState('');
   
   // Animation values
@@ -70,6 +79,15 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     }
   };
 
+  const handlePlanTripPress = () => {
+    setShowTripTypeModal(true);
+  };
+
+  const handleTripTypeSelect = (tripType) => {
+    setShowTripTypeModal(false);
+    onPlanTrip(tripType);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* Header with Profile */}
@@ -88,7 +106,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
         </Pressable>
       </View>
 
-      {/* Background Elements - Fixed position */}
+      {/* Background Elements */}
       <View style={styles.bgElements} pointerEvents="none">
         <View style={[styles.bgCircle, styles.bgCircle1]} />
         <View style={[styles.bgCircle, styles.bgCircle2]} />
@@ -186,7 +204,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           <Animated.View style={{ transform: [{ scale: hasActiveTrip ? scaleAnim2 : scaleAnim1 }] }}>
             <Pressable 
               style={({ pressed }) => [styles.optionCard, pressed && styles.cardPressed]} 
-              onPress={onPlanTrip}
+              onPress={handlePlanTripPress}
             >
               <View style={styles.optionGlow} />
               <View style={styles.optionIconBg}>
@@ -271,6 +289,52 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
         </View>
       </ScrollView>
 
+      {/* Trip Type Selection Modal */}
+      <Modal animationType="slide" transparent visible={showTripTypeModal} onRequestClose={() => setShowTripTypeModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.tripTypeModalContent}>
+            <View style={styles.modalHandle} />
+            
+            <View style={styles.tripTypeHeader}>
+              <View>
+                <Text style={styles.tripTypeTitle}>Choose Trip Type</Text>
+                <Text style={styles.tripTypeSubtitle}>Select who's traveling with you</Text>
+              </View>
+              <Pressable onPress={() => setShowTripTypeModal(false)} style={styles.modalCloseBtn}>
+                <Text style={styles.modalCloseBtnText}>×</Text>
+              </Pressable>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.tripTypeList}>
+                {TRIP_TYPES.map((type, index) => (
+                  <Pressable
+                    key={type.key}
+                    style={({ pressed }) => [
+                      styles.tripTypeCard,
+                      { borderLeftColor: type.color },
+                      pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] }
+                    ]}
+                    onPress={() => handleTripTypeSelect(type.key)}
+                  >
+                    <View style={[styles.tripTypeIconBg, { backgroundColor: type.color + '20' }]}>
+                      <Text style={styles.tripTypeEmoji}>{type.emoji}</Text>
+                    </View>
+                    <View style={styles.tripTypeInfo}>
+                      <Text style={styles.tripTypeLabel}>{type.label}</Text>
+                      <Text style={styles.tripTypeDesc}>{type.description}</Text>
+                    </View>
+                    <View style={[styles.tripTypeArrow, { backgroundColor: type.color + '20' }]}>
+                      <Text style={[styles.tripTypeArrowText, { color: type.color }]}>→</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {/* Join Trip Modal */}
       <Modal animationType="slide" transparent visible={showJoinModal} onRequestClose={() => setShowJoinModal(false)}>
         <View style={styles.modalOverlay}>
@@ -293,7 +357,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
               maxLength={8}
             />
             <Pressable 
-              style={({ pressed }) => [styles.joinButton, !tripCode.trim() && styles.joinButtonDisabled, pressed && styles.buttonPressed]} 
+              style={({ pressed }) => [styles.joinButton, !tripCode.trim() && styles.joinButtonDisabled, pressed && { opacity: 0.8 }]} 
               onPress={handleJoinTrip} 
               disabled={!tripCode.trim()}
             >
@@ -310,20 +374,10 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 }
 
 const createStyles = (colors) => StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.bg,
-  },
+  container: { flex: 1, backgroundColor: colors.bg },
   
   // Top Bar
-  topBar: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: 20, 
-    paddingVertical: 12,
-    backgroundColor: colors.bg,
-  },
+  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
   logoContainer: { flexDirection: 'row', alignItems: 'center' },
   logoEmoji: { fontSize: 28, marginRight: 8 },
   logoText: { fontSize: 22, fontWeight: 'bold', color: colors.text },
@@ -332,88 +386,44 @@ const createStyles = (colors) => StyleSheet.create({
   profileAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primary },
   profileEmoji: { fontSize: 22 },
 
-  // ScrollView
-  scrollView: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  scrollContent: { 
-    flexGrow: 1,
-    paddingBottom: 40,
-    backgroundColor: colors.bg,
-  },
+  scrollView: { flex: 1, backgroundColor: colors.bg },
+  scrollContent: { flexGrow: 1, paddingBottom: 40, backgroundColor: colors.bg },
   
-  // Background - Fixed behind content
-  bgElements: { 
-    position: 'absolute', 
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: -1,
-    overflow: 'hidden',
-  },
-  bgCircle: { 
-    position: 'absolute', 
-    borderRadius: 999, 
-    backgroundColor: colors.primary, 
-    opacity: 0.04,
-  },
+  bgElements: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: -1, overflow: 'hidden' },
+  bgCircle: { position: 'absolute', borderRadius: 999, backgroundColor: colors.primary, opacity: 0.04 },
   bgCircle1: { width: 400, height: 400, top: -100, right: -150 },
   bgCircle2: { width: 300, height: 300, top: 400, left: -150 },
   bgCircle3: { width: 200, height: 200, top: 700, right: -50 },
 
-  // Illustration Section
-  illustrationSection: { 
-    alignItems: 'center', 
-    paddingVertical: 20,
-    backgroundColor: colors.bg,
-  },
+  // Illustration
+  illustrationSection: { alignItems: 'center', paddingVertical: 20, backgroundColor: colors.bg },
   illustrationContainer: { width: 220, height: 220, alignItems: 'center', justifyContent: 'center' },
   outerRing: { position: 'absolute', width: 200, height: 200, borderRadius: 100, borderWidth: 2, borderColor: colors.primary, opacity: 0.3, borderStyle: 'dashed' },
   middleRing: { position: 'absolute', width: 160, height: 160, borderRadius: 80, borderWidth: 1, borderColor: colors.primaryBorder, opacity: 0.5 },
-  travelerCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.primaryBorder, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 15, elevation: 8 },
+  travelerCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.primaryBorder },
   travelerEmoji: { fontSize: 60 },
-  floatingElement: { position: 'absolute', width: 48, height: 48, borderRadius: 24, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primaryBorder, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 },
+  floatingElement: { position: 'absolute', width: 48, height: 48, borderRadius: 24, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primaryBorder },
   floatingElement1: { top: 0, left: 20 },
   floatingElement2: { top: 30, right: 10 },
   floatingElement3: { bottom: 20, left: 10 },
   floatingElement4: { bottom: 0, right: 30 },
   floatingEmoji: { fontSize: 22 },
 
-  // Actions Container
-  actionsContainer: { 
-    paddingHorizontal: 20, 
-    gap: 14,
-    backgroundColor: colors.bg,
-  },
-
-  // Card Press State
+  // Actions
+  actionsContainer: { paddingHorizontal: 20, gap: 14, backgroundColor: colors.bg },
   cardPressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
-  buttonPressed: { opacity: 0.8 },
 
-  // Current Trip Card
-  currentTripCard: { backgroundColor: colors.primary, borderRadius: 24, padding: 20, overflow: 'hidden', shadowColor: colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 8 },
-  currentTripGlow: { position: 'absolute', top: -40, right: -40, width: 150, height: 150, backgroundColor: '#FFFFFF', opacity: 0.15, borderRadius: 75 },
-  currentTripHeader: { flexDirection: 'row', alignItems: 'center' },
-  currentTripIconBg: { width: 50, height: 50, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
+  currentTripCard: { backgroundColor: colors.card, borderRadius: 20, padding: 18, flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderColor: colors.primary, overflow: 'hidden' },
+  currentTripGlow: { position: 'absolute', top: -30, right: -30, width: 100, height: 100, backgroundColor: colors.primary, opacity: 0.1, borderRadius: 50 },
+  currentTripHeader: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  currentTripIconBg: { width: 50, height: 50, borderRadius: 16, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
   currentTripIcon: { fontSize: 26 },
   currentTripInfo: { flex: 1, marginLeft: 14 },
-  currentTripLabel: { fontSize: 10, color: 'rgba(0,0,0,0.5)', fontWeight: '700', letterSpacing: 1 },
-  currentTripName: { fontSize: 20, fontWeight: 'bold', color: colors.bg, marginTop: 2 },
-  currentTripArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center' },
-  arrowText: { fontSize: 18, color: colors.bg, fontWeight: 'bold' },
-  currentTripDates: { flexDirection: 'row', alignItems: 'center', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.2)' },
-  currentTripDateIcon: { fontSize: 16, marginRight: 8 },
-  currentTripDateText: { fontSize: 14, color: 'rgba(0,0,0,0.6)', fontWeight: '500' },
-  currentTripStats: { flexDirection: 'row', marginTop: 16, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 14 },
-  tripStatItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  tripStatEmoji: { fontSize: 18, marginRight: 8 },
-  tripStatValue: { fontSize: 16, fontWeight: 'bold', color: colors.bg },
-  tripStatLabel: { fontSize: 10, color: 'rgba(0,0,0,0.5)' },
-  tripStatDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.3)', marginHorizontal: 8 },
+  currentTripLabel: { fontSize: 10, color: colors.primary, fontWeight: '700', letterSpacing: 1 },
+  currentTripName: { fontSize: 18, fontWeight: 'bold', color: colors.text, marginTop: 2 },
+  currentTripArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
+  arrowText: { fontSize: 18, color: colors.primary, fontWeight: 'bold' },
 
-  // Option Cards
   optionCard: { backgroundColor: colors.card, borderRadius: 20, padding: 18, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder, overflow: 'hidden' },
   optionGlow: { position: 'absolute', top: -50, right: -50, width: 150, height: 150, backgroundColor: colors.primary, opacity: 0.08, borderRadius: 75 },
   optionIconBg: { width: 50, height: 50, borderRadius: 16, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
@@ -424,12 +434,8 @@ const createStyles = (colors) => StyleSheet.create({
   optionArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
   arrowTextSecondary: { fontSize: 18, color: colors.primary, fontWeight: 'bold' },
 
-  // Features Section
-  featuresSection: { 
-    marginTop: 40, 
-    paddingHorizontal: 20,
-    backgroundColor: colors.bg,
-  },
+  // Features
+  featuresSection: { marginTop: 40, paddingHorizontal: 20, backgroundColor: colors.bg },
   featuresTitle: { fontSize: 22, fontWeight: 'bold', color: colors.text, textAlign: 'center' },
   featuresSubtitle: { fontSize: 14, color: colors.textMuted, textAlign: 'center', marginTop: 6, marginBottom: 24 },
   featuresGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
@@ -440,11 +446,7 @@ const createStyles = (colors) => StyleSheet.create({
   featureDesc: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
 
   // Why Section
-  whySection: { 
-    marginTop: 30, 
-    paddingHorizontal: 20,
-    backgroundColor: colors.bg,
-  },
+  whySection: { marginTop: 30, paddingHorizontal: 20, backgroundColor: colors.bg },
   whyTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 16 },
   whyList: { backgroundColor: colors.card, borderRadius: 20, padding: 6, borderWidth: 1, borderColor: colors.primaryBorder },
   whyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: colors.primaryBorder },
@@ -452,20 +454,15 @@ const createStyles = (colors) => StyleSheet.create({
   whyItemText: { fontSize: 15, color: colors.text, flex: 1 },
 
   // Footer
-  footer: { 
-    alignItems: 'center', 
-    marginTop: 40, 
-    paddingVertical: 20,
-    backgroundColor: colors.bg,
-  },
+  footer: { alignItems: 'center', marginTop: 40, paddingVertical: 20, backgroundColor: colors.bg },
   footerLogo: { fontSize: 32 },
   footerText: { fontSize: 16, fontWeight: 'bold', color: colors.textMuted, marginTop: 8 },
   footerVersion: { fontSize: 12, color: colors.textLight, marginTop: 4 },
 
-  // Modal
+  // Modal General
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.8)' },
   modalContent: { backgroundColor: colors.card, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, alignItems: 'center' },
-  modalHandle: { width: 40, height: 4, backgroundColor: colors.textMuted, borderRadius: 2, marginBottom: 24 },
+  modalHandle: { width: 40, height: 4, backgroundColor: colors.textMuted, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   modalIconContainer: { marginBottom: 20 },
   modalIconBg: { width: 80, height: 80, borderRadius: 24, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primaryBorder },
   modalIcon: { fontSize: 40 },
@@ -477,4 +474,21 @@ const createStyles = (colors) => StyleSheet.create({
   joinButtonText: { fontSize: 18, fontWeight: 'bold', color: colors.bg },
   cancelButton: { padding: 16 },
   cancelButtonText: { fontSize: 16, color: colors.textMuted },
+
+  // Trip Type Modal
+  tripTypeModalContent: { backgroundColor: colors.card, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '85%' },
+  tripTypeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  tripTypeTitle: { fontSize: 26, fontWeight: 'bold', color: colors.text },
+  tripTypeSubtitle: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
+  modalCloseBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.cardLight, alignItems: 'center', justifyContent: 'center' },
+  modalCloseBtnText: { color: colors.textMuted, fontSize: 22 },
+  tripTypeList: { gap: 12 },
+  tripTypeCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardLight, borderRadius: 16, padding: 16, borderLeftWidth: 4 },
+  tripTypeIconBg: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  tripTypeEmoji: { fontSize: 28 },
+  tripTypeInfo: { flex: 1, marginLeft: 14 },
+  tripTypeLabel: { fontSize: 17, fontWeight: 'bold', color: colors.text },
+  tripTypeDesc: { fontSize: 13, color: colors.textMuted, marginTop: 4 },
+  tripTypeArrow: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  tripTypeArrowText: { fontSize: 18, fontWeight: 'bold' },
 });
