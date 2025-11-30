@@ -3,15 +3,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ThemeContext = createContext(null);
 
-// Custom Dark Theme - Charcoal & Teal
+// Custom Dark Theme - Charcoal & Light Green
 const darkColors = {
   bg: '#0A0A0A',                    // Pure dark black
   card: '#1A1A1A',                  // Dark gray card
   cardLight: '#2A2A2A',             // Lighter gray
-  primary: '#00D9A5',               // Vibrant teal/mint
-  primaryMuted: 'rgba(0, 217, 165, 0.12)',
-  primaryBorder: 'rgba(0, 217, 165, 0.25)',
-  secondary: '#FF6B9D',             // Soft pink accent
+  primary: '#90EE90',               // Light green (LightGreen)
+  primaryMuted: 'rgba(144, 238, 144, 0.12)',
+  primaryBorder: 'rgba(144, 238, 144, 0.25)',
+  secondary: '#98FB98',             // Pale green accent
   text: '#FAFAFA',                  // Pure white
   textMuted: '#888888',             // Medium gray
   textLight: '#555555',             // Dark gray
