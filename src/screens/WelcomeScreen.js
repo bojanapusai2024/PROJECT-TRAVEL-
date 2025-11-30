@@ -19,12 +19,11 @@ const TRIP_TYPES = [
 
 export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProfile, hasActiveTrip }) {
   const { colors } = useTheme();
-  const { tripInfo, getTotalExpenses, packingItems, itinerary } = useTravelContext();
+  const { tripInfo, getTotalExpenses, packingItems, itinerary, expenses } = useTravelContext();
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showTripTypeModal, setShowTripTypeModal] = useState(false);
   const [tripCode, setTripCode] = useState('');
   
-  // Animation values
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim1 = useState(new Animated.Value(0.8))[0];
   const scaleAnim2 = useState(new Animated.Value(0.8))[0];
@@ -34,11 +33,30 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  // Calculate trip stats
   const packedCount = packingItems.filter(i => i.packed).length;
   const totalItems = packingItems.length;
   const totalExpenses = getTotalExpenses();
-  const activitiesCount = itinerary.length;
+  const lastExpense = expenses.length > 0 ? expenses[expenses.length - 1] : null;
+
+  // Calculate trip days
+  const getTripDays = () => {
+    if (!tripInfo.startDate || !tripInfo.endDate) return 0;
+    try {
+      const parts1 = tripInfo.startDate.split(' ');
+      const parts2 = tripInfo.endDate.split(' ');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const startDate = new Date(parseInt(parts1[2]), months.indexOf(parts1[1]), parseInt(parts1[0]));
+      const endDate = new Date(parseInt(parts2[2]), months.indexOf(parts2[1]), parseInt(parts2[0]));
+      const diffTime = endDate - startDate;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      return diffDays > 0 ? diffDays : 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  const tripDays = getTripDays();
+  const participantCount = (tripInfo.participants?.length || 0) + 1;
 
   useEffect(() => {
     Animated.parallel([
@@ -96,10 +114,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           <Text style={styles.logoEmoji}>✈️</Text>
           <Text style={styles.logoText}>TravelMate</Text>
         </View>
-        <Pressable 
-          style={({ pressed }) => [styles.profileButton, pressed && styles.profileButtonPressed]} 
-          onPress={handleProfilePress}
-        >
+        <Pressable style={({ pressed }) => [styles.profileButton, pressed && { opacity: 0.7 }]} onPress={handleProfilePress}>
           <View style={styles.profileAvatar}>
             <Text style={styles.profileEmoji}>👤</Text>
           </View>
@@ -119,8 +134,10 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
         showsVerticalScrollIndicator={false}
         bounces={false}
         overScrollMode="never"
+        alwaysBounceVertical={false}
+        scrollEventThrottle={16}
       >
-        {/* Traveler Illustration */}
+        {/* Illustration */}
         <Animated.View style={[styles.illustrationSection, { opacity: fadeAnim }]}>
           <Animated.View style={[styles.illustrationContainer, { transform: [{ translateY: floatTranslate }] }]}>
             <Animated.View style={[styles.outerRing, { transform: [{ scale: pulseAnim }] }]} />
@@ -128,31 +145,21 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             <View style={styles.travelerCircle}>
               <Text style={styles.travelerEmoji}>🧗</Text>
             </View>
-            <View style={[styles.floatingElement, styles.floatingElement1]}>
-              <Text style={styles.floatingEmoji}>🏔️</Text>
-            </View>
-            <View style={[styles.floatingElement, styles.floatingElement2]}>
-              <Text style={styles.floatingEmoji}>✈️</Text>
-            </View>
-            <View style={[styles.floatingElement, styles.floatingElement3]}>
-              <Text style={styles.floatingEmoji}>🌴</Text>
-            </View>
-            <View style={[styles.floatingElement, styles.floatingElement4]}>
-              <Text style={styles.floatingEmoji}>🎒</Text>
-            </View>
+            <View style={[styles.floatingElement, styles.floatingElement1]}><Text style={styles.floatingEmoji}>🏔️</Text></View>
+            <View style={[styles.floatingElement, styles.floatingElement2]}><Text style={styles.floatingEmoji}>✈️</Text></View>
+            <View style={[styles.floatingElement, styles.floatingElement3]}><Text style={styles.floatingEmoji}>🌴</Text></View>
+            <View style={[styles.floatingElement, styles.floatingElement4]}><Text style={styles.floatingEmoji}>🎒</Text></View>
           </Animated.View>
         </Animated.View>
 
         {/* Action Cards */}
         <View style={styles.actionsContainer}>
-          {/* Current Trip Card */}
+          {/* Current Trip Card - RESTORED */}
           {hasActiveTrip && (
             <Animated.View style={{ transform: [{ scale: scaleAnim1 }] }}>
-              <Pressable 
-                style={({ pressed }) => [styles.currentTripCard, pressed && styles.cardPressed]} 
-                onPress={onMyTrip}
-              >
+              <Pressable style={({ pressed }) => [styles.currentTripCard, pressed && { opacity: 0.9 }]} onPress={onMyTrip}>
                 <View style={styles.currentTripGlow} />
+                
                 <View style={styles.currentTripHeader}>
                   <View style={styles.currentTripIconBg}>
                     <Text style={styles.currentTripIcon}>🧳</Text>
@@ -165,35 +172,28 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
                     <Text style={styles.arrowText}>→</Text>
                   </View>
                 </View>
+
                 {tripInfo.startDate && tripInfo.endDate && (
                   <View style={styles.currentTripDates}>
                     <Text style={styles.currentTripDateIcon}>📅</Text>
-                    <Text style={styles.currentTripDateText}>{tripInfo.startDate} - {tripInfo.endDate}</Text>
+                    <Text style={styles.currentTripDateText}>{tripInfo.startDate} → {tripInfo.endDate}</Text>
                   </View>
                 )}
+
                 <View style={styles.currentTripStats}>
                   <View style={styles.tripStatItem}>
-                    <Text style={styles.tripStatEmoji}>💰</Text>
-                    <View>
-                      <Text style={styles.tripStatValue}>${totalExpenses}</Text>
-                      <Text style={styles.tripStatLabel}>Spent</Text>
-                    </View>
+                    <Text style={styles.tripStatValue}>{participantCount}</Text>
+                    <Text style={styles.tripStatLabel}>Travelers</Text>
                   </View>
                   <View style={styles.tripStatDivider} />
                   <View style={styles.tripStatItem}>
-                    <Text style={styles.tripStatEmoji}>🎒</Text>
-                    <View>
-                      <Text style={styles.tripStatValue}>{packedCount}/{totalItems}</Text>
-                      <Text style={styles.tripStatLabel}>Packed</Text>
-                    </View>
+                    <Text style={styles.tripStatValue}>{tripDays}</Text>
+                    <Text style={styles.tripStatLabel}>Days</Text>
                   </View>
                   <View style={styles.tripStatDivider} />
                   <View style={styles.tripStatItem}>
-                    <Text style={styles.tripStatEmoji}>🗺️</Text>
-                    <View>
-                      <Text style={styles.tripStatValue}>{activitiesCount}</Text>
-                      <Text style={styles.tripStatLabel}>Activities</Text>
-                    </View>
+                    <Text style={styles.tripStatValue}>${lastExpense ? lastExpense.amount : 0}</Text>
+                    <Text style={styles.tripStatLabel}>Last Spent</Text>
                   </View>
                 </View>
               </Pressable>
@@ -204,66 +204,52 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           <Animated.View style={{ transform: [{ scale: hasActiveTrip ? scaleAnim2 : scaleAnim1 }] }}>
             <Pressable 
               style={({ pressed }) => [styles.optionCard, pressed && styles.cardPressed]} 
-              onPress={handlePlanTripPress}
+              onPress={onPlanTrip}
             >
               <View style={styles.optionGlow} />
-              <View style={styles.optionIconBg}>
-                <Text style={styles.optionIcon}>🚀</Text>
-              </View>
+              <View style={styles.optionIconBg}><Text style={styles.optionIcon}>🚀</Text></View>
               <View style={styles.optionContent}>
                 <Text style={styles.optionTitle}>{hasActiveTrip ? 'Plan New Trip' : 'Plan a Trip'}</Text>
                 <Text style={styles.optionDescription}>Create your perfect journey</Text>
               </View>
-              <View style={styles.optionArrow}>
-                <Text style={styles.arrowTextSecondary}>→</Text>
-              </View>
+              <View style={styles.optionArrow}><Text style={styles.arrowTextSecondary}>→</Text></View>
             </Pressable>
           </Animated.View>
 
           {/* Join a Trip */}
           <Animated.View style={{ transform: [{ scale: hasActiveTrip ? scaleAnim3 : scaleAnim2 }] }}>
-            <Pressable 
-              style={({ pressed }) => [styles.optionCard, pressed && styles.cardPressed]} 
-              onPress={() => setShowJoinModal(true)}
-            >
-              <View style={styles.optionIconBg}>
-                <Text style={styles.optionIcon}>👥</Text>
-              </View>
+            <Pressable style={({ pressed }) => [styles.optionCard, pressed && { opacity: 0.8 }]} onPress={() => setShowJoinModal(true)}>
+              <View style={styles.optionIconBg}><Text style={styles.optionIcon}>👥</Text></View>
               <View style={styles.optionContent}>
                 <Text style={styles.optionTitle}>Join a Trip</Text>
                 <Text style={styles.optionDescription}>Enter code to join friends</Text>
               </View>
-              <View style={styles.optionArrow}>
-                <Text style={styles.arrowTextSecondary}>→</Text>
-              </View>
+              <View style={styles.optionArrow}><Text style={styles.arrowTextSecondary}>→</Text></View>
             </Pressable>
           </Animated.View>
         </View>
 
-        {/* Features Section */}
+        {/* Features */}
         <Animated.View style={[styles.featuresSection, { opacity: fadeAnim }]}>
           <Text style={styles.featuresTitle}>Everything you need</Text>
           <Text style={styles.featuresSubtitle}>All-in-one travel companion</Text>
-          
           <View style={styles.featuresGrid}>
             {[
               { icon: '💰', label: 'Budget', desc: 'Track spending' },
               { icon: '💳', label: 'Expenses', desc: 'Log costs' },
               { icon: '🎒', label: 'Packing', desc: 'Checklist' },
               { icon: '🗺️', label: 'Itinerary', desc: 'Plan days' },
-            ].map((feature, index) => (
-              <View key={index} style={styles.featureCard}>
-                <View style={styles.featureIconBg}>
-                  <Text style={styles.featureIcon}>{feature.icon}</Text>
-                </View>
-                <Text style={styles.featureLabel}>{feature.label}</Text>
-                <Text style={styles.featureDesc}>{feature.desc}</Text>
+            ].map((f, i) => (
+              <View key={i} style={styles.featureCard}>
+                <View style={styles.featureIconBg}><Text style={styles.featureIcon}>{f.icon}</Text></View>
+                <Text style={styles.featureLabel}>{f.label}</Text>
+                <Text style={styles.featureDesc}>{f.desc}</Text>
               </View>
             ))}
           </View>
         </Animated.View>
 
-        {/* Why TravelMate Section */}
+        {/* Why Section */}
         <Animated.View style={[styles.whySection, { opacity: fadeAnim }]}>
           <Text style={styles.whyTitle}>Why TravelMate?</Text>
           <View style={styles.whyList}>
@@ -335,16 +321,12 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
         </View>
       </Modal>
 
-      {/* Join Trip Modal */}
+      {/* Join Modal */}
       <Modal animationType="slide" transparent visible={showJoinModal} onRequestClose={() => setShowJoinModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHandle} />
-            <View style={styles.modalIconContainer}>
-              <View style={styles.modalIconBg}>
-                <Text style={styles.modalIcon}>🔗</Text>
-              </View>
-            </View>
+            <View style={styles.modalIconBg}><Text style={styles.modalIcon}>🔗</Text></View>
             <Text style={styles.modalTitle}>Join a Trip</Text>
             <Text style={styles.modalDescription}>Enter the trip code shared by your travel buddy</Text>
             <TextInput
@@ -357,7 +339,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
               maxLength={8}
             />
             <Pressable 
-              style={({ pressed }) => [styles.joinButton, !tripCode.trim() && styles.joinButtonDisabled, pressed && { opacity: 0.8 }]} 
+              style={({ pressed }) => [styles.joinButton, !tripCode.trim() && styles.joinButtonDisabled, pressed && styles.buttonPressed]} 
               onPress={handleJoinTrip} 
               disabled={!tripCode.trim()}
             >
@@ -377,17 +359,31 @@ const createStyles = (colors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   
   // Top Bar
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+  topBar: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    paddingVertical: 12,
+    backgroundColor: colors.bg,
+  },
   logoContainer: { flexDirection: 'row', alignItems: 'center' },
   logoEmoji: { fontSize: 28, marginRight: 8 },
   logoText: { fontSize: 22, fontWeight: 'bold', color: colors.text },
   profileButton: { padding: 4 },
-  profileButtonPressed: { opacity: 0.7 },
   profileAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primary },
   profileEmoji: { fontSize: 22 },
 
-  scrollView: { flex: 1, backgroundColor: colors.bg },
-  scrollContent: { flexGrow: 1, paddingBottom: 40, backgroundColor: colors.bg },
+  // ScrollView
+  scrollView: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
+  scrollContent: { 
+    flexGrow: 1,
+    paddingBottom: 40,
+    backgroundColor: colors.bg,
+  },
   
   bgElements: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: -1, overflow: 'hidden' },
   bgCircle: { position: 'absolute', borderRadius: 999, backgroundColor: colors.primary, opacity: 0.04 },
@@ -395,8 +391,12 @@ const createStyles = (colors) => StyleSheet.create({
   bgCircle2: { width: 300, height: 300, top: 400, left: -150 },
   bgCircle3: { width: 200, height: 200, top: 700, right: -50 },
 
-  // Illustration
-  illustrationSection: { alignItems: 'center', paddingVertical: 20, backgroundColor: colors.bg },
+  // Illustration Section
+  illustrationSection: { 
+    alignItems: 'center', 
+    paddingVertical: 20,
+    backgroundColor: colors.bg,
+  },
   illustrationContainer: { width: 220, height: 220, alignItems: 'center', justifyContent: 'center' },
   outerRing: { position: 'absolute', width: 200, height: 200, borderRadius: 100, borderWidth: 2, borderColor: colors.primary, opacity: 0.3, borderStyle: 'dashed' },
   middleRing: { position: 'absolute', width: 160, height: 160, borderRadius: 80, borderWidth: 1, borderColor: colors.primaryBorder, opacity: 0.5 },
@@ -409,21 +409,39 @@ const createStyles = (colors) => StyleSheet.create({
   floatingElement4: { bottom: 0, right: 30 },
   floatingEmoji: { fontSize: 22 },
 
-  // Actions
-  actionsContainer: { paddingHorizontal: 20, gap: 14, backgroundColor: colors.bg },
-  cardPressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
+  // Actions Container
+  actionsContainer: { 
+    paddingHorizontal: 20, 
+    gap: 14,
+    backgroundColor: colors.bg,
+  },
 
-  currentTripCard: { backgroundColor: colors.card, borderRadius: 20, padding: 18, flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderColor: colors.primary, overflow: 'hidden' },
-  currentTripGlow: { position: 'absolute', top: -30, right: -30, width: 100, height: 100, backgroundColor: colors.primary, opacity: 0.1, borderRadius: 50 },
-  currentTripHeader: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  currentTripIconBg: { width: 50, height: 50, borderRadius: 16, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
+  // Card Press State
+  cardPressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
+  buttonPressed: { opacity: 0.8 },
+
+  // Current Trip Card
+  currentTripCard: { backgroundColor: colors.primary, borderRadius: 24, padding: 20, overflow: 'hidden', shadowColor: colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 8 },
+  currentTripGlow: { position: 'absolute', top: -40, right: -40, width: 150, height: 150, backgroundColor: '#FFFFFF', opacity: 0.15, borderRadius: 75 },
+  currentTripHeader: { flexDirection: 'row', alignItems: 'center' },
+  currentTripIconBg: { width: 50, height: 50, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
   currentTripIcon: { fontSize: 26 },
   currentTripInfo: { flex: 1, marginLeft: 14 },
-  currentTripLabel: { fontSize: 10, color: colors.primary, fontWeight: '700', letterSpacing: 1 },
-  currentTripName: { fontSize: 18, fontWeight: 'bold', color: colors.text, marginTop: 2 },
-  currentTripArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
-  arrowText: { fontSize: 18, color: colors.primary, fontWeight: 'bold' },
+  currentTripLabel: { fontSize: 10, color: 'rgba(0,0,0,0.5)', fontWeight: '700', letterSpacing: 1 },
+  currentTripName: { fontSize: 20, fontWeight: 'bold', color: colors.bg, marginTop: 2 },
+  currentTripArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center' },
+  arrowText: { fontSize: 18, color: colors.bg, fontWeight: 'bold' },
+  currentTripDates: { flexDirection: 'row', alignItems: 'center', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.2)' },
+  currentTripDateIcon: { fontSize: 16, marginRight: 8 },
+  currentTripDateText: { fontSize: 14, color: 'rgba(0,0,0,0.6)', fontWeight: '500' },
+  currentTripStats: { flexDirection: 'row', marginTop: 16, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 14 },
+  tripStatItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  tripStatEmoji: { fontSize: 18, marginRight: 8 },
+  tripStatValue: { fontSize: 16, fontWeight: 'bold', color: colors.bg },
+  tripStatLabel: { fontSize: 10, color: 'rgba(0,0,0,0.5)' },
+  tripStatDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.3)', marginHorizontal: 8 },
 
+  // Option Cards
   optionCard: { backgroundColor: colors.card, borderRadius: 20, padding: 18, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder, overflow: 'hidden' },
   optionGlow: { position: 'absolute', top: -50, right: -50, width: 150, height: 150, backgroundColor: colors.primary, opacity: 0.08, borderRadius: 75 },
   optionIconBg: { width: 50, height: 50, borderRadius: 16, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
@@ -434,8 +452,12 @@ const createStyles = (colors) => StyleSheet.create({
   optionArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
   arrowTextSecondary: { fontSize: 18, color: colors.primary, fontWeight: 'bold' },
 
-  // Features
-  featuresSection: { marginTop: 40, paddingHorizontal: 20, backgroundColor: colors.bg },
+  // Features Section
+  featuresSection: { 
+    marginTop: 40, 
+    paddingHorizontal: 20,
+    backgroundColor: colors.bg,
+  },
   featuresTitle: { fontSize: 22, fontWeight: 'bold', color: colors.text, textAlign: 'center' },
   featuresSubtitle: { fontSize: 14, color: colors.textMuted, textAlign: 'center', marginTop: 6, marginBottom: 24 },
   featuresGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
@@ -446,7 +468,11 @@ const createStyles = (colors) => StyleSheet.create({
   featureDesc: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
 
   // Why Section
-  whySection: { marginTop: 30, paddingHorizontal: 20, backgroundColor: colors.bg },
+  whySection: { 
+    marginTop: 30, 
+    paddingHorizontal: 20,
+    backgroundColor: colors.bg,
+  },
   whyTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 16 },
   whyList: { backgroundColor: colors.card, borderRadius: 20, padding: 6, borderWidth: 1, borderColor: colors.primaryBorder },
   whyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: colors.primaryBorder },
@@ -454,15 +480,20 @@ const createStyles = (colors) => StyleSheet.create({
   whyItemText: { fontSize: 15, color: colors.text, flex: 1 },
 
   // Footer
-  footer: { alignItems: 'center', marginTop: 40, paddingVertical: 20, backgroundColor: colors.bg },
+  footer: { 
+    alignItems: 'center', 
+    marginTop: 40, 
+    paddingVertical: 20,
+    backgroundColor: colors.bg,
+  },
   footerLogo: { fontSize: 32 },
   footerText: { fontSize: 16, fontWeight: 'bold', color: colors.textMuted, marginTop: 8 },
   footerVersion: { fontSize: 12, color: colors.textLight, marginTop: 4 },
 
-  // Modal General
+  // Modal
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.8)' },
   modalContent: { backgroundColor: colors.card, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, alignItems: 'center' },
-  modalHandle: { width: 40, height: 4, backgroundColor: colors.textMuted, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  modalHandle: { width: 40, height: 4, backgroundColor: colors.textMuted, borderRadius: 2, marginBottom: 24 },
   modalIconContainer: { marginBottom: 20 },
   modalIconBg: { width: 80, height: 80, borderRadius: 24, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primaryBorder },
   modalIcon: { fontSize: 40 },
@@ -470,7 +501,6 @@ const createStyles = (colors) => StyleSheet.create({
   modalDescription: { fontSize: 15, color: colors.textMuted, textAlign: 'center', marginBottom: 24 },
   codeInput: { width: '100%', backgroundColor: colors.cardLight, borderRadius: 16, padding: 20, fontSize: 24, fontWeight: 'bold', color: colors.text, textAlign: 'center', letterSpacing: 8, borderWidth: 2, borderColor: colors.primaryBorder, marginBottom: 20 },
   joinButton: { width: '100%', backgroundColor: colors.primary, borderRadius: 16, padding: 18, alignItems: 'center', marginBottom: 12 },
-  joinButtonDisabled: { opacity: 0.5 },
   joinButtonText: { fontSize: 18, fontWeight: 'bold', color: colors.bg },
   cancelButton: { padding: 16 },
   cancelButtonText: { fontSize: 16, color: colors.textMuted },
