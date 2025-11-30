@@ -21,12 +21,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   const scaleAnim2 = useState(new Animated.Value(0.8))[0];
   const scaleAnim3 = useState(new Animated.Value(0.8))[0];
   const floatAnim = useState(new Animated.Value(0))[0];
-  const rotateAnim = useState(new Animated.Value(0))[0];
   const pulseAnim = useState(new Animated.Value(1))[0];
-  const glowAnim = useState(new Animated.Value(0.3))[0];
-  const starAnim1 = useState(new Animated.Value(0))[0];
-  const starAnim2 = useState(new Animated.Value(0))[0];
-  const starAnim3 = useState(new Animated.Value(0))[0];
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -53,45 +48,16 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
       ])
     ).start();
 
-    // Rotate animation for orbiting icons
-    Animated.loop(
-      Animated.timing(rotateAnim, { toValue: 1, duration: 15000, useNativeDriver: true })
-    ).start();
-
-    // Pulse animation for rings
+    // Pulse animation for ring
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.2, duration: 2000, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.15, duration: 2000, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
       ])
     ).start();
-
-    // Glow animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, { toValue: 0.8, duration: 1500, useNativeDriver: true }),
-        Animated.timing(glowAnim, { toValue: 0.3, duration: 1500, useNativeDriver: true }),
-      ])
-    ).start();
-
-    // Twinkling stars
-    const animateStar = (anim, delay) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(anim, { toValue: 1, duration: 800, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0, duration: 800, useNativeDriver: true }),
-        ])
-      ).start();
-    };
-    animateStar(starAnim1, 0);
-    animateStar(starAnim2, 500);
-    animateStar(starAnim3, 1000);
   }, []);
 
-  const floatTranslate = floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -25] });
-  const rotate = rotateAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-  const reverseRotate = rotateAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-360deg'] });
+  const floatTranslate = floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -20] });
 
   const handleJoinTrip = () => {
     if (tripCode.trim()) {
@@ -118,8 +84,8 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
       {/* Background Elements */}
       <View style={styles.bgElements}>
-        <Animated.View style={[styles.bgCircle, styles.bgCircle1, { opacity: glowAnim }]} />
-        <Animated.View style={[styles.bgCircle, styles.bgCircle2, { opacity: glowAnim }]} />
+        <View style={[styles.bgCircle, styles.bgCircle1]} />
+        <View style={[styles.bgCircle, styles.bgCircle2]} />
         <View style={[styles.bgCircle, styles.bgCircle3]} />
       </View>
 
@@ -128,58 +94,31 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
         showsVerticalScrollIndicator={false}
         bounces={true}
       >
-        {/* 3D Globe Animation */}
-        <Animated.View style={[styles.globeSection, { opacity: fadeAnim }]}>
-          <Animated.View style={[styles.globeContainer, { transform: [{ translateY: floatTranslate }] }]}>
-            {/* Twinkling stars */}
-            <Animated.View style={[styles.star, styles.star1, { opacity: starAnim1 }]}>
-              <Text style={styles.starEmoji}>✨</Text>
-            </Animated.View>
-            <Animated.View style={[styles.star, styles.star2, { opacity: starAnim2 }]}>
-              <Text style={styles.starEmoji}>⭐</Text>
-            </Animated.View>
-            <Animated.View style={[styles.star, styles.star3, { opacity: starAnim3 }]}>
-              <Text style={styles.starEmoji}>✨</Text>
-            </Animated.View>
-
-            {/* Outer rings with pulse */}
-            <Animated.View style={[styles.orbitRing, styles.orbitRing1, { transform: [{ scale: pulseAnim }] }]} />
-            <Animated.View style={[styles.orbitRing, styles.orbitRing2, { transform: [{ rotate: reverseRotate }] }]} />
-            <Animated.View style={[styles.orbitRing, styles.orbitRing3]} />
+        {/* Traveler Illustration */}
+        <Animated.View style={[styles.illustrationSection, { opacity: fadeAnim }]}>
+          <Animated.View style={[styles.illustrationContainer, { transform: [{ translateY: floatTranslate }] }]}>
+            {/* Outer ring */}
+            <Animated.View style={[styles.outerRing, { transform: [{ scale: pulseAnim }] }]} />
+            <View style={styles.middleRing} />
             
-            {/* Glow effect behind globe */}
-            <Animated.View style={[styles.globeGlow, { opacity: glowAnim }]} />
-            
-            {/* Main globe */}
-            <View style={styles.globe}>
-              <Text style={styles.globeEmoji}>🌍</Text>
+            {/* Main traveler illustration */}
+            <View style={styles.travelerCircle}>
+              <Text style={styles.travelerEmoji}>🧗</Text>
             </View>
 
-            {/* Orbiting icons - outer ring */}
-            <Animated.View style={[styles.orbitContainer, { transform: [{ rotate }] }]}>
-              <View style={[styles.orbitIcon, styles.orbitIcon1]}>
-                <Text style={styles.orbitEmoji}>✈️</Text>
-              </View>
-              <View style={[styles.orbitIcon, styles.orbitIcon2]}>
-                <Text style={styles.orbitEmoji}>🏝️</Text>
-              </View>
-              <View style={[styles.orbitIcon, styles.orbitIcon3]}>
-                <Text style={styles.orbitEmoji}>🎒</Text>
-              </View>
-              <View style={[styles.orbitIcon, styles.orbitIcon4]}>
-                <Text style={styles.orbitEmoji}>🗺️</Text>
-              </View>
-            </Animated.View>
-
-            {/* Inner orbiting icons */}
-            <Animated.View style={[styles.innerOrbitContainer, { transform: [{ rotate: reverseRotate }] }]}>
-              <View style={[styles.innerOrbitIcon, styles.innerOrbitIcon1]}>
-                <Text style={styles.innerOrbitEmoji}>🏨</Text>
-              </View>
-              <View style={[styles.innerOrbitIcon, styles.innerOrbitIcon2]}>
-                <Text style={styles.innerOrbitEmoji}>🍽️</Text>
-              </View>
-            </Animated.View>
+            {/* Floating elements around */}
+            <View style={[styles.floatingElement, styles.floatingElement1]}>
+              <Text style={styles.floatingEmoji}>🏔️</Text>
+            </View>
+            <View style={[styles.floatingElement, styles.floatingElement2]}>
+              <Text style={styles.floatingEmoji}>✈️</Text>
+            </View>
+            <View style={[styles.floatingElement, styles.floatingElement3]}>
+              <Text style={styles.floatingEmoji}>🌴</Text>
+            </View>
+            <View style={[styles.floatingElement, styles.floatingElement4]}>
+              <Text style={styles.floatingEmoji}>🎒</Text>
+            </View>
           </Animated.View>
         </Animated.View>
 
@@ -283,19 +222,13 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
               { icon: '🎒', label: 'Packing', desc: 'Checklist' },
               { icon: '🗺️', label: 'Itinerary', desc: 'Plan days' },
             ].map((feature, index) => (
-              <Animated.View 
-                key={index} 
-                style={[
-                  styles.featureCard,
-                  { transform: [{ scale: scaleAnim1 }] }
-                ]}
-              >
+              <View key={index} style={styles.featureCard}>
                 <View style={styles.featureIconBg}>
                   <Text style={styles.featureIcon}>{feature.icon}</Text>
                 </View>
                 <Text style={styles.featureLabel}>{feature.label}</Text>
                 <Text style={styles.featureDesc}>{feature.desc}</Text>
-              </Animated.View>
+              </View>
             ))}
           </View>
         </Animated.View>
@@ -310,7 +243,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
               { icon: '📊', text: 'Smart budget tracking' },
               { icon: '📱', text: 'Works offline too' },
             ].map((item, index) => (
-              <View key={index} style={styles.whyItem}>
+              <View key={index} style={[styles.whyItem, index === 3 && { borderBottomWidth: 0 }]}>
                 <Text style={styles.whyItemIcon}>{item.icon}</Text>
                 <Text style={styles.whyItemText}>{item.text}</Text>
               </View>
@@ -378,50 +311,30 @@ const createStyles = (colors) => StyleSheet.create({
   
   // Background
   bgElements: { position: 'absolute', width: '100%', height: '100%' },
-  bgCircle: { position: 'absolute', borderRadius: 999, backgroundColor: colors.primary },
-  bgCircle1: { width: 400, height: 400, top: -100, right: -150, opacity: 0.05 },
-  bgCircle2: { width: 300, height: 300, bottom: 200, left: -150, opacity: 0.03 },
-  bgCircle3: { width: 200, height: 200, bottom: 50, right: -50, opacity: 0.02 },
+  bgCircle: { position: 'absolute', borderRadius: 999, backgroundColor: colors.primary, opacity: 0.04 },
+  bgCircle1: { width: 400, height: 400, top: -100, right: -150 },
+  bgCircle2: { width: 300, height: 300, bottom: 200, left: -150 },
+  bgCircle3: { width: 200, height: 200, bottom: 50, right: -50 },
 
-  // Globe Section
-  globeSection: { alignItems: 'center', paddingVertical: 20 },
-  globeContainer: { width: 250, height: 250, alignItems: 'center', justifyContent: 'center' },
+  // Illustration Section
+  illustrationSection: { alignItems: 'center', paddingVertical: 30 },
+  illustrationContainer: { width: 220, height: 220, alignItems: 'center', justifyContent: 'center' },
   
-  // Stars
-  star: { position: 'absolute' },
-  star1: { top: 10, left: 30 },
-  star2: { top: 40, right: 20 },
-  star3: { bottom: 50, left: 20 },
-  starEmoji: { fontSize: 16 },
-
-  // Globe glow
-  globeGlow: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: colors.primary, opacity: 0.15 },
-
-  // Orbit rings
-  orbitRing: { position: 'absolute', borderWidth: 1, borderStyle: 'dashed' },
-  orbitRing1: { width: 200, height: 200, borderRadius: 100, borderColor: colors.primary, opacity: 0.5 },
-  orbitRing2: { width: 160, height: 160, borderRadius: 80, borderColor: colors.primaryBorder, opacity: 0.4 },
-  orbitRing3: { width: 240, height: 240, borderRadius: 120, borderColor: colors.primaryBorder, opacity: 0.2 },
+  // Rings
+  outerRing: { position: 'absolute', width: 200, height: 200, borderRadius: 100, borderWidth: 2, borderColor: colors.primary, opacity: 0.3, borderStyle: 'dashed' },
+  middleRing: { position: 'absolute', width: 160, height: 160, borderRadius: 80, borderWidth: 1, borderColor: colors.primaryBorder, opacity: 0.5 },
   
-  // Globe
-  globe: { width: 110, height: 110, borderRadius: 55, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.primaryBorder, shadowColor: colors.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 25, elevation: 15 },
-  globeEmoji: { fontSize: 60 },
+  // Traveler
+  travelerCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.primaryBorder, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 15, elevation: 8 },
+  travelerEmoji: { fontSize: 60 },
 
-  // Outer orbit
-  orbitContainer: { position: 'absolute', width: 200, height: 200 },
-  orbitIcon: { position: 'absolute', width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primaryBorder, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 5 },
-  orbitIcon1: { top: -12, left: '50%', marginLeft: -22 },
-  orbitIcon2: { right: -12, top: '50%', marginTop: -22 },
-  orbitIcon3: { bottom: -12, left: '50%', marginLeft: -22 },
-  orbitIcon4: { left: -12, top: '50%', marginTop: -22 },
-  orbitEmoji: { fontSize: 20 },
-
-  // Inner orbit
-  innerOrbitContainer: { position: 'absolute', width: 130, height: 130 },
-  innerOrbitIcon: { position: 'absolute', width: 32, height: 32, borderRadius: 16, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
-  innerOrbitIcon1: { top: -6, left: '50%', marginLeft: -16 },
-  innerOrbitIcon2: { bottom: -6, left: '50%', marginLeft: -16 },
-  innerOrbitEmoji: { fontSize: 14 },
+  // Floating elements
+  floatingElement: { position: 'absolute', width: 48, height: 48, borderRadius: 24, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primaryBorder, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 },
+  floatingElement1: { top: 0, left: 20 },
+  floatingElement2: { top: 30, right: 10 },
+  floatingElement3: { bottom: 20, left: 10 },
+  floatingElement4: { bottom: 0, right: 30 },
+  floatingEmoji: { fontSize: 22 },
 
   // Actions Container
   actionsContainer: { paddingHorizontal: 20, gap: 14 },
@@ -472,9 +385,9 @@ const createStyles = (colors) => StyleSheet.create({
   // Why Section
   whySection: { marginTop: 30, paddingHorizontal: 20 },
   whyTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 16 },
-  whyList: { backgroundColor: colors.card, borderRadius: 20, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
-  whyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.primaryBorder },
-  whyItemIcon: { fontSize: 20, marginRight: 14 },
+  whyList: { backgroundColor: colors.card, borderRadius: 20, padding: 6, borderWidth: 1, borderColor: colors.primaryBorder },
+  whyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: colors.primaryBorder },
+  whyItemIcon: { fontSize: 22, marginRight: 14 },
   whyItemText: { fontSize: 15, color: colors.text, flex: 1 },
 
   // Footer
