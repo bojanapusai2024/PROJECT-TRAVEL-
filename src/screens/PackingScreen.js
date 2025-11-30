@@ -1,171 +1,442 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import { 
+  View, Text, ScrollView, TextInput, TouchableOpacity, 
+  Modal, StyleSheet, Dimensions, Alert 
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTravelContext } from '../context/TravelContext';
 import { useTheme } from '../context/ThemeContext';
 
-const CATEGORIES = [
-  { key: 'clothing', label: 'Clothing', icon: '👕' },
-  { key: 'toiletries', label: 'Toiletries', icon: '🧴' },
-  { key: 'electronics', label: 'Electronics', icon: '📱' },
-  { key: 'documents', label: 'Documents', icon: '📄' },
-  { key: 'other', label: 'Other', icon: '📦' },
+const { width } = Dimensions.get('window');
+
+const PACKING_CATEGORIES = [
+  { key: 'essentials', label: 'Essentials', emoji: '🎒', color: '#EF4444' },
+  { key: 'clothing', label: 'Clothing', emoji: '👕', color: '#3B82F6' },
+  { key: 'toiletries', label: 'Toiletries', emoji: '🧴', color: '#10B981' },
+  { key: 'electronics', label: 'Electronics', emoji: '📱', color: '#8B5CF6' },
+  { key: 'documents', label: 'Documents', emoji: '📄', color: '#F59E0B' },
+  { key: 'accessories', label: 'Accessories', emoji: '🕶️', color: '#EC4899' },
+  { key: 'health', label: 'Health', emoji: '💊', color: '#06B6D4' },
+  { key: 'other', label: 'Other', emoji: '📦', color: '#6B7280' },
 ];
 
-const QUICK_ADD = ['Passport', 'Phone Charger', 'Toothbrush', 'Clothes', 'Wallet', 'Sunglasses'];
+const QUICK_ADD_ITEMS = {
+  essentials: ['Passport', 'Wallet', 'Phone', 'Keys', 'Cash', 'Credit Cards'],
+  clothing: ['T-Shirts', 'Pants', 'Underwear', 'Socks', 'Jacket', 'Sleepwear'],
+  toiletries: ['Toothbrush', 'Toothpaste', 'Shampoo', 'Soap', 'Deodorant', 'Sunscreen'],
+  electronics: ['Charger', 'Power Bank', 'Earphones', 'Camera', 'Adapter', 'Laptop'],
+  documents: ['ID Card', 'Tickets', 'Hotel Booking', 'Insurance', 'Visa', 'Itinerary'],
+  accessories: ['Watch', 'Sunglasses', 'Belt', 'Bag', 'Umbrella', 'Hat'],
+  health: ['Medicines', 'First Aid', 'Vitamins', 'Hand Sanitizer', 'Masks', 'Tissues'],
+  other: ['Snacks', 'Books', 'Travel Pillow', 'Lock', 'Pen', 'Notebook'],
+};
 
 export default function PackingScreen() {
-  const { packingItems, addPackingItem, togglePackingItem, deletePackingItem } = useTravelContext();
+  const { 
+    packingItems = [], 
+    addPackingItem, 
+    togglePackingItem, 
+    deletePackingItem,
+    tripInfo = {}
+  } = useTravelContext();
   const { colors } = useTheme();
+  
   const [modalVisible, setModalVisible] = useState(false);
-  const [newItem, setNewItem] = useState({ name: '', category: 'clothing' });
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [showPacked, setShowPacked] = useState(true);
+  const [newItem, setNewItem] = useState({ name: '', category: 'essentials', quantity: '1', notes: '' });
+  const [searchQuery, setSearchQuery] = useState('');
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const handleAddItem = () => {
     if (newItem.name.trim()) {
-      addPackingItem({ name: newItem.name, category: newItem.category, quantity: 1 });
-      setNewItem({ name: '', category: 'clothing' });
+      addPackingItem({
+        ...newItem,
+        quantity: parseInt(newItem.quantity) || 1,
+      });
+      setNewItem({ name: '', category: 'essentials', quantity: '1', notes: '' });
       setModalVisible(false);
     }
   };
 
-  const packedCount = packingItems.filter(i => i.packed).length;
-  const totalCount = packingItems.length;
-  const progress = totalCount > 0 ? (packedCount / totalCount) * 100 : 0;
+  const handleQuickAdd = (itemName, category) => {
+    addPackingItem({
+      name: itemName,
+      category,
+      quantity: 1,
+      notes: '',
+    });
+  };
 
-  const getCategoryIcon = (key) => CATEGORIES.find(c => c.key === key)?.icon || '📦';
+  const handleDeleteItem = (id, name) => {
+    Alert.alert('Delete Item', `Remove "${name}" from packing list?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deletePackingItem(id) }
+    ]);
+  };
+
+  const getCategoryInfo = (key) => PACKING_CATEGORIES.find(c => c.key === key) || PACKING_CATEGORIES[7];
+
+  // Filter and group items
+  const filteredItems = packingItems.filter(item => {
+    const matchesCategory = filterCategory === 'all' || item.category === filterCategory;
+    const matchesSearch = !searchQuery || item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesPacked = showPacked || !item.packed;
+    return matchesCategory && matchesSearch && matchesPacked;
+  });
+
+  const groupedItems = PACKING_CATEGORIES.reduce((acc, cat) => {
+    acc[cat.key] = filteredItems.filter(item => item.category === cat.key);
+    return acc;
+  }, {});
+
+  // Stats
+  const totalItems = packingItems.length;
+  const packedItems = packingItems.filter(item => item.packed).length;
+  const packedPercentage = totalItems > 0 ? (packedItems / totalItems) * 100 : 0;
+  const categoryStats = PACKING_CATEGORIES.map(cat => ({
+    ...cat,
+    total: packingItems.filter(i => i.category === cat.key).length,
+    packed: packingItems.filter(i => i.category === cat.key && i.packed).length,
+  }));
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Packing</Text>
-            <Text style={styles.subtitle}>{packedCount} of {totalCount} items packed</Text>
-          </View>
-          <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-            <Text style={styles.addButtonText}>+</Text>
-          </TouchableOpacity>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>🎒 Packing List</Text>
+          <Text style={styles.headerSubtitle}>
+            {tripInfo.destination ? `For ${tripInfo.destination}` : 'Pack smart, travel light'}
+          </Text>
         </View>
+        <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)}>
+          <Text style={styles.addBtnText}>+ Add</Text>
+        </TouchableOpacity>
+      </View>
 
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Progress Card */}
         <View style={styles.progressCard}>
-          <View style={styles.progressCircleContainer}>
+          <View style={styles.progressHeader}>
+            <View style={styles.progressInfo}>
+              <Text style={styles.progressLabel}>Packing Progress</Text>
+              <Text style={styles.progressCount}>
+                <Text style={styles.progressPacked}>{packedItems}</Text>
+                <Text style={styles.progressTotal}> / {totalItems} items</Text>
+              </Text>
+            </View>
             <View style={styles.progressCircle}>
-              <Text style={styles.progressPercent}>{progress.toFixed(0)}%</Text>
+              <Text style={styles.progressPercent}>{packedPercentage.toFixed(0)}%</Text>
             </View>
           </View>
-          <View style={styles.progressInfo}>
-            <Text style={styles.progressTitle}>
-              {progress === 100 ? '🎉 All Packed!' : 'Keep going!'}
-            </Text>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${progress}%` }]} />
-            </View>
+
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { 
+              width: `${packedPercentage}%`,
+              backgroundColor: packedPercentage === 100 ? '#10B981' : colors.primary
+            }]} />
           </View>
-        </View>
 
-        {/* Quick Add */}
-        <View style={styles.quickAddSection}>
-          <Text style={styles.sectionTitle}>Quick Add</Text>
-          <View style={styles.quickAddGrid}>
-            {QUICK_ADD.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.quickAddChip}
-                onPress={() => addPackingItem({ name: item, category: 'other', quantity: 1 })}
-              >
-                <Text style={styles.quickAddText}>+ {item}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Items List */}
-        <View style={styles.itemsSection}>
-          {packingItems.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>🎒</Text>
-              <Text style={styles.emptyText}>No items yet</Text>
+          {packedPercentage === 100 && totalItems > 0 && (
+            <View style={styles.completeBadge}>
+              <Text style={styles.completeBadgeText}>✅ All packed and ready!</Text>
             </View>
-          ) : (
-            <>
-              {packingItems.filter(i => !i.packed).length > 0 && (
-                <>
-                  <Text style={styles.listLabel}>TO PACK</Text>
-                  {packingItems.filter(i => !i.packed).map(item => (
-                    <View key={item.id} style={styles.itemCard}>
-                      <TouchableOpacity style={styles.checkbox} onPress={() => togglePackingItem(item.id)} />
-                      <Text style={styles.itemIcon}>{getCategoryIcon(item.category)}</Text>
-                      <Text style={styles.itemName}>{item.name}</Text>
-                      <TouchableOpacity onPress={() => deletePackingItem(item.id)}>
-                        <Text style={styles.deleteButton}>×</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </>
-              )}
-
-              {packingItems.filter(i => i.packed).length > 0 && (
-                <>
-                  <Text style={[styles.listLabel, { marginTop: 24 }]}>PACKED ✓</Text>
-                  {packingItems.filter(i => i.packed).map(item => (
-                    <View key={item.id} style={[styles.itemCard, styles.itemCardPacked]}>
-                      <TouchableOpacity style={[styles.checkbox, styles.checkboxChecked]} onPress={() => togglePackingItem(item.id)}>
-                        <Text style={styles.checkmark}>✓</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.itemIcon}>{getCategoryIcon(item.category)}</Text>
-                      <Text style={[styles.itemName, styles.itemNamePacked]}>{item.name}</Text>
-                      <TouchableOpacity onPress={() => deletePackingItem(item.id)}>
-                        <Text style={styles.deleteButton}>×</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </>
-              )}
-            </>
           )}
         </View>
 
-        <View style={{ height: 120 }} />
+        {/* Category Overview */}
+        <View style={styles.categoryOverview}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+            {categoryStats.filter(cat => cat.total > 0).map((cat) => (
+              <TouchableOpacity 
+                key={cat.key}
+                style={[
+                  styles.categoryPill,
+                  filterCategory === cat.key && { backgroundColor: cat.color, borderColor: cat.color }
+                ]}
+                onPress={() => setFilterCategory(filterCategory === cat.key ? 'all' : cat.key)}
+              >
+                <Text style={styles.categoryPillEmoji}>{cat.emoji}</Text>
+                <View style={styles.categoryPillInfo}>
+                  <Text style={[styles.categoryPillLabel, filterCategory === cat.key && { color: '#FFF' }]}>{cat.label}</Text>
+                  <Text style={[styles.categoryPillCount, filterCategory === cat.key && { color: 'rgba(255,255,255,0.8)' }]}>
+                    {cat.packed}/{cat.total}
+                  </Text>
+                </View>
+                {cat.packed === cat.total && cat.total > 0 && (
+                  <Text style={styles.categoryCheck}>✓</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Search & Filters */}
+        <View style={styles.searchSection}>
+          <View style={styles.searchBox}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search items..."
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Text style={styles.searchClear}>✕</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          <TouchableOpacity 
+            style={[styles.filterToggle, !showPacked && styles.filterToggleActive]}
+            onPress={() => setShowPacked(!showPacked)}
+          >
+            <Text style={styles.filterToggleText}>{showPacked ? '👁️' : '👁️‍🗨️'}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Add Section */}
+        {totalItems === 0 && (
+          <View style={styles.quickAddSection}>
+            <Text style={styles.sectionTitle}>⚡ Quick Add</Text>
+            <Text style={styles.quickAddHint}>Tap items to add them to your list</Text>
+            {PACKING_CATEGORIES.slice(0, 4).map((cat) => (
+              <View key={cat.key} style={styles.quickAddCategory}>
+                <View style={styles.quickAddHeader}>
+                  <Text style={styles.quickAddEmoji}>{cat.emoji}</Text>
+                  <Text style={styles.quickAddLabel}>{cat.label}</Text>
+                </View>
+                <View style={styles.quickAddItems}>
+                  {QUICK_ADD_ITEMS[cat.key].map((item) => (
+                    <TouchableOpacity
+                      key={item}
+                      style={[styles.quickAddItem, { borderColor: cat.color + '40' }]}
+                      onPress={() => handleQuickAdd(item, cat.key)}
+                    >
+                      <Text style={styles.quickAddItemText}>+ {item}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Packing List by Category */}
+        {totalItems > 0 && (
+          <View style={styles.listSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>📋 Your Items</Text>
+              <Text style={styles.sectionCount}>{filteredItems.length} items</Text>
+            </View>
+
+            {filteredItems.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyEmoji}>🔍</Text>
+                <Text style={styles.emptyTitle}>No items found</Text>
+                <Text style={styles.emptyText}>Try adjusting your filters</Text>
+              </View>
+            ) : (
+              PACKING_CATEGORIES.map((cat) => {
+                const items = groupedItems[cat.key];
+                if (items.length === 0) return null;
+
+                return (
+                  <View key={cat.key} style={styles.categoryGroup}>
+                    <View style={[styles.categoryHeader, { borderLeftColor: cat.color }]}>
+                      <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+                      <Text style={styles.categoryTitle}>{cat.label}</Text>
+                      <View style={[styles.categoryBadge, { backgroundColor: cat.color + '20' }]}>
+                        <Text style={[styles.categoryBadgeText, { color: cat.color }]}>
+                          {items.filter(i => i.packed).length}/{items.length}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {items.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={[styles.itemCard, item.packed && styles.itemCardPacked]}
+                        onPress={() => togglePackingItem(item.id)}
+                        onLongPress={() => handleDeleteItem(item.id, item.name)}
+                        delayLongPress={500}
+                      >
+                        <View style={[styles.checkbox, item.packed && { backgroundColor: '#10B981', borderColor: '#10B981' }]}>
+                          {item.packed && <Text style={styles.checkmark}>✓</Text>}
+                        </View>
+                        <View style={styles.itemInfo}>
+                          <Text style={[styles.itemName, item.packed && styles.itemNamePacked]}>{item.name}</Text>
+                          {item.quantity > 1 && (
+                            <Text style={styles.itemQuantity}>×{item.quantity}</Text>
+                          )}
+                          {item.notes && (
+                            <Text style={styles.itemNotes}>{item.notes}</Text>
+                          )}
+                        </View>
+                        <TouchableOpacity 
+                          style={styles.itemDelete}
+                          onPress={() => handleDeleteItem(item.id, item.name)}
+                        >
+                          <Text style={styles.itemDeleteText}>🗑️</Text>
+                        </TouchableOpacity>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                );
+              })
+            )}
+          </View>
+        )}
+
+        {/* Suggestions */}
+        {totalItems > 0 && totalItems < 10 && (
+          <View style={styles.suggestSection}>
+            <Text style={styles.sectionTitle}>💡 Suggested Items</Text>
+            <View style={styles.suggestItems}>
+              {PACKING_CATEGORIES.slice(0, 3).flatMap(cat => 
+                QUICK_ADD_ITEMS[cat.key]
+                  .filter(item => !packingItems.some(p => p.name.toLowerCase() === item.toLowerCase()))
+                  .slice(0, 2)
+                  .map(item => (
+                    <TouchableOpacity
+                      key={`${cat.key}-${item}`}
+                      style={styles.suggestItem}
+                      onPress={() => handleQuickAdd(item, cat.key)}
+                    >
+                      <Text style={styles.suggestEmoji}>{cat.emoji}</Text>
+                      <Text style={styles.suggestText}>{item}</Text>
+                      <Text style={styles.suggestAdd}>+</Text>
+                    </TouchableOpacity>
+                  ))
+              )}
+            </View>
+          </View>
+        )}
+
+        <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Modal */}
-      <Modal animationType="slide" transparent visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
+      {/* FAB */}
+      <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
+        <Text style={styles.fabIcon}>+</Text>
+        <Text style={styles.fabText}>Add Item</Text>
+      </TouchableOpacity>
+
+      {/* Add Item Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Add Item</Text>
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Item name"
-              placeholderTextColor={colors.textMuted}
-              value={newItem.name}
-              onChangeText={(t) => setNewItem({...newItem, name: t})}
-            />
-
-            <Text style={styles.inputLabel}>Category</Text>
-            <View style={styles.categoryGrid}>
-              {CATEGORIES.map(cat => (
-                <TouchableOpacity
-                  key={cat.key}
-                  style={[styles.categoryChip, newItem.category === cat.key && styles.categoryChipActive]}
-                  onPress={() => setNewItem({...newItem, category: cat.key})}
-                >
-                  <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                  <Text style={[styles.categoryText, newItem.category === cat.key && styles.categoryTextActive]}>
-                    {cat.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Item</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalClose}>
+                <Text style={styles.modalCloseText}>✕</Text>
+              </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleAddItem}>
-              <Text style={styles.submitButtonText}>Add Item</Text>
-            </TouchableOpacity>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {/* Item Name */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Item Name *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., Passport, Charger, Jacket"
+                  placeholderTextColor={colors.textMuted}
+                  value={newItem.name}
+                  onChangeText={(t) => setNewItem({ ...newItem, name: t })}
+                />
+              </View>
+
+              {/* Category */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Category</Text>
+                <View style={styles.categoryGrid}>
+                  {PACKING_CATEGORIES.map((cat) => (
+                    <TouchableOpacity
+                      key={cat.key}
+                      style={[
+                        styles.categoryOption,
+                        newItem.category === cat.key && { backgroundColor: cat.color, borderColor: cat.color }
+                      ]}
+                      onPress={() => setNewItem({ ...newItem, category: cat.key })}
+                    >
+                      <Text style={styles.categoryOptionEmoji}>{cat.emoji}</Text>
+                      <Text style={[styles.categoryOptionText, newItem.category === cat.key && { color: '#FFF' }]}>
+                        {cat.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Quantity */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Quantity</Text>
+                <View style={styles.quantityRow}>
+                  <TouchableOpacity 
+                    style={styles.quantityBtn}
+                    onPress={() => setNewItem({ ...newItem, quantity: Math.max(1, parseInt(newItem.quantity) - 1).toString() })}
+                  >
+                    <Text style={styles.quantityBtnText}>−</Text>
+                  </TouchableOpacity>
+                  <TextInput
+                    style={styles.quantityInput}
+                    keyboardType="number-pad"
+                    value={newItem.quantity}
+                    onChangeText={(t) => setNewItem({ ...newItem, quantity: t.replace(/[^0-9]/g, '') || '1' })}
+                  />
+                  <TouchableOpacity 
+                    style={styles.quantityBtn}
+                    onPress={() => setNewItem({ ...newItem, quantity: (parseInt(newItem.quantity) + 1).toString() })}
+                  >
+                    <Text style={styles.quantityBtnText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Notes */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Notes (optional)</Text>
+                <TextInput
+                  style={[styles.input, { height: 70, textAlignVertical: 'top' }]}
+                  placeholder="Any specific details..."
+                  placeholderTextColor={colors.textMuted}
+                  value={newItem.notes}
+                  onChangeText={(t) => setNewItem({ ...newItem, notes: t })}
+                  multiline
+                />
+              </View>
+
+              {/* Quick Add in Modal */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Quick Add</Text>
+                <View style={styles.quickAddModalItems}>
+                  {QUICK_ADD_ITEMS[newItem.category]?.slice(0, 6).map((item) => (
+                    <TouchableOpacity
+                      key={item}
+                      style={styles.quickAddModalItem}
+                      onPress={() => setNewItem({ ...newItem, name: item })}
+                    >
+                      <Text style={styles.quickAddModalText}>{item}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Submit */}
+              <TouchableOpacity
+                style={[styles.submitBtn, !newItem.name.trim() && { opacity: 0.5 }]}
+                onPress={handleAddItem}
+                disabled={!newItem.name.trim()}
+              >
+                <Text style={styles.submitBtnText}>+ Add to Packing List</Text>
+              </TouchableOpacity>
+
+              <View style={{ height: 30 }} />
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -175,56 +446,139 @@ export default function PackingScreen() {
 
 const createStyles = (colors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 20 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 20 },
-  title: { color: colors.text, fontSize: 32, fontWeight: 'bold' },
-  subtitle: { color: colors.textMuted, fontSize: 14, marginTop: 4 },
-  addButton: { width: 48, height: 48, backgroundColor: colors.primary, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  addButtonText: { color: colors.bg, fontSize: 28, fontWeight: 'bold', marginTop: -2 },
+  scrollContent: { paddingBottom: 20 },
   
-  progressCard: { marginTop: 24, backgroundColor: colors.card, borderRadius: 20, padding: 24, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
-  progressCircleContainer: { marginRight: 20 },
-  progressCircle: { width: 70, height: 70, borderRadius: 35, borderWidth: 4, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  progressPercent: { color: colors.primary, fontSize: 20, fontWeight: 'bold' },
-  progressInfo: { flex: 1 },
-  progressTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  // Header
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
+  headerTitle: { color: colors.text, fontSize: 24, fontWeight: 'bold' },
+  headerSubtitle: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
+  addBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+  addBtnText: { color: colors.bg, fontSize: 14, fontWeight: 'bold' },
+
+  // Progress Card
+  progressCard: { marginHorizontal: 20, backgroundColor: colors.card, borderRadius: 20, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: colors.primaryBorder },
+  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  progressInfo: {},
+  progressLabel: { color: colors.textMuted, fontSize: 12 },
+  progressCount: { marginTop: 4 },
+  progressPacked: { color: colors.primary, fontSize: 28, fontWeight: 'bold' },
+  progressTotal: { color: colors.textMuted, fontSize: 16 },
+  progressCircle: { width: 60, height: 60, borderRadius: 30, borderWidth: 4, borderColor: colors.primary, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.cardLight },
+  progressPercent: { color: colors.primary, fontSize: 14, fontWeight: 'bold' },
   progressBar: { height: 8, backgroundColor: colors.cardLight, borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 4 },
-  
-  quickAddSection: { marginTop: 30 },
-  sectionTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 14 },
-  quickAddGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  quickAddChip: { backgroundColor: colors.primaryMuted, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.primaryBorder },
-  quickAddText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
-  
-  itemsSection: { marginTop: 30 },
-  listLabel: { color: colors.primary, fontSize: 12, fontWeight: '700', letterSpacing: 1.5, marginBottom: 12 },
-  itemCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 14, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.primaryBorder },
-  itemCardPacked: { opacity: 0.6 },
-  checkbox: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: colors.primary, marginRight: 14, alignItems: 'center', justifyContent: 'center' },
-  checkboxChecked: { backgroundColor: colors.primary },
-  checkmark: { color: colors.bg, fontSize: 14, fontWeight: 'bold' },
-  itemIcon: { fontSize: 20, marginRight: 12 },
-  itemName: { flex: 1, color: colors.text, fontSize: 16, fontWeight: '500' },
-  itemNamePacked: { textDecorationLine: 'line-through', color: colors.textMuted },
-  deleteButton: { color: colors.textMuted, fontSize: 24, paddingLeft: 10 },
-  
+  progressFill: { height: '100%', borderRadius: 4 },
+  completeBadge: { backgroundColor: '#10B98120', borderRadius: 10, padding: 10, marginTop: 12, alignItems: 'center' },
+  completeBadgeText: { color: '#10B981', fontSize: 13, fontWeight: '600' },
+
+  // Category Overview
+  categoryOverview: { marginBottom: 16 },
+  categoryScroll: { paddingHorizontal: 20, gap: 10 },
+  categoryPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, borderWidth: 1, borderColor: colors.primaryBorder },
+  categoryPillEmoji: { fontSize: 18, marginRight: 8 },
+  categoryPillInfo: {},
+  categoryPillLabel: { color: colors.text, fontSize: 12, fontWeight: '600' },
+  categoryPillCount: { color: colors.textMuted, fontSize: 10, marginTop: 2 },
+  categoryCheck: { color: '#10B981', fontSize: 14, marginLeft: 8 },
+
+  // Search
+  searchSection: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 16, gap: 10 },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 12, paddingHorizontal: 14, borderWidth: 1, borderColor: colors.primaryBorder },
+  searchIcon: { fontSize: 16, marginRight: 10 },
+  searchInput: { flex: 1, color: colors.text, fontSize: 14, paddingVertical: 12 },
+  searchClear: { color: colors.textMuted, fontSize: 16, padding: 4 },
+  filterToggle: { width: 46, height: 46, borderRadius: 12, backgroundColor: colors.card, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
+  filterToggleActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primary },
+  filterToggleText: { fontSize: 18 },
+
+  // Quick Add Section
+  quickAddSection: { paddingHorizontal: 20, marginBottom: 20 },
+  quickAddHint: { color: colors.textMuted, fontSize: 12, marginBottom: 16 },
+  quickAddCategory: { marginBottom: 16 },
+  quickAddHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  quickAddEmoji: { fontSize: 18, marginRight: 8 },
+  quickAddLabel: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  quickAddItems: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  quickAddItem: { backgroundColor: colors.card, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
+  quickAddItemText: { color: colors.text, fontSize: 13 },
+
+  // List Section
+  listSection: { paddingHorizontal: 20 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  sectionTitle: { color: colors.text, fontSize: 17, fontWeight: 'bold', marginBottom: 12 },
+  sectionCount: { color: colors.textMuted, fontSize: 13 },
+
+  // Empty State
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyEmoji: { fontSize: 48, marginBottom: 12 },
-  emptyText: { color: colors.textMuted, fontSize: 16 },
-  
+  emptyTitle: { color: colors.text, fontSize: 18, fontWeight: '600' },
+  emptyText: { color: colors.textMuted, fontSize: 14, marginTop: 4 },
+
+  // Category Group
+  categoryGroup: { marginBottom: 20 },
+  categoryHeader: { flexDirection: 'row', alignItems: 'center', paddingLeft: 12, borderLeftWidth: 3, marginBottom: 10 },
+  categoryEmoji: { fontSize: 18, marginRight: 8 },
+  categoryTitle: { color: colors.text, fontSize: 15, fontWeight: '600', flex: 1 },
+  categoryBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  categoryBadgeText: { fontSize: 11, fontWeight: '600' },
+
+  // Item Card
+  itemCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: colors.primaryBorder },
+  itemCardPacked: { opacity: 0.7, backgroundColor: colors.cardLight },
+  checkbox: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: colors.primaryBorder, justifyContent: 'center', alignItems: 'center' },
+  checkmark: { color: '#FFF', fontSize: 14, fontWeight: 'bold' },
+  itemInfo: { flex: 1, marginLeft: 12 },
+  itemName: { color: colors.text, fontSize: 15, fontWeight: '500' },
+  itemNamePacked: { textDecorationLine: 'line-through', color: colors.textMuted },
+  itemQuantity: { color: colors.primary, fontSize: 12, marginTop: 2 },
+  itemNotes: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
+  itemDelete: { padding: 6 },
+  itemDeleteText: { fontSize: 14 },
+
+  // Suggestions
+  suggestSection: { paddingHorizontal: 20, marginTop: 10 },
+  suggestItems: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  suggestItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: colors.primaryBorder },
+  suggestEmoji: { fontSize: 14, marginRight: 6 },
+  suggestText: { color: colors.text, fontSize: 13 },
+  suggestAdd: { color: colors.primary, fontSize: 16, marginLeft: 8, fontWeight: 'bold' },
+
+  // FAB
+  fab: { position: 'absolute', bottom: 20, right: 20, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary, paddingVertical: 14, paddingHorizontal: 18, borderRadius: 16, elevation: 5 },
+  fabIcon: { color: colors.bg, fontSize: 20, fontWeight: 'bold', marginRight: 6 },
+  fabText: { color: colors.bg, fontSize: 15, fontWeight: 'bold' },
+
+  // Modal
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
-  modalContent: { backgroundColor: colors.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24 },
-  modalHandle: { width: 40, height: 4, backgroundColor: colors.textMuted, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
-  modalTitle: { color: colors.text, fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  input: { backgroundColor: colors.cardLight, color: colors.text, padding: 18, borderRadius: 14, fontSize: 16, borderWidth: 1, borderColor: colors.primaryBorder, marginBottom: 20 },
-  inputLabel: { color: colors.textMuted, marginBottom: 12 },
-  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
-  categoryChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardLight, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.primaryBorder },
-  categoryChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  categoryIcon: { fontSize: 16, marginRight: 6 },
-  categoryText: { color: colors.text, fontSize: 13 },
-  categoryTextActive: { color: colors.bg, fontWeight: '600' },
-  submitButton: { backgroundColor: colors.primary, padding: 18, borderRadius: 14, alignItems: 'center' },
-  submitButtonText: { color: colors.bg, fontSize: 17, fontWeight: 'bold' },
+  modalContent: { backgroundColor: colors.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 12, paddingHorizontal: 24, maxHeight: '90%' },
+  modalHandle: { width: 40, height: 4, backgroundColor: colors.textMuted, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { color: colors.text, fontSize: 22, fontWeight: 'bold' },
+  modalClose: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.cardLight, justifyContent: 'center', alignItems: 'center' },
+  modalCloseText: { color: colors.textMuted, fontSize: 18 },
+
+  // Inputs
+  inputGroup: { marginBottom: 16 },
+  inputLabel: { color: colors.textMuted, fontSize: 13, marginBottom: 8 },
+  input: { backgroundColor: colors.cardLight, color: colors.text, padding: 14, borderRadius: 12, fontSize: 15, borderWidth: 1, borderColor: colors.primaryBorder },
+
+  // Category Grid
+  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  categoryOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardLight, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.primaryBorder },
+  categoryOptionEmoji: { fontSize: 16, marginRight: 6 },
+  categoryOptionText: { color: colors.text, fontSize: 12, fontWeight: '500' },
+
+  // Quantity
+  quantityRow: { flexDirection: 'row', alignItems: 'center' },
+  quantityBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.cardLight, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
+  quantityBtnText: { color: colors.text, fontSize: 20, fontWeight: 'bold' },
+  quantityInput: { flex: 1, backgroundColor: colors.cardLight, color: colors.text, textAlign: 'center', fontSize: 18, fontWeight: 'bold', marginHorizontal: 10, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: colors.primaryBorder },
+
+  // Quick Add in Modal
+  quickAddModalItems: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  quickAddModalItem: { backgroundColor: colors.cardLight, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: colors.primaryBorder },
+  quickAddModalText: { color: colors.text, fontSize: 13 },
+
+  // Submit
+  submitBtn: { backgroundColor: colors.primary, padding: 16, borderRadius: 14, alignItems: 'center', marginTop: 10 },
+  submitBtnText: { color: colors.bg, fontSize: 16, fontWeight: 'bold' },
 });
