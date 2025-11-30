@@ -36,10 +36,10 @@ function TripTabs({ onBackToHome }) {
           tabBarInactiveTintColor: colors.textMuted,
           tabBarIcon: ({ focused }) => {
             let emoji = '🏠';
-            if (route.name === 'Budget') emoji = '💰';
-            if (route.name === 'Expenses') emoji = '💳';
-            if (route.name === 'Packing') emoji = '🎒';
             if (route.name === 'Itinerary') emoji = '🗺️';
+            if (route.name === 'Expenses') emoji = '💳';
+            if (route.name === 'Budget') emoji = '💰';
+            if (route.name === 'Packing') emoji = '🎒';
             return (
               <View style={[
                 { padding: 8, borderRadius: 12 },
@@ -54,10 +54,10 @@ function TripTabs({ onBackToHome }) {
         <Tab.Screen name="Dashboard">
           {() => <HomeScreen onBackToHome={onBackToHome} />}
         </Tab.Screen>
-        <Tab.Screen name="Budget" component={BudgetScreen} />
-        <Tab.Screen name="Expenses" component={ExpenseScreen} />
-        <Tab.Screen name="Packing" component={PackingScreen} />
         <Tab.Screen name="Itinerary" component={MapScreen} />
+        <Tab.Screen name="Expenses" component={ExpenseScreen} />
+        <Tab.Screen name="Budget" component={BudgetScreen} />
+        <Tab.Screen name="Packing" component={PackingScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );
