@@ -3,10 +3,12 @@ import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Animat
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTravelContext } from '../context/TravelContext';
 import { useTheme } from '../context/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
 
 export default function HomeScreen({ onBackToHome }) {
   const { tripInfo, setTripInfo, budget, getTotalExpenses, getRemainingBudget, packingItems, itinerary, expenses } = useTravelContext();
   const { colors } = useTheme();
+  const navigation = useNavigation();
   const [isEditing, setIsEditing] = useState(false);
 
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -27,6 +29,9 @@ export default function HomeScreen({ onBackToHome }) {
   const spentPercentage = budget.total > 0 ? (getTotalExpenses() / budget.total) * 100 : 0;
   const participantCount = (tripInfo.participants?.length || 0) + 1;
   const remainingBudget = getRemainingBudget();
+
+  // Get last expense
+  const lastExpense = expenses.length > 0 ? expenses[expenses.length - 1] : null;
 
   // Get recent expenses
   const recentExpenses = expenses.slice(-4).reverse();
@@ -62,6 +67,16 @@ export default function HomeScreen({ onBackToHome }) {
   };
 
   const daysUntil = getDaysUntilTrip();
+
+  // Navigate to Itinerary tab
+  const goToItinerary = () => {
+    navigation.navigate('Itinerary');
+  };
+
+  // Navigate to Expenses tab
+  const goToExpenses = () => {
+    navigation.navigate('Expenses');
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -126,8 +141,17 @@ export default function HomeScreen({ onBackToHome }) {
             </View>
             <View style={styles.heroStatDivider} />
             <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatValue}>{packedCount}/{totalItems}</Text>
-              <Text style={styles.heroStatLabel}>Packed</Text>
+              {lastExpense ? (
+                <>
+                  <Text style={styles.heroStatValue}>${lastExpense.amount}</Text>
+                  <Text style={styles.heroStatLabel}>Last Spent</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.heroStatValue}>$0</Text>
+                  <Text style={styles.heroStatLabel}>Last Spent</Text>
+                </>
+              )}
             </View>
           </View>
 
@@ -191,49 +215,73 @@ export default function HomeScreen({ onBackToHome }) {
 
         {/* Activity Overview */}
         <Animated.View style={[styles.overviewSection, { opacity: fadeAnim }]}>
-          <Text style={styles.sectionTitle}>📍 Activity Overview</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>📍 Activity Overview</Text>
+            {itinerary.length > 0 && (
+              <TouchableOpacity onPress={goToItinerary}>
+                <Text style={styles.viewMoreText}>View All →</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={styles.overviewCard}>
             {itinerary.length === 0 ? (
-              <View style={styles.emptyOverview}>
+              <TouchableOpacity style={styles.emptyOverview} onPress={goToItinerary}>
                 <Text style={styles.emptyOverviewEmoji}>🗺️</Text>
                 <Text style={styles.emptyOverviewText}>No activities planned yet</Text>
-                <Text style={styles.emptyOverviewHint}>Go to Itinerary to add activities</Text>
-              </View>
+                <Text style={styles.emptyOverviewHint}>Tap to add activities</Text>
+              </TouchableOpacity>
             ) : (
               <View style={styles.overviewList}>
                 {itinerary.slice(0, 4).map((item, index) => (
-                  <View key={item.id} style={[styles.overviewItem, index < Math.min(itinerary.length, 4) - 1 && styles.overviewItemBorder]}>
+                  <TouchableOpacity 
+                    key={item.id} 
+                    style={[styles.overviewItem, index < Math.min(itinerary.length, 4) - 1 && styles.overviewItemBorder]}
+                    onPress={goToItinerary}
+                  >
                     <View style={styles.overviewDayBadge}>
                       <Text style={styles.overviewDayText}>D{item.dayNumber}</Text>
                     </View>
                     <Text style={styles.overviewName} numberOfLines={1}>{item.name}</Text>
                     <Text style={styles.overviewTime}>{item.time || '--:--'}</Text>
-                  </View>
+                  </TouchableOpacity>
                 ))}
                 {itinerary.length > 4 && (
-                  <Text style={styles.moreItems}>+{itinerary.length - 4} more activities</Text>
+                  <TouchableOpacity style={styles.moreItemsButton} onPress={goToItinerary}>
+                    <Text style={styles.moreItems}>+{itinerary.length - 4} more activities →</Text>
+                  </TouchableOpacity>
                 )}
               </View>
             )}
           </View>
         </Animated.View>
 
-        {/* Expense Logs - NEW SECTION */}
+        {/* Expense Logs */}
         <Animated.View style={[styles.overviewSection, { opacity: fadeAnim }]}>
-          <Text style={styles.sectionTitle}>💳 Recent Expenses</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>💳 Recent Expenses</Text>
+            {expenses.length > 0 && (
+              <TouchableOpacity onPress={goToExpenses}>
+                <Text style={styles.viewMoreText}>View All →</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={styles.overviewCard}>
             {expenses.length === 0 ? (
-              <View style={styles.emptyOverview}>
+              <TouchableOpacity style={styles.emptyOverview} onPress={goToExpenses}>
                 <Text style={styles.emptyOverviewEmoji}>💸</Text>
                 <Text style={styles.emptyOverviewText}>No expenses logged yet</Text>
-                <Text style={styles.emptyOverviewHint}>Go to Expenses to start tracking</Text>
-              </View>
+                <Text style={styles.emptyOverviewHint}>Tap to start tracking</Text>
+              </TouchableOpacity>
             ) : (
               <View style={styles.overviewList}>
                 {recentExpenses.map((expense, index) => {
                   const categoryInfo = getCategoryInfo(expense.category);
                   return (
-                    <View key={expense.id} style={[styles.expenseItem, index < recentExpenses.length - 1 && styles.overviewItemBorder]}>
+                    <TouchableOpacity 
+                      key={expense.id} 
+                      style={[styles.expenseItem, index < recentExpenses.length - 1 && styles.overviewItemBorder]}
+                      onPress={goToExpenses}
+                    >
                       <View style={[styles.expenseIconBg, { backgroundColor: categoryInfo.color + '20' }]}>
                         <Text style={styles.expenseIcon}>{categoryInfo.emoji}</Text>
                       </View>
@@ -242,11 +290,13 @@ export default function HomeScreen({ onBackToHome }) {
                         <Text style={styles.expenseDate}>{expense.date}</Text>
                       </View>
                       <Text style={styles.expenseAmount}>-${expense.amount}</Text>
-                    </View>
+                    </TouchableOpacity>
                   );
                 })}
                 {expenses.length > 4 && (
-                  <Text style={styles.moreItems}>+{expenses.length - 4} more expenses</Text>
+                  <TouchableOpacity style={styles.moreItemsButton} onPress={goToExpenses}>
+                    <Text style={styles.moreItems}>+{expenses.length - 4} more expenses →</Text>
+                  </TouchableOpacity>
                 )}
               </View>
             )}
@@ -299,7 +349,7 @@ const createStyles = (colors) => StyleSheet.create({
   statusEmoji: { fontSize: 16, marginRight: 8 },
   statusText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
 
-  // Hero Card - Softer gradient using card colors
+  // Hero Card
   heroCard: { 
     marginHorizontal: 20, 
     backgroundColor: colors.card, 
@@ -351,16 +401,18 @@ const createStyles = (colors) => StyleSheet.create({
   packingPercent: { color: colors.primary, fontSize: 22, fontWeight: 'bold' },
   packingStatus: { color: colors.textMuted, fontSize: 12, marginTop: 8 },
 
-  // Section Title
-  sectionTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  // Section Header
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
+  viewMoreText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
 
-  // Overview Section (Activity & Expenses)
+  // Overview Section
   overviewSection: { paddingHorizontal: 20, marginBottom: 20 },
   overviewCard: { backgroundColor: colors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
   emptyOverview: { alignItems: 'center', paddingVertical: 20 },
   emptyOverviewEmoji: { fontSize: 32, marginBottom: 8 },
   emptyOverviewText: { color: colors.textMuted, fontSize: 14 },
-  emptyOverviewHint: { color: colors.textLight, fontSize: 12, marginTop: 4 },
+  emptyOverviewHint: { color: colors.primary, fontSize: 12, marginTop: 4, fontWeight: '500' },
   overviewList: { gap: 0 },
   overviewItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
   overviewItemBorder: { borderBottomWidth: 1, borderBottomColor: colors.primaryBorder },
@@ -368,7 +420,8 @@ const createStyles = (colors) => StyleSheet.create({
   overviewDayText: { color: colors.primary, fontSize: 11, fontWeight: '700' },
   overviewName: { flex: 1, color: colors.text, fontSize: 14 },
   overviewTime: { color: colors.textMuted, fontSize: 12 },
-  moreItems: { color: colors.primary, fontSize: 13, fontWeight: '500', textAlign: 'center', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.primaryBorder },
+  moreItemsButton: { paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.primaryBorder, marginTop: 4 },
+  moreItems: { color: colors.primary, fontSize: 13, fontWeight: '600', textAlign: 'center' },
 
   // Expense Items
   expenseItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
