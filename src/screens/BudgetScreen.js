@@ -7,12 +7,12 @@ import { useTheme } from '../context/ThemeContext';
 const { width } = Dimensions.get('window');
 
 const CATEGORIES = [
-  { key: 'accommodation', label: 'Stay', emoji: '🏨', color: '#8B5CF6' },
-  { key: 'transport', label: 'Transport', emoji: '🚗', color: '#3B82F6' },
-  { key: 'food', label: 'Food', emoji: '🍽️', color: '#F59E0B' },
-  { key: 'activities', label: 'Activities', emoji: '🎭', color: '#10B981' },
-  { key: 'shopping', label: 'Shopping', emoji: '🛍️', color: '#EC4899' },
-  { key: 'other', label: 'Other', emoji: '📦', color: '#6B7280' },
+  { key: 'accommodation', label: 'Stay', emoji: '🏨', color: '#8B5CF6', tip: '30-40%' },
+  { key: 'transport', label: 'Transport', emoji: '🚗', color: '#3B82F6', tip: '15-25%' },
+  { key: 'food', label: 'Food', emoji: '🍽️', color: '#F59E0B', tip: '20-30%' },
+  { key: 'activities', label: 'Activities', emoji: '🎭', color: '#10B981', tip: '10-15%' },
+  { key: 'shopping', label: 'Shopping', emoji: '🛍️', color: '#EC4899', tip: '5-10%' },
+  { key: 'other', label: 'Other', emoji: '📦', color: '#6B7280', tip: '5-10%' },
 ];
 
 export default function BudgetScreen() {
@@ -21,12 +21,13 @@ export default function BudgetScreen() {
     setBudget, 
     getExpensesByCategory,
     formatCurrency,
-    currency = { symbol: '₹', code: 'INR' }
+    currency = { symbol: '₹', code: 'INR' },
+    tripInfo = {}
   } = useTravelContext();
   const { colors } = useTheme();
   
   const [totalBudget, setTotalBudget] = useState((budget.total || 0).toString());
-  const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryInputs, setCategoryInputs] = useState({});
   
   const expensesByCategory = getExpensesByCategory ? getExpensesByCategory() : {};
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -37,6 +38,7 @@ export default function BudgetScreen() {
   };
 
   const updateCategoryBudget = (category, value) => {
+    setCategoryInputs({ ...categoryInputs, [category]: value });
     const newValue = parseFloat(value) || 0;
     setBudget({
       ...budget,
@@ -55,175 +57,254 @@ export default function BudgetScreen() {
   const totalSpent = Object.values(expensesByCategory).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
   const remainingBudget = (budget.total || 0) - totalSpent;
   const spentPercentage = budget.total > 0 ? (totalSpent / budget.total) * 100 : 0;
+  const allocatedPercentage = budget.total > 0 ? (allocatedTotal / budget.total) * 100 : 0;
+
+  const getStatusColor = (pct) => {
+    if (pct > 90) return '#EF4444';
+    if (pct > 70) return '#F59E0B';
+    return '#10B981';
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>💰 Budget</Text>
-        <Text style={styles.headerSubtitle}>Plan your travel spending</Text>
+        <View>
+          <Text style={styles.headerTitle}>💰 Budget</Text>
+          <Text style={styles.headerSubtitle}>
+            {tripInfo.destination ? `${tripInfo.destination} Trip` : 'Plan your spending'}
+          </Text>
+        </View>
+        {budget.total > 0 && (
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerBadgeText}>{spentPercentage.toFixed(0)}% used</Text>
+          </View>
+        )}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Total Budget Card */}
+        {/* Total Budget Card - Now uses softer colors */}
         <View style={styles.totalCard}>
-          <View style={styles.totalCardHeader}>
-            <View style={styles.totalIconBg}>
-              <Text style={styles.totalIcon}>💵</Text>
+          <View style={styles.totalCardInner}>
+            <View style={styles.totalCardLeft}>
+              <Text style={styles.totalLabel}>Total Budget</Text>
+              <View style={styles.totalInputRow}>
+                <Text style={styles.currencySymbol}>{currency.symbol}</Text>
+                <TextInput
+                  style={styles.totalInput}
+                  keyboardType="decimal-pad"
+                  value={totalBudget}
+                  onChangeText={setTotalBudget}
+                  onBlur={handleSaveBudget}
+                  placeholderTextColor={colors.textMuted}
+                  placeholder="0"
+                />
+              </View>
             </View>
-            <Text style={styles.totalLabel}>Total Trip Budget</Text>
-          </View>
-          
-          <View style={styles.totalInputContainer}>
-            <Text style={styles.currencySymbol}>{currency.symbol}</Text>
-            <TextInput
-              style={styles.totalInput}
-              keyboardType="decimal-pad"
-              value={totalBudget}
-              onChangeText={setTotalBudget}
-              onBlur={handleSaveBudget}
-              placeholderTextColor="rgba(255,255,255,0.5)"
-              placeholder="0"
-            />
+            <View style={styles.totalCardRight}>
+              <View style={[styles.circleProgress, { borderColor: getStatusColor(spentPercentage) }]}>
+                <Text style={styles.circleText}>{spentPercentage.toFixed(0)}%</Text>
+                <Text style={styles.circleLabel}>spent</Text>
+              </View>
+            </View>
           </View>
 
-          {/* Progress Bar */}
-          <View style={styles.totalProgress}>
-            <View style={styles.totalProgressBar}>
-              <View style={[styles.totalProgressFill, { 
-                width: `${Math.min(spentPercentage, 100)}%`,
-                backgroundColor: spentPercentage > 90 ? '#EF4444' : spentPercentage > 70 ? '#FCD34D' : '#34D399'
-              }]} />
+          {/* Dual Progress Bar */}
+          <View style={styles.dualProgressContainer}>
+            <View style={styles.dualProgressBar}>
+              <View style={[styles.dualProgressAllocated, { width: `${Math.min(allocatedPercentage, 100)}%` }]} />
+              <View style={[styles.dualProgressSpent, { width: `${Math.min(spentPercentage, 100)}%`, backgroundColor: getStatusColor(spentPercentage) }]} />
             </View>
-            <Text style={styles.totalProgressText}>{spentPercentage.toFixed(0)}% spent</Text>
-          </View>
-          
-          {/* Budget Summary */}
-          <View style={styles.budgetSummary}>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryEmoji}>📊</Text>
-              <Text style={styles.summaryValue}>{safeFormat(allocatedTotal)}</Text>
-              <Text style={styles.summaryLabel}>Allocated</Text>
-            </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryEmoji}>💸</Text>
-              <Text style={styles.summaryValue}>{safeFormat(totalSpent)}</Text>
-              <Text style={styles.summaryLabel}>Spent</Text>
-            </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryEmoji}>💵</Text>
-              <Text style={[styles.summaryValue, { color: remainingBudget >= 0 ? '#34D399' : '#EF4444' }]}>
-                {safeFormat(remainingBudget)}
-              </Text>
-              <Text style={styles.summaryLabel}>Remaining</Text>
+            <View style={styles.dualProgressLegend}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: colors.primaryMuted }]} />
+                <Text style={styles.legendText}>Allocated {allocatedPercentage.toFixed(0)}%</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: getStatusColor(spentPercentage) }]} />
+                <Text style={styles.legendText}>Spent {spentPercentage.toFixed(0)}%</Text>
+              </View>
             </View>
           </View>
         </View>
 
-        {/* Quick Stats */}
-        <View style={styles.quickStats}>
-          <View style={styles.quickStatCard}>
-            <Text style={styles.quickStatEmoji}>📅</Text>
-            <Text style={styles.quickStatValue}>{safeFormat(unallocated)}</Text>
-            <Text style={styles.quickStatLabel}>Unallocated</Text>
+        {/* Stats Grid */}
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <View style={[styles.statIconBg, { backgroundColor: '#10B98120' }]}>
+              <Text style={styles.statIcon}>💵</Text>
+            </View>
+            <Text style={[styles.statValue, { color: remainingBudget >= 0 ? '#10B981' : '#EF4444' }]}>
+              {safeFormat(Math.abs(remainingBudget))}
+            </Text>
+            <Text style={styles.statLabel}>{remainingBudget >= 0 ? 'Remaining' : 'Over Budget'}</Text>
           </View>
-          <View style={styles.quickStatCard}>
-            <Text style={styles.quickStatEmoji}>🎯</Text>
-            <Text style={styles.quickStatValue}>{CATEGORIES.length}</Text>
-            <Text style={styles.quickStatLabel}>Categories</Text>
+          
+          <View style={styles.statCard}>
+            <View style={[styles.statIconBg, { backgroundColor: '#3B82F620' }]}>
+              <Text style={styles.statIcon}>💸</Text>
+            </View>
+            <Text style={styles.statValue}>{safeFormat(totalSpent)}</Text>
+            <Text style={styles.statLabel}>Total Spent</Text>
+          </View>
+          
+          <View style={styles.statCard}>
+            <View style={[styles.statIconBg, { backgroundColor: '#F59E0B20' }]}>
+              <Text style={styles.statIcon}>📊</Text>
+            </View>
+            <Text style={[styles.statValue, { color: unallocated >= 0 ? colors.text : '#EF4444' }]}>
+              {safeFormat(Math.abs(unallocated))}
+            </Text>
+            <Text style={styles.statLabel}>{unallocated >= 0 ? 'Unallocated' : 'Over Allocated'}</Text>
           </View>
         </View>
 
         {/* Category Breakdown */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 Budget by Category</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>📊 Category Budgets</Text>
+            <Text style={styles.sectionHint}>Tap to edit</Text>
+          </View>
           
           {CATEGORIES.map((category) => {
             const allocated = parseFloat(budget.categories?.[category.key]) || 0;
             const spent = parseFloat(expensesByCategory[category.key]) || 0;
             const percentage = allocated > 0 ? Math.min((spent / allocated) * 100, 100) : 0;
             const remaining = allocated - spent;
+            const inputValue = categoryInputs[category.key] !== undefined 
+              ? categoryInputs[category.key] 
+              : allocated.toString();
             
             return (
-              <View key={category.key} style={[styles.categoryCard, { borderLeftColor: category.color }]}>
-                <View style={styles.categoryHeader}>
-                  <View style={styles.categoryInfo}>
-                    <View style={[styles.categoryIconBg, { backgroundColor: category.color + '20' }]}>
-                      <Text style={styles.categoryEmoji}>{category.emoji}</Text>
+              <View key={category.key} style={styles.categoryCard}>
+                <View style={styles.categoryTop}>
+                  <View style={[styles.categoryColorBar, { backgroundColor: category.color }]} />
+                  <View style={styles.categoryMain}>
+                    <View style={styles.categoryHeader}>
+                      <View style={[styles.categoryIconBg, { backgroundColor: category.color + '15' }]}>
+                        <Text style={styles.categoryEmoji}>{category.emoji}</Text>
+                      </View>
+                      <View style={styles.categoryInfo}>
+                        <Text style={styles.categoryLabel}>{category.label}</Text>
+                        <Text style={styles.categoryHint}>Suggested: {category.tip}</Text>
+                      </View>
+                      <View style={styles.categoryInputBox}>
+                        <Text style={styles.categoryInputSymbol}>{currency.symbol}</Text>
+                        <TextInput
+                          style={styles.categoryInput}
+                          keyboardType="decimal-pad"
+                          value={inputValue}
+                          onChangeText={(text) => updateCategoryBudget(category.key, text)}
+                          placeholder="0"
+                          placeholderTextColor={colors.textMuted}
+                        />
+                      </View>
                     </View>
-                    <View style={styles.categoryText}>
-                      <Text style={styles.categoryLabel}>{category.label}</Text>
-                      <Text style={styles.categorySpent}>
-                        {safeFormat(spent)} of {safeFormat(allocated)}
+                    
+                    {/* Progress */}
+                    <View style={styles.categoryProgressRow}>
+                      <View style={styles.categoryProgressBar}>
+                        <View 
+                          style={[
+                            styles.categoryProgressFill, 
+                            { 
+                              width: `${percentage}%`, 
+                              backgroundColor: getStatusColor(percentage)
+                            }
+                          ]} 
+                        />
+                      </View>
+                      <Text style={[styles.categoryPercent, { color: getStatusColor(percentage) }]}>
+                        {percentage.toFixed(0)}%
                       </Text>
                     </View>
-                  </View>
-                  
-                  <View style={styles.categoryInputWrapper}>
-                    <Text style={styles.categoryDollar}>{currency.symbol}</Text>
-                    <TextInput
-                      style={styles.categoryInput}
-                      keyboardType="decimal-pad"
-                      value={allocated.toString()}
-                      onChangeText={(text) => updateCategoryBudget(category.key, text)}
-                      onFocus={() => setEditingCategory(category.key)}
-                      onBlur={() => setEditingCategory(null)}
-                      placeholder="0"
-                      placeholderTextColor={colors.textMuted}
-                    />
-                  </View>
-                </View>
-                
-                <View style={styles.categoryProgress}>
-                  <View style={styles.progressBar}>
-                    <View 
-                      style={[
-                        styles.progressFill, 
-                        { 
-                          width: `${percentage}%`, 
-                          backgroundColor: percentage > 90 ? '#EF4444' : percentage > 70 ? '#F59E0B' : category.color 
-                        }
-                      ]} 
-                    />
-                  </View>
-                  <Text style={[styles.progressPercent, { color: percentage > 90 ? '#EF4444' : colors.textMuted }]}>
-                    {percentage.toFixed(0)}%
-                  </Text>
-                </View>
 
-                {allocated > 0 && (
-                  <View style={styles.categoryFooter}>
-                    <Text style={[styles.categoryRemaining, { color: remaining >= 0 ? '#10B981' : '#EF4444' }]}>
-                      {remaining >= 0 ? `${safeFormat(remaining)} left` : `${safeFormat(Math.abs(remaining))} over`}
-                    </Text>
+                    {/* Footer Stats */}
+                    <View style={styles.categoryFooter}>
+                      <Text style={styles.categorySpentText}>
+                        {safeFormat(spent)} spent
+                      </Text>
+                      {allocated > 0 && (
+                        <Text style={[styles.categoryRemainingText, { color: remaining >= 0 ? '#10B981' : '#EF4444' }]}>
+                          {remaining >= 0 ? `${safeFormat(remaining)} left` : `${safeFormat(Math.abs(remaining))} over`}
+                        </Text>
+                      )}
+                    </View>
                   </View>
-                )}
+                </View>
               </View>
             );
           })}
         </View>
 
-        {/* Tips Card */}
+        {/* Smart Insights */}
+        <View style={styles.insightsCard}>
+          <Text style={styles.insightsTitle}>💡 Smart Insights</Text>
+          <View style={styles.insightsList}>
+            {spentPercentage > 80 && (
+              <View style={styles.insightItem}>
+                <Text style={styles.insightIcon}>⚠️</Text>
+                <Text style={styles.insightText}>You've used {spentPercentage.toFixed(0)}% of your budget. Consider slowing down!</Text>
+              </View>
+            )}
+            {unallocated > 0 && budget.total > 0 && (
+              <View style={styles.insightItem}>
+                <Text style={styles.insightIcon}>💰</Text>
+                <Text style={styles.insightText}>{safeFormat(unallocated)} is unallocated. Assign it to categories for better tracking.</Text>
+              </View>
+            )}
+            {unallocated < 0 && (
+              <View style={styles.insightItem}>
+                <Text style={styles.insightIcon}>📊</Text>
+                <Text style={styles.insightText}>You've over-allocated by {safeFormat(Math.abs(unallocated))}. Adjust category budgets.</Text>
+              </View>
+            )}
+            {budget.total === 0 && (
+              <View style={styles.insightItem}>
+                <Text style={styles.insightIcon}>🎯</Text>
+                <Text style={styles.insightText}>Set a total budget above to start planning your trip expenses.</Text>
+              </View>
+            )}
+            {spentPercentage <= 50 && budget.total > 0 && spentPercentage > 0 && (
+              <View style={styles.insightItem}>
+                <Text style={styles.insightIcon}>✅</Text>
+                <Text style={styles.insightText}>Great job! You're spending wisely with {(100 - spentPercentage).toFixed(0)}% still available.</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Tips */}
         <View style={styles.tipsCard}>
-          <Text style={styles.tipsTitle}>💡 Budget Tips</Text>
+          <Text style={styles.tipsTitle}>📝 Budgeting Tips</Text>
           <View style={styles.tipsList}>
-            <View style={styles.tipRow}>
-              <Text style={styles.tipBullet}>•</Text>
-              <Text style={styles.tipItem}>Allocate 30-40% for accommodation</Text>
+            <View style={styles.tipItem}>
+              <Text style={styles.tipEmoji}>🏨</Text>
+              <View style={styles.tipContent}>
+                <Text style={styles.tipTitle}>Accommodation</Text>
+                <Text style={styles.tipDesc}>Book early for better rates. Consider hostels or Airbnb.</Text>
+              </View>
             </View>
-            <View style={styles.tipRow}>
-              <Text style={styles.tipBullet}>•</Text>
-              <Text style={styles.tipItem}>Keep 10-15% as emergency fund</Text>
+            <View style={styles.tipItem}>
+              <Text style={styles.tipEmoji}>🚗</Text>
+              <View style={styles.tipContent}>
+                <Text style={styles.tipTitle}>Transport</Text>
+                <Text style={styles.tipDesc}>Use local transport. Book flights in advance.</Text>
+              </View>
             </View>
-            <View style={styles.tipRow}>
-              <Text style={styles.tipBullet}>•</Text>
-              <Text style={styles.tipItem}>Track expenses daily to stay on budget</Text>
+            <View style={styles.tipItem}>
+              <Text style={styles.tipEmoji}>🍽️</Text>
+              <View style={styles.tipContent}>
+                <Text style={styles.tipTitle}>Food</Text>
+                <Text style={styles.tipDesc}>Eat local. Mix street food with restaurants.</Text>
+              </View>
             </View>
-            <View style={styles.tipRow}>
-              <Text style={styles.tipBullet}>•</Text>
-              <Text style={styles.tipItem}>Book transport & stays early for savings</Text>
+            <View style={styles.tipItem}>
+              <Text style={styles.tipEmoji}>💡</Text>
+              <View style={styles.tipContent}>
+                <Text style={styles.tipTitle}>Emergency Fund</Text>
+                <Text style={styles.tipDesc}>Keep 10-15% aside for unexpected expenses.</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -239,126 +320,119 @@ const createStyles = (colors) => StyleSheet.create({
   scrollContent: { paddingBottom: 20 },
   
   // Header
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
   headerTitle: { color: colors.text, fontSize: 24, fontWeight: 'bold' },
   headerSubtitle: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
+  headerBadge: { backgroundColor: colors.primaryMuted, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  headerBadgeText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
 
-  // Total Card
+  // Total Card - Softer, theme-matching colors
   totalCard: { 
     marginHorizontal: 20, 
-    backgroundColor: colors.primary, 
+    backgroundColor: colors.card, 
     borderRadius: 24, 
     padding: 20, 
-    marginBottom: 16 
-  },
-  totalCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  totalIconBg: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 14, 
-    backgroundColor: 'rgba(255,255,255,0.2)', 
-    alignItems: 'center', 
-    justifyContent: 'center' 
-  },
-  totalIcon: { fontSize: 22 },
-  totalLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: '600', marginLeft: 12 },
-  
-  totalInputContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  currencySymbol: { color: '#FFF', fontSize: 36, fontWeight: 'bold', marginRight: 4 },
-  totalInput: { flex: 1, color: '#FFF', fontSize: 44, fontWeight: 'bold', padding: 0 },
-
-  totalProgress: { marginBottom: 16 },
-  totalProgressBar: { height: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 4, overflow: 'hidden' },
-  totalProgressFill: { height: '100%', borderRadius: 4 },
-  totalProgressText: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 6, textAlign: 'right' },
-  
-  budgetSummary: { 
-    flexDirection: 'row', 
-    backgroundColor: 'rgba(255,255,255,0.15)', 
-    borderRadius: 16, 
-    padding: 14 
-  },
-  summaryItem: { flex: 1, alignItems: 'center' },
-  summaryEmoji: { fontSize: 18, marginBottom: 4 },
-  summaryValue: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
-  summaryLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 10, marginTop: 2 },
-  summaryDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
-
-  // Quick Stats
-  quickStats: { flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginBottom: 20 },
-  quickStatCard: { 
-    flex: 1, 
-    backgroundColor: colors.card, 
-    borderRadius: 16, 
-    padding: 16, 
-    alignItems: 'center',
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: colors.primaryBorder
+    borderColor: colors.primaryBorder,
   },
-  quickStatEmoji: { fontSize: 24, marginBottom: 8 },
-  quickStatValue: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
-  quickStatLabel: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
+  totalCardInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  totalCardLeft: { flex: 1 },
+  totalLabel: { color: colors.textMuted, fontSize: 13, fontWeight: '500', marginBottom: 8 },
+  totalInputRow: { flexDirection: 'row', alignItems: 'center' },
+  currencySymbol: { color: colors.primary, fontSize: 32, fontWeight: 'bold' },
+  totalInput: { color: colors.text, fontSize: 40, fontWeight: 'bold', padding: 0, minWidth: 100 },
+  totalCardRight: { marginLeft: 16 },
+  circleProgress: { 
+    width: 70, 
+    height: 70, 
+    borderRadius: 35, 
+    borderWidth: 4, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: colors.cardLight 
+  },
+  circleText: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  circleLabel: { color: colors.textMuted, fontSize: 10 },
+
+  // Dual Progress - Softer colors
+  dualProgressContainer: { marginTop: 20 },
+  dualProgressBar: { 
+    height: 10, 
+    backgroundColor: colors.cardLight, 
+    borderRadius: 5, 
+    overflow: 'hidden', 
+    position: 'relative' 
+  },
+  dualProgressAllocated: { 
+    position: 'absolute', 
+    height: '100%', 
+    backgroundColor: colors.primaryMuted, 
+    borderRadius: 5 
+  },
+  dualProgressSpent: { 
+    position: 'absolute', 
+    height: '100%', 
+    borderRadius: 5 
+  },
+  dualProgressLegend: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  legendItem: { flexDirection: 'row', alignItems: 'center' },
+  legendDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
+  legendText: { color: colors.textMuted, fontSize: 11 },
+
+  // Stats Grid
+  statsGrid: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginBottom: 20 },
+  statCard: { flex: 1, backgroundColor: colors.card, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
+  statIconBg: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  statIcon: { fontSize: 18 },
+  statValue: { color: colors.text, fontSize: 15, fontWeight: 'bold', textAlign: 'center' },
+  statLabel: { color: colors.textMuted, fontSize: 10, marginTop: 4, textAlign: 'center' },
 
   // Section
   section: { paddingHorizontal: 20, marginBottom: 20 },
-  sectionTitle: { color: colors.text, fontSize: 17, fontWeight: 'bold', marginBottom: 14 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  sectionTitle: { color: colors.text, fontSize: 17, fontWeight: 'bold' },
+  sectionHint: { color: colors.textMuted, fontSize: 12 },
   
   // Category Card
-  categoryCard: { 
-    backgroundColor: colors.card, 
-    borderRadius: 16, 
-    padding: 16, 
-    marginBottom: 12, 
-    borderWidth: 1, 
-    borderColor: colors.primaryBorder, 
-    borderLeftWidth: 4 
-  },
-  categoryHeader: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    marginBottom: 12 
-  },
-  categoryInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  categoryIconBg: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  categoryCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: colors.primaryBorder },
+  categoryTop: { flexDirection: 'row' },
+  categoryColorBar: { width: 4 },
+  categoryMain: { flex: 1, padding: 14 },
+  categoryHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  categoryIconBg: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   categoryEmoji: { fontSize: 20 },
-  categoryText: { marginLeft: 12, flex: 1 },
+  categoryInfo: { flex: 1, marginLeft: 12 },
   categoryLabel: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  categorySpent: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  categoryHint: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
+  categoryInputBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardLight, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, borderWidth: 1, borderColor: colors.primaryBorder },
+  categoryInputSymbol: { color: colors.textMuted, fontSize: 14 },
+  categoryInput: { color: colors.text, fontSize: 15, fontWeight: '600', width: 70, textAlign: 'right', padding: 0 },
   
-  categoryInputWrapper: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: colors.cardLight, 
-    borderRadius: 10, 
-    paddingHorizontal: 12, 
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder
-  },
-  categoryDollar: { color: colors.textMuted, fontSize: 16, marginRight: 2 },
-  categoryInput: { color: colors.text, fontSize: 16, fontWeight: '600', width: 70, textAlign: 'right', padding: 0 },
-  
-  categoryProgress: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  progressBar: { flex: 1, height: 8, backgroundColor: colors.cardLight, borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 4 },
-  progressPercent: { fontSize: 12, width: 40, textAlign: 'right', fontWeight: '600' },
+  categoryProgressRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  categoryProgressBar: { flex: 1, height: 6, backgroundColor: colors.cardLight, borderRadius: 3, overflow: 'hidden' },
+  categoryProgressFill: { height: '100%', borderRadius: 3 },
+  categoryPercent: { fontSize: 12, fontWeight: '600', width: 36, textAlign: 'right' },
 
-  categoryFooter: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.primaryBorder },
-  categoryRemaining: { fontSize: 12, fontWeight: '600' },
+  categoryFooter: { flexDirection: 'row', justifyContent: 'space-between' },
+  categorySpentText: { color: colors.textMuted, fontSize: 12 },
+  categoryRemainingText: { fontSize: 12, fontWeight: '600' },
+
+  // Insights
+  insightsCard: { marginHorizontal: 20, backgroundColor: colors.card, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.primaryBorder },
+  insightsTitle: { color: colors.text, fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  insightsList: { gap: 10 },
+  insightItem: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: colors.cardLight, padding: 12, borderRadius: 10 },
+  insightIcon: { fontSize: 16, marginRight: 10, marginTop: 1 },
+  insightText: { color: colors.text, fontSize: 13, flex: 1, lineHeight: 18 },
 
   // Tips
-  tipsCard: { 
-    marginHorizontal: 20, 
-    backgroundColor: colors.card, 
-    borderRadius: 16, 
-    padding: 20, 
-    borderWidth: 1, 
-    borderColor: colors.primaryBorder 
-  },
+  tipsCard: { marginHorizontal: 20, backgroundColor: colors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
   tipsTitle: { color: colors.text, fontSize: 16, fontWeight: 'bold', marginBottom: 14 },
-  tipsList: { gap: 10 },
-  tipRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  tipBullet: { color: colors.primary, fontSize: 16, marginRight: 8, marginTop: -2 },
-  tipItem: { color: colors.textMuted, fontSize: 14, lineHeight: 20, flex: 1 },
+  tipsList: { gap: 12 },
+  tipItem: { flexDirection: 'row', alignItems: 'flex-start' },
+  tipEmoji: { fontSize: 20, marginRight: 12, marginTop: 2 },
+  tipContent: { flex: 1 },
+  tipTitle: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  tipDesc: { color: colors.textMuted, fontSize: 12, marginTop: 2, lineHeight: 18 },
 });
