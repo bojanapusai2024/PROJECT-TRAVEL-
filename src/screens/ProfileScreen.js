@@ -1,11 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Modal } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 
 export default function ProfileScreen({ onBack }) {
   const { colors, isDark, toggleTheme } = useTheme();
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [userName, setUserName] = useState('Traveler');
+  const [userEmail, setUserEmail] = useState('traveler@travelmate.app');
+  const [tempName, setTempName] = useState(userName);
+  const [tempEmail, setTempEmail] = useState(userEmail);
+  
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const pastTrips = [
@@ -18,12 +24,21 @@ export default function ProfileScreen({ onBack }) {
   const totalDays = pastTrips.reduce((sum, t) => sum + t.days, 0);
   const totalSpent = pastTrips.reduce((sum, t) => sum + t.spent, 0);
 
+  const handleSaveProfile = () => {
+    setUserName(tempName);
+    setUserEmail(tempEmail);
+    setShowEditModal(false);
+  };
+
   const menuItems = [
     { icon: '💱', label: 'Currency', value: 'USD', type: 'value' },
     { icon: '🌐', label: 'Language', value: 'English', type: 'value' },
     { icon: '🔔', label: 'Notifications', value: true, type: 'toggle' },
     { icon: '📤', label: 'Export Data', type: 'action' },
     { icon: '❓', label: 'Help & Support', type: 'action' },
+    { icon: '⭐', label: 'Rate App', type: 'action' },
+    { icon: '📋', label: 'Terms of Service', type: 'action' },
+    { icon: '🔒', label: 'Privacy Policy', type: 'action' },
   ];
 
   return (
@@ -48,9 +63,9 @@ export default function ProfileScreen({ onBack }) {
               <Text style={styles.avatarBadgeText}>✨</Text>
             </View>
           </View>
-          <Text style={styles.profileName}>Traveler</Text>
-          <Text style={styles.profileEmail}>traveler@travelmate.app</Text>
-          <TouchableOpacity style={styles.editProfileButton}>
+          <Text style={styles.profileName}>{userName}</Text>
+          <Text style={styles.profileEmail}>{userEmail}</Text>
+          <TouchableOpacity style={styles.editProfileButton} onPress={() => { setTempName(userName); setTempEmail(userEmail); setShowEditModal(true); }}>
             <Text style={styles.editProfileText}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
@@ -58,14 +73,17 @@ export default function ProfileScreen({ onBack }) {
         {/* Stats Row */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
+            <Text style={styles.statEmoji}>✈️</Text>
             <Text style={styles.statValue}>{totalTrips}</Text>
             <Text style={styles.statLabel}>Trips</Text>
           </View>
           <View style={styles.statCard}>
+            <Text style={styles.statEmoji}>📅</Text>
             <Text style={styles.statValue}>{totalDays}</Text>
             <Text style={styles.statLabel}>Days</Text>
           </View>
           <View style={styles.statCard}>
+            <Text style={styles.statEmoji}>💰</Text>
             <Text style={styles.statValue}>${(totalSpent / 1000).toFixed(1)}k</Text>
             <Text style={styles.statLabel}>Spent</Text>
           </View>
@@ -140,25 +158,91 @@ export default function ProfileScreen({ onBack }) {
         </View>
 
         {/* Danger Zone */}
-        <TouchableOpacity style={styles.dangerCard}>
-          <View style={styles.dangerIcon}>
-            <Text style={styles.dangerIconEmoji}>🗑️</Text>
-          </View>
-          <View style={styles.dangerInfo}>
-            <Text style={styles.dangerLabel}>Clear All Data</Text>
-            <Text style={styles.dangerDescription}>Delete all trips and settings</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Account</Text>
+        </View>
+        <View style={styles.dangerSection}>
+          <TouchableOpacity style={styles.dangerCard}>
+            <View style={styles.dangerIcon}>
+              <Text style={styles.dangerIconEmoji}>🗑️</Text>
+            </View>
+            <View style={styles.dangerInfo}>
+              <Text style={styles.dangerLabel}>Clear All Data</Text>
+              <Text style={styles.dangerDescription}>Delete all trips and settings</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.dangerCard, styles.logoutCard]}>
+            <View style={[styles.dangerIcon, styles.logoutIcon]}>
+              <Text style={styles.dangerIconEmoji}>🚪</Text>
+            </View>
+            <View style={styles.dangerInfo}>
+              <Text style={[styles.dangerLabel, styles.logoutLabel]}>Log Out</Text>
+              <Text style={styles.dangerDescription}>Sign out of your account</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
         {/* App Info */}
         <View style={styles.appInfo}>
           <Text style={styles.appLogo}>✈️</Text>
           <Text style={styles.appName}>TravelMate</Text>
           <Text style={styles.appVersion}>Version 1.0.0</Text>
+          <Text style={styles.appCopyright}>Made with ❤️ for travelers</Text>
         </View>
 
-        <View style={{ height: 20 }} />
+        <View style={{ height: 30 }} />
       </ScrollView>
+
+      {/* Edit Profile Modal */}
+      <Modal animationType="slide" transparent visible={showEditModal} onRequestClose={() => setShowEditModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <TouchableOpacity onPress={() => setShowEditModal(false)} style={styles.modalClose}>
+                <Text style={styles.modalCloseText}>×</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.editAvatarContainer}>
+              <View style={styles.editAvatar}>
+                <Text style={styles.editAvatarEmoji}>🧑‍✈️</Text>
+              </View>
+              <TouchableOpacity style={styles.changeAvatarBtn}>
+                <Text style={styles.changeAvatarText}>Change Avatar</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Name</Text>
+              <TextInput
+                style={styles.input}
+                value={tempName}
+                onChangeText={setTempName}
+                placeholder="Your name"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <TextInput
+                style={styles.input}
+                value={tempEmail}
+                onChangeText={setTempEmail}
+                placeholder="Your email"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="email-address"
+              />
+            </View>
+
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
+              <Text style={styles.saveButtonText}>Save Changes</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* History Modal */}
       <Modal animationType="slide" transparent visible={showHistoryModal} onRequestClose={() => setShowHistoryModal(false)}>
@@ -172,25 +256,33 @@ export default function ProfileScreen({ onBack }) {
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
-              {pastTrips.map((trip) => (
-                <View key={trip.id} style={styles.historyItem}>
-                  <View style={styles.historyItemIcon}>
-                    <Text style={styles.historyItemEmoji}>{trip.emoji}</Text>
-                  </View>
-                  <View style={styles.historyItemInfo}>
-                    <Text style={styles.historyItemName}>{trip.name}</Text>
-                    <Text style={styles.historyItemDestination}>{trip.destination}</Text>
-                    <View style={styles.historyItemMeta}>
-                      <Text style={styles.historyItemDate}>📅 {trip.date}</Text>
-                      <Text style={styles.historyItemDays}>• {trip.days} days</Text>
+              {pastTrips.length === 0 ? (
+                <View style={styles.emptyHistory}>
+                  <Text style={styles.emptyEmoji}>🗺️</Text>
+                  <Text style={styles.emptyTitle}>No past trips yet</Text>
+                  <Text style={styles.emptyText}>Complete your first trip to see it here</Text>
+                </View>
+              ) : (
+                pastTrips.map((trip) => (
+                  <View key={trip.id} style={styles.historyItem}>
+                    <View style={styles.historyItemIcon}>
+                      <Text style={styles.historyItemEmoji}>{trip.emoji}</Text>
+                    </View>
+                    <View style={styles.historyItemInfo}>
+                      <Text style={styles.historyItemName}>{trip.name}</Text>
+                      <Text style={styles.historyItemDestination}>{trip.destination}</Text>
+                      <View style={styles.historyItemMeta}>
+                        <Text style={styles.historyItemDate}>📅 {trip.date}</Text>
+                        <Text style={styles.historyItemDays}>• {trip.days} days</Text>
+                      </View>
+                    </View>
+                    <View style={styles.historyItemSpent}>
+                      <Text style={styles.historyItemSpentValue}>${trip.spent}</Text>
+                      <Text style={styles.historyItemSpentLabel}>spent</Text>
                     </View>
                   </View>
-                  <View style={styles.historyItemSpent}>
-                    <Text style={styles.historyItemSpentValue}>${trip.spent}</Text>
-                    <Text style={styles.historyItemSpentLabel}>spent</Text>
-                  </View>
-                </View>
-              ))}
+                ))
+              )}
             </ScrollView>
           </View>
         </View>
@@ -203,7 +295,7 @@ const createStyles = (colors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 20 },
   
-  // Header with Back
+  // Header
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, marginBottom: 20 },
   backButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
   backArrow: { fontSize: 22, color: colors.text },
@@ -224,9 +316,10 @@ const createStyles = (colors) => StyleSheet.create({
 
   // Stats Row
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
-  statCard: { flex: 1, backgroundColor: colors.card, borderRadius: 16, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
-  statValue: { color: colors.primary, fontSize: 24, fontWeight: 'bold' },
-  statLabel: { color: colors.textMuted, fontSize: 12, marginTop: 4 },
+  statCard: { flex: 1, backgroundColor: colors.card, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
+  statEmoji: { fontSize: 20, marginBottom: 6 },
+  statValue: { color: colors.primary, fontSize: 22, fontWeight: 'bold' },
+  statLabel: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
 
   // History Card
   historyCard: { backgroundColor: colors.card, borderRadius: 20, padding: 20, marginBottom: 24, borderWidth: 1, borderColor: colors.primaryBorder },
@@ -264,28 +357,45 @@ const createStyles = (colors) => StyleSheet.create({
   menuValue: { color: colors.textMuted, fontSize: 14 },
   menuArrow: { color: colors.textMuted, fontSize: 18 },
 
-  // Danger Card
-  dangerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.3)', marginBottom: 30 },
+  // Danger Section
+  dangerSection: { gap: 12, marginBottom: 30 },
+  dangerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.3)' },
   dangerIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(239, 68, 68, 0.2)', alignItems: 'center', justifyContent: 'center' },
   dangerIconEmoji: { fontSize: 20 },
   dangerInfo: { flex: 1, marginLeft: 14 },
   dangerLabel: { color: '#EF4444', fontSize: 15, fontWeight: '600' },
   dangerDescription: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  logoutCard: { backgroundColor: colors.card, borderColor: colors.primaryBorder },
+  logoutIcon: { backgroundColor: colors.cardLight },
+  logoutLabel: { color: colors.text },
 
   // App Info
-  appInfo: { alignItems: 'center', paddingVertical: 20 },
-  appLogo: { fontSize: 32, marginBottom: 8 },
-  appName: { color: colors.textMuted, fontSize: 16, fontWeight: '600' },
-  appVersion: { color: colors.textMuted, fontSize: 12, marginTop: 4, opacity: 0.6 },
+  appInfo: { alignItems: 'center', paddingVertical: 24 },
+  appLogo: { fontSize: 40, marginBottom: 8 },
+  appName: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
+  appVersion: { color: colors.textMuted, fontSize: 13, marginTop: 4 },
+  appCopyright: { color: colors.textMuted, fontSize: 12, marginTop: 8, opacity: 0.6 },
 
   // Modal
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.8)' },
-  modalContent: { backgroundColor: colors.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '80%' },
+  modalContent: { backgroundColor: colors.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '85%' },
   modalHandle: { width: 40, height: 4, backgroundColor: colors.textMuted, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { color: colors.text, fontSize: 24, fontWeight: 'bold' },
   modalClose: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.cardLight, borderRadius: 10 },
   modalCloseText: { color: colors.textMuted, fontSize: 22 },
+
+  // Edit Profile
+  editAvatarContainer: { alignItems: 'center', marginBottom: 24 },
+  editAvatar: { width: 80, height: 80, borderRadius: 24, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.primary },
+  editAvatarEmoji: { fontSize: 40 },
+  changeAvatarBtn: { marginTop: 12 },
+  changeAvatarText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
+  inputGroup: { marginBottom: 16 },
+  inputLabel: { color: colors.textMuted, fontSize: 13, marginBottom: 8, fontWeight: '500' },
+  input: { backgroundColor: colors.cardLight, color: colors.text, padding: 16, borderRadius: 12, fontSize: 16, borderWidth: 1, borderColor: colors.primaryBorder },
+  saveButton: { backgroundColor: colors.primary, padding: 18, borderRadius: 14, alignItems: 'center', marginTop: 8 },
+  saveButtonText: { color: colors.bg, fontSize: 17, fontWeight: 'bold' },
 
   // History Items
   historyItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardLight, borderRadius: 16, padding: 16, marginBottom: 12 },

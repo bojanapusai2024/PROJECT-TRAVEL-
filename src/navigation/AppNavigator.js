@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -65,15 +65,16 @@ function TripTabs({ onBackToHome }) {
 
 export default function AppNavigator() {
   const [screen, setScreen] = useState('welcome');
-  const [hasActiveTrip, setHasActiveTrip] = useState(false);
   const { setTripInfo, setBudget, tripInfo } = useTravelContext();
   const { colors } = useTheme();
+
+  // Check if there's an active trip based on tripInfo
+  const hasActiveTrip = !!(tripInfo.destination || tripInfo.startDate || tripInfo.name);
 
   const handlePlanTrip = () => setScreen('setup');
 
   const handleJoinTrip = (code) => {
     console.log('Joining trip with code:', code);
-    setHasActiveTrip(true);
     setScreen('trip');
   };
 
@@ -86,7 +87,6 @@ export default function AppNavigator() {
       participants: tripData.participants,
     });
     setBudget(prev => ({ ...prev, total: parseFloat(tripData.budget) || 0 }));
-    setHasActiveTrip(true);
     setScreen('trip');
   };
 
