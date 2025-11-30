@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -71,7 +71,10 @@ export default function AppNavigator() {
   // Check if there's an active trip based on tripInfo
   const hasActiveTrip = !!(tripInfo.destination || tripInfo.startDate || tripInfo.name);
 
-  const handlePlanTrip = () => setScreen('setup');
+  const handlePlanTrip = () => {
+    console.log('Plan trip pressed');
+    setScreen('setup');
+  };
 
   const handleJoinTrip = (code) => {
     console.log('Joining trip with code:', code);
@@ -91,18 +94,23 @@ export default function AppNavigator() {
   };
 
   const handleBackToWelcome = () => {
+    console.log('Going back to welcome');
     setScreen('welcome');
   };
 
   const handleMyTrip = () => {
+    console.log('My trip pressed');
     setScreen('trip');
   };
 
   const handleProfile = () => {
+    console.log('Profile pressed - navigating to profile');
     setScreen('profile');
   };
 
-  // Setup screen - no footer
+  console.log('Current screen:', screen);
+
+  // Setup screen
   if (screen === 'setup') {
     return (
       <TripSetupScreen 
@@ -124,7 +132,7 @@ export default function AppNavigator() {
     return <TripTabs onBackToHome={handleBackToWelcome} />;
   }
 
-  // Welcome screen - no footer anymore
+  // Welcome screen (default)
   return (
     <WelcomeScreen 
       onPlanTrip={handlePlanTrip}

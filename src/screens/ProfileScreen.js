@@ -30,6 +30,13 @@ export default function ProfileScreen({ onBack }) {
     setShowEditModal(false);
   };
 
+  const handleBack = () => {
+    console.log('Back pressed from profile');
+    if (onBack) {
+      onBack();
+    }
+  };
+
   const menuItems = [
     { icon: '💱', label: 'Currency', value: 'USD', type: 'value' },
     { icon: '🌐', label: 'Language', value: 'English', type: 'value' },
@@ -46,7 +53,12 @@ export default function ProfileScreen({ onBack }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Header with Back Button */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBack}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
           <Text style={styles.title}>Profile</Text>

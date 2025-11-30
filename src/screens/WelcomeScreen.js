@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   View, Text, TouchableOpacity, StyleSheet, Dimensions, 
-  Animated, TextInput, Modal, ScrollView 
+  Animated, TextInput, Modal, ScrollView, Pressable
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
@@ -32,7 +32,6 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   const activitiesCount = itinerary.length;
 
   useEffect(() => {
-    // Initial animations
     Animated.parallel([
       Animated.timing(fadeAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
       Animated.spring(scaleAnim1, { toValue: 1, tension: 50, friction: 7, delay: 300, useNativeDriver: true }),
@@ -40,7 +39,6 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
       Animated.spring(scaleAnim3, { toValue: 1, tension: 50, friction: 7, delay: 700, useNativeDriver: true }),
     ]).start();
 
-    // Continuous float animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim, { toValue: 1, duration: 3000, useNativeDriver: true }),
@@ -48,7 +46,6 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
       ])
     ).start();
 
-    // Pulse animation for ring
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1.15, duration: 2000, useNativeDriver: true }),
@@ -67,6 +64,12 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     }
   };
 
+  const handleProfilePress = () => {
+    if (onProfile) {
+      onProfile();
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header with Profile */}
@@ -75,11 +78,14 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           <Text style={styles.logoEmoji}>✈️</Text>
           <Text style={styles.logoText}>TravelMate</Text>
         </View>
-        <TouchableOpacity style={styles.profileButton} onPress={onProfile} activeOpacity={0.8}>
+        <Pressable 
+          style={({ pressed }) => [styles.profileButton, pressed && styles.profileButtonPressed]} 
+          onPress={handleProfilePress}
+        >
           <View style={styles.profileAvatar}>
             <Text style={styles.profileEmoji}>👤</Text>
           </View>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Background Elements */}
@@ -97,16 +103,11 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
         {/* Traveler Illustration */}
         <Animated.View style={[styles.illustrationSection, { opacity: fadeAnim }]}>
           <Animated.View style={[styles.illustrationContainer, { transform: [{ translateY: floatTranslate }] }]}>
-            {/* Outer ring */}
             <Animated.View style={[styles.outerRing, { transform: [{ scale: pulseAnim }] }]} />
             <View style={styles.middleRing} />
-            
-            {/* Main traveler illustration */}
             <View style={styles.travelerCircle}>
               <Text style={styles.travelerEmoji}>🧗</Text>
             </View>
-
-            {/* Floating elements around */}
             <View style={[styles.floatingElement, styles.floatingElement1]}>
               <Text style={styles.floatingEmoji}>🏔️</Text>
             </View>
@@ -127,7 +128,10 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           {/* Current Trip Card */}
           {hasActiveTrip && (
             <Animated.View style={{ transform: [{ scale: scaleAnim1 }] }}>
-              <TouchableOpacity style={styles.currentTripCard} onPress={onMyTrip} activeOpacity={0.9}>
+              <Pressable 
+                style={({ pressed }) => [styles.currentTripCard, pressed && styles.cardPressed]} 
+                onPress={onMyTrip}
+              >
                 <View style={styles.currentTripGlow} />
                 <View style={styles.currentTripHeader}>
                   <View style={styles.currentTripIconBg}>
@@ -172,13 +176,16 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
                     </View>
                   </View>
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             </Animated.View>
           )}
 
           {/* Plan a Trip */}
           <Animated.View style={{ transform: [{ scale: hasActiveTrip ? scaleAnim2 : scaleAnim1 }] }}>
-            <TouchableOpacity style={styles.optionCard} onPress={onPlanTrip} activeOpacity={0.9}>
+            <Pressable 
+              style={({ pressed }) => [styles.optionCard, pressed && styles.cardPressed]} 
+              onPress={onPlanTrip}
+            >
               <View style={styles.optionGlow} />
               <View style={styles.optionIconBg}>
                 <Text style={styles.optionIcon}>🚀</Text>
@@ -190,12 +197,15 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
               <View style={styles.optionArrow}>
                 <Text style={styles.arrowTextSecondary}>→</Text>
               </View>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Join a Trip */}
           <Animated.View style={{ transform: [{ scale: hasActiveTrip ? scaleAnim3 : scaleAnim2 }] }}>
-            <TouchableOpacity style={styles.optionCard} onPress={() => setShowJoinModal(true)} activeOpacity={0.9}>
+            <Pressable 
+              style={({ pressed }) => [styles.optionCard, pressed && styles.cardPressed]} 
+              onPress={() => setShowJoinModal(true)}
+            >
               <View style={styles.optionIconBg}>
                 <Text style={styles.optionIcon}>👥</Text>
               </View>
@@ -206,7 +216,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
               <View style={styles.optionArrow}>
                 <Text style={styles.arrowTextSecondary}>→</Text>
               </View>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
         </View>
 
@@ -282,12 +292,16 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
               autoCapitalize="characters"
               maxLength={8}
             />
-            <TouchableOpacity style={[styles.joinButton, !tripCode.trim() && styles.joinButtonDisabled]} onPress={handleJoinTrip} disabled={!tripCode.trim()}>
+            <Pressable 
+              style={({ pressed }) => [styles.joinButton, !tripCode.trim() && styles.joinButtonDisabled, pressed && styles.buttonPressed]} 
+              onPress={handleJoinTrip} 
+              disabled={!tripCode.trim()}
+            >
               <Text style={styles.joinButtonText}>Join Trip</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setShowJoinModal(false)}>
+            </Pressable>
+            <Pressable style={styles.cancelButton} onPress={() => setShowJoinModal(false)}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -304,13 +318,14 @@ const createStyles = (colors) => StyleSheet.create({
   logoEmoji: { fontSize: 28, marginRight: 8 },
   logoText: { fontSize: 22, fontWeight: 'bold', color: colors.text },
   profileButton: { padding: 4 },
+  profileButtonPressed: { opacity: 0.7 },
   profileAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primary },
   profileEmoji: { fontSize: 22 },
 
   scrollContent: { flexGrow: 1, paddingBottom: 20 },
   
   // Background
-  bgElements: { position: 'absolute', width: '100%', height: '100%' },
+  bgElements: { position: 'absolute', width: '100%', height: '100%', zIndex: -1 },
   bgCircle: { position: 'absolute', borderRadius: 999, backgroundColor: colors.primary, opacity: 0.04 },
   bgCircle1: { width: 400, height: 400, top: -100, right: -150 },
   bgCircle2: { width: 300, height: 300, bottom: 200, left: -150 },
@@ -319,16 +334,10 @@ const createStyles = (colors) => StyleSheet.create({
   // Illustration Section
   illustrationSection: { alignItems: 'center', paddingVertical: 30 },
   illustrationContainer: { width: 220, height: 220, alignItems: 'center', justifyContent: 'center' },
-  
-  // Rings
   outerRing: { position: 'absolute', width: 200, height: 200, borderRadius: 100, borderWidth: 2, borderColor: colors.primary, opacity: 0.3, borderStyle: 'dashed' },
   middleRing: { position: 'absolute', width: 160, height: 160, borderRadius: 80, borderWidth: 1, borderColor: colors.primaryBorder, opacity: 0.5 },
-  
-  // Traveler
   travelerCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.primaryBorder, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 15, elevation: 8 },
   travelerEmoji: { fontSize: 60 },
-
-  // Floating elements
   floatingElement: { position: 'absolute', width: 48, height: 48, borderRadius: 24, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primaryBorder, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 },
   floatingElement1: { top: 0, left: 20 },
   floatingElement2: { top: 30, right: 10 },
@@ -338,6 +347,10 @@ const createStyles = (colors) => StyleSheet.create({
 
   // Actions Container
   actionsContainer: { paddingHorizontal: 20, gap: 14 },
+
+  // Card Press State
+  cardPressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
+  buttonPressed: { opacity: 0.8 },
 
   // Current Trip Card
   currentTripCard: { backgroundColor: colors.primary, borderRadius: 24, padding: 20, overflow: 'hidden', shadowColor: colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 8 },
