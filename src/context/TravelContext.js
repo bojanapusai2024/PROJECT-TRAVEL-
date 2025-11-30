@@ -3,6 +3,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TravelContext = createContext(null);
 
+const CURRENCIES = [
+  { code: 'USD', symbol: '$', name: 'US Dollar', flag: '🇺🇸' },
+  { code: 'EUR', symbol: '€', name: 'Euro', flag: '🇪🇺' },
+  { code: 'GBP', symbol: '£', name: 'British Pound', flag: '🇬🇧' },
+  { code: 'JPY', symbol: '¥', name: 'Japanese Yen', flag: '🇯🇵' },
+  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', flag: '🇨🇳' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee', flag: '🇮🇳' },
+];
+
 export const useTravelContext = () => {
   const context = useContext(TravelContext);
   if (!context) {
@@ -40,6 +49,9 @@ export function TravelProvider({ children }) {
   });
 
   const [tripHistory, setTripHistory] = useState([]);
+  
+  // Currency state
+  const [currency, setCurrency] = useState(CURRENCIES[0]); // Default USD
 
   function generateTripCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -152,6 +164,7 @@ export function TravelProvider({ children }) {
         expensesCount: expenses.length,
         activitiesCount: itinerary.length,
         packingItemsCount: packingItems.length,
+        currency: currency.code,
       };
       
       setTripHistory(prev => [completedTrip, ...prev]);
@@ -184,6 +197,11 @@ export function TravelProvider({ children }) {
     setTripHistory(prev => prev.filter(trip => trip.id !== id));
   };
 
+  // Format amount with currency
+  const formatCurrency = (amount) => {
+    return `${currency.symbol}${amount.toLocaleString()}`;
+  };
+
   const value = {
     tripInfo, setTripInfo,
     budget, setBudget,
@@ -195,6 +213,11 @@ export function TravelProvider({ children }) {
     endTrip,
     tripHistory,
     deleteTripFromHistory,
+    // Currency
+    currency,
+    setCurrency,
+    currencies: CURRENCIES,
+    formatCurrency,
     isLoaded,
   };
 

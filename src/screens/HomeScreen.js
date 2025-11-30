@@ -9,7 +9,7 @@ import DatePickerModal from '../components/DatePickerModal';
 export default function HomeScreen({ onBackToHome }) {
   const { 
     tripInfo, setTripInfo, budget, setBudget, getTotalExpenses, getRemainingBudget, 
-    packingItems, itinerary, expenses, clearTrip, endTrip
+    packingItems, itinerary, expenses, clearTrip, endTrip, formatCurrency, currency
   } = useTravelContext();
   const { colors } = useTheme();
   const navigation = useNavigation();
@@ -253,7 +253,7 @@ export default function HomeScreen({ onBackToHome }) {
             </View>
             <View style={styles.heroStatDivider} />
             <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatValue}>${lastExpense ? lastExpense.amount : 0}</Text>
+              <Text style={styles.heroStatValue}>{formatCurrency(lastExpense ? lastExpense.amount : 0)}</Text>
               <Text style={styles.heroStatLabel}>Last Spent</Text>
             </View>
           </View>
@@ -325,7 +325,7 @@ export default function HomeScreen({ onBackToHome }) {
               </View>
               <Text style={styles.statCardTitle}>Budget</Text>
             </View>
-            <Text style={styles.statCardValue}>${budget.total.toLocaleString()}</Text>
+            <Text style={styles.statCardValue}>{formatCurrency(budget.total)}</Text>
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
                 <View style={[styles.progressFill, { width: `${Math.min(spentPercentage, 100)}%`, backgroundColor: spentPercentage > 90 ? '#EF4444' : colors.primary }]} />
@@ -335,11 +335,11 @@ export default function HomeScreen({ onBackToHome }) {
             <View style={styles.statCardFooter}>
               <View style={styles.statMini}>
                 <Text style={styles.statMiniLabel}>Spent</Text>
-                <Text style={styles.statMiniValue}>${getTotalExpenses()}</Text>
+                <Text style={styles.statMiniValue}>{formatCurrency(getTotalExpenses())}</Text>
               </View>
               <View style={styles.statMini}>
                 <Text style={styles.statMiniLabel}>Left</Text>
-                <Text style={[styles.statMiniValue, { color: remainingBudget >= 0 ? colors.primary : '#EF4444' }]}>${remainingBudget}</Text>
+                <Text style={[styles.statMiniValue, { color: remainingBudget >= 0 ? colors.primary : '#EF4444' }]}>{formatCurrency(remainingBudget)}</Text>
               </View>
             </View>
           </Animated.View>
@@ -436,7 +436,7 @@ export default function HomeScreen({ onBackToHome }) {
                         <Text style={styles.expenseName} numberOfLines={1}>{expense.title}</Text>
                         <Text style={styles.expenseDate}>{expense.date}</Text>
                       </View>
-                      <Text style={styles.expenseAmount}>-${expense.amount}</Text>
+                      <Text style={styles.expenseAmount}>-{formatCurrency(expense.amount)}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -524,7 +524,7 @@ export default function HomeScreen({ onBackToHome }) {
                 </View>
                 <View style={styles.settingsInfo}>
                   <Text style={styles.settingsLabel}>Edit Budget</Text>
-                  <Text style={styles.settingsDesc}>Current: ${budget.total.toLocaleString()}</Text>
+                  <Text style={styles.settingsDesc}>Current: {formatCurrency(budget.total)}</Text>
                 </View>
                 <Text style={styles.settingsArrow}>→</Text>
               </Pressable>
@@ -652,7 +652,7 @@ export default function HomeScreen({ onBackToHome }) {
             <View style={styles.budgetEditSection}>
               <Text style={styles.budgetEditLabel}>Total Trip Budget</Text>
               <View style={styles.budgetInputRow}>
-                <Text style={styles.budgetCurrency}>$</Text>
+                <Text style={styles.budgetCurrency}>{currency.symbol}</Text>
                 <TextInput
                   style={styles.budgetInputField}
                   value={newBudget}
@@ -663,8 +663,8 @@ export default function HomeScreen({ onBackToHome }) {
                 />
               </View>
               <View style={styles.budgetInfo}>
-                <Text style={styles.budgetInfoText}>💳 Spent: ${getTotalExpenses()}</Text>
-                <Text style={styles.budgetInfoText}>📊 Remaining: ${parseFloat(newBudget || 0) - getTotalExpenses()}</Text>
+                <Text style={styles.budgetInfoText}>💳 Spent: {formatCurrency(getTotalExpenses())}</Text>
+                <Text style={styles.budgetInfoText}>📊 Remaining: {formatCurrency(parseFloat(newBudget || 0) - getTotalExpenses())}</Text>
               </View>
             </View>
 

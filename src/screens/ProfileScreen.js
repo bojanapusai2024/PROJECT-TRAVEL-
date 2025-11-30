@@ -9,9 +9,10 @@ import { useTravelContext } from '../context/TravelContext';
 
 export default function ProfileScreen({ onBack }) {
   const { colors, isDark, toggleTheme } = useTheme();
-  const { tripHistory, deleteTripFromHistory, getTotalExpenses } = useTravelContext();
+  const { tripHistory, deleteTripFromHistory, currency, setCurrency, currencies, formatCurrency } = useTravelContext();
   
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [userName, setUserName] = useState('Traveler');
   const [userEmail, setUserEmail] = useState('traveler@email.com');
   const [editName, setEditName] = useState(userName);
@@ -25,12 +26,14 @@ export default function ProfileScreen({ onBack }) {
     setShowEditModal(false);
   };
 
+  const handleSelectCurrency = (curr) => {
+    setCurrency(curr);
+    setShowCurrencyModal(false);
+  };
+
   // Calculate stats from history
   const totalTrips = tripHistory.length;
-  const totalDays = tripHistory.reduce((sum, trip) => {
-    // Calculate days from trip dates if available
-    return sum + (trip.activitiesCount || 0);
-  }, 0);
+  const totalDays = tripHistory.reduce((sum, trip) => sum + (trip.activitiesCount || 0), 0);
   const totalSpent = tripHistory.reduce((sum, trip) => sum + (trip.totalSpent || 0), 0);
 
   return (
@@ -92,7 +95,7 @@ export default function ProfileScreen({ onBack }) {
             <View style={[styles.statIconBg, { backgroundColor: '#F59E0B20' }]}>
               <Text style={styles.statIcon}>💰</Text>
             </View>
-            <Text style={styles.statValue}>${totalSpent}</Text>
+            <Text style={styles.statValue}>{formatCurrency(totalSpent)}</Text>
             <Text style={styles.statLabel}>Spent</Text>
           </View>
         </View>
@@ -137,7 +140,7 @@ export default function ProfileScreen({ onBack }) {
                   <View style={styles.historyStats}>
                     <View style={styles.historyStatItem}>
                       <Text style={styles.historyStatEmoji}>💰</Text>
-                      <Text style={styles.historyStatValue}>${trip.totalSpent || 0}</Text>
+                      <Text style={styles.historyStatValue}>{formatCurrency(trip.totalSpent || 0)}</Text>
                       <Text style={styles.historyStatLabel}>Spent</Text>
                     </View>
                     <View style={styles.historyStatDivider} />
@@ -191,14 +194,15 @@ export default function ProfileScreen({ onBack }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>⚙️ Settings</Text>
           <View style={styles.settingCard}>
-            <Pressable style={styles.settingRow}>
+            {/* Currency - Clickable */}
+            <Pressable style={styles.settingRow} onPress={() => setShowCurrencyModal(true)}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: '#10B98120' }]}>
                   <Text style={styles.settingIcon}>💵</Text>
                 </View>
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingLabel}>Currency</Text>
-                  <Text style={styles.settingDesc}>USD ($)</Text>
+                  <Text style={styles.settingDesc}>{currency.flag} {currency.code} ({currency.symbol})</Text>
                 </View>
               </View>
               <Text style={styles.settingArrow}>→</Text>
@@ -346,6 +350,65 @@ export default function ProfileScreen({ onBack }) {
           </View>
         </View>
       </Modal>
+
+      {/* Currency Selection Modal */}
+      <Modal visible={showCurrencyModal} transparent animationType="slide" onRequestClose={() => setShowCurrencyModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+            
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>💵 Select Currency</Text>
+              <Pressable onPress={() => setShowCurrencyModal(false)} style={styles.modalCloseBtn}>
+                <Text style={styles.modalCloseBtnText}>×</Text>
+              </Pressable>
+            </View>
+
+            <Text style={styles.currencyHint}>Choose your preferred currency for the app</Text>
+
+            <View style={styles.currencyList}>
+              {currencies.map((curr) => (
+                <Pressable
+                  key={curr.code}
+                  style={({ pressed }) => [
+                    styles.currencyItem,
+                    currency.code === curr.code && styles.currencyItemActive,
+                    pressed && { opacity: 0.8 }
+                  ]}
+                  onPress={() => handleSelectCurrency(curr)}
+                >
+                  <View style={styles.currencyLeft}>
+                    <Text style={styles.currencyFlag}>{curr.flag}</Text>
+                    <View style={styles.currencyInfo}>
+                      <Text style={[styles.currencyCode, currency.code === curr.code && styles.currencyCodeActive]}>
+                        {curr.code}
+                      </Text>
+                      <Text style={styles.currencyName}>{curr.name}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.currencyRight}>
+                    <Text style={[styles.currencySymbol, currency.code === curr.code && styles.currencySymbolActive]}>
+                      {curr.symbol}
+                    </Text>
+                    {currency.code === curr.code && (
+                      <View style={styles.currencyCheck}>
+                        <Text style={styles.currencyCheckText}>✓</Text>
+                      </View>
+                    )}
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+
+            <View style={styles.currencyNote}>
+              <Text style={styles.currencyNoteEmoji}>💡</Text>
+              <Text style={styles.currencyNoteText}>
+                Currency will be applied to all budget and expense displays across the app.
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -355,108 +418,31 @@ const createStyles = (colors) => StyleSheet.create({
   scrollContent: { paddingBottom: 20 },
 
   // Header
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between',
-    paddingHorizontal: 20, 
-    paddingVertical: 16,
-  },
-  backButton: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 14, 
-    backgroundColor: colors.card, 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-  },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 },
+  backButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
   backButtonText: { color: colors.text, fontSize: 20, fontWeight: 'bold' },
   headerTitle: { color: colors.text, fontSize: 20, fontWeight: 'bold' },
   headerRight: { width: 44 },
 
   // Profile Card
-  profileCard: { 
-    marginHorizontal: 20, 
-    backgroundColor: colors.card, 
-    borderRadius: 24, 
-    padding: 24, 
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-    overflow: 'hidden',
-    marginBottom: 20,
-  },
-  profileGlow: { 
-    position: 'absolute', 
-    top: -50, 
-    right: -50, 
-    width: 150, 
-    height: 150, 
-    backgroundColor: colors.primary, 
-    opacity: 0.08, 
-    borderRadius: 75,
-  },
+  profileCard: { marginHorizontal: 20, backgroundColor: colors.card, borderRadius: 24, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder, overflow: 'hidden', marginBottom: 20 },
+  profileGlow: { position: 'absolute', top: -50, right: -50, width: 150, height: 150, backgroundColor: colors.primary, opacity: 0.08, borderRadius: 75 },
   avatarContainer: { position: 'relative', marginBottom: 16 },
-  avatar: { 
-    width: 80, 
-    height: 80, 
-    borderRadius: 24, 
-    backgroundColor: colors.primary, 
-    alignItems: 'center', 
-    justifyContent: 'center',
-  },
+  avatar: { width: 80, height: 80, borderRadius: 24, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: colors.bg, fontSize: 32, fontWeight: 'bold' },
-  avatarBadge: { 
-    position: 'absolute', 
-    bottom: -4, 
-    right: -4, 
-    width: 28, 
-    height: 28, 
-    borderRadius: 14, 
-    backgroundColor: colors.card, 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.primaryBorder,
-  },
+  avatarBadge: { position: 'absolute', bottom: -4, right: -4, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primaryBorder },
   avatarBadgeText: { fontSize: 14 },
   userName: { color: colors.text, fontSize: 22, fontWeight: 'bold' },
   userEmail: { color: colors.textMuted, fontSize: 14, marginTop: 4 },
-  editButton: { 
-    marginTop: 16, 
-    backgroundColor: colors.primaryMuted, 
-    paddingHorizontal: 20, 
-    paddingVertical: 10, 
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-  },
+  editButton: { marginTop: 16, backgroundColor: colors.primaryMuted, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: colors.primaryBorder },
   editButtonText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
 
   // Stats Card
-  statsCard: { 
-    marginHorizontal: 20, 
-    backgroundColor: colors.card, 
-    borderRadius: 20, 
-    padding: 20, 
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-    marginBottom: 24,
-  },
+  statsCard: { marginHorizontal: 20, backgroundColor: colors.card, borderRadius: 20, padding: 20, flexDirection: 'row', borderWidth: 1, borderColor: colors.primaryBorder, marginBottom: 24 },
   statItem: { flex: 1, alignItems: 'center' },
-  statIconBg: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 14, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    marginBottom: 8,
-  },
+  statIconBg: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   statIcon: { fontSize: 20 },
-  statValue: { color: colors.text, fontSize: 20, fontWeight: 'bold' },
+  statValue: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
   statLabel: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   statDivider: { width: 1, backgroundColor: colors.primaryBorder, marginHorizontal: 12 },
 
@@ -467,64 +453,24 @@ const createStyles = (colors) => StyleSheet.create({
   sectionCount: { color: colors.textMuted, fontSize: 13 },
 
   // Empty History
-  emptyHistory: { 
-    backgroundColor: colors.card, 
-    borderRadius: 20, 
-    padding: 40, 
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-  },
-  emptyIconBg: { 
-    width: 72, 
-    height: 72, 
-    borderRadius: 20, 
-    backgroundColor: colors.primaryMuted, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    marginBottom: 16,
-  },
+  emptyHistory: { backgroundColor: colors.card, borderRadius: 20, padding: 40, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
+  emptyIconBg: { width: 72, height: 72, borderRadius: 20, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   emptyIcon: { fontSize: 32 },
   emptyTitle: { color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: 6 },
   emptyText: { color: colors.textMuted, fontSize: 13, textAlign: 'center' },
 
   // History List
   historyList: { gap: 12 },
-  historyCard: { 
-    backgroundColor: colors.card, 
-    borderRadius: 18, 
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-  },
+  historyCard: { backgroundColor: colors.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
   historyHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-  historyIconBg: { 
-    width: 48, 
-    height: 48, 
-    borderRadius: 14, 
-    backgroundColor: colors.primaryMuted, 
-    alignItems: 'center', 
-    justifyContent: 'center',
-  },
+  historyIconBg: { width: 48, height: 48, borderRadius: 14, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
   historyIcon: { fontSize: 22 },
   historyInfo: { flex: 1, marginLeft: 12 },
   historyDestination: { color: colors.text, fontSize: 17, fontWeight: 'bold' },
   historyDates: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  historyDeleteBtn: { 
-    width: 36, 
-    height: 36, 
-    borderRadius: 10, 
-    backgroundColor: colors.cardLight, 
-    alignItems: 'center', 
-    justifyContent: 'center',
-  },
+  historyDeleteBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.cardLight, alignItems: 'center', justifyContent: 'center' },
   historyDeleteText: { fontSize: 16 },
-  historyStats: { 
-    flexDirection: 'row', 
-    backgroundColor: colors.cardLight, 
-    borderRadius: 12, 
-    padding: 12,
-  },
+  historyStats: { flexDirection: 'row', backgroundColor: colors.cardLight, borderRadius: 12, padding: 12 },
   historyStatItem: { flex: 1, alignItems: 'center' },
   historyStatEmoji: { fontSize: 16, marginBottom: 4 },
   historyStatValue: { color: colors.text, fontSize: 15, fontWeight: 'bold' },
@@ -534,27 +480,10 @@ const createStyles = (colors) => StyleSheet.create({
   historyCompleted: { color: colors.primary, fontSize: 12, fontWeight: '500' },
 
   // Settings Card
-  settingCard: { 
-    backgroundColor: colors.card, 
-    borderRadius: 16, 
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-  },
-  settingRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between',
-    padding: 14,
-  },
+  settingCard: { backgroundColor: colors.card, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: colors.primaryBorder },
+  settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 },
   settingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  settingIconBg: { 
-    width: 40, 
-    height: 40, 
-    borderRadius: 12, 
-    alignItems: 'center', 
-    justifyContent: 'center',
-  },
+  settingIconBg: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   settingIcon: { fontSize: 18 },
   settingInfo: { marginLeft: 12, flex: 1 },
   settingLabel: { color: colors.text, fontSize: 15, fontWeight: '500' },
@@ -570,63 +499,38 @@ const createStyles = (colors) => StyleSheet.create({
 
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
-  modalContent: { 
-    backgroundColor: colors.card, 
-    borderTopLeftRadius: 28, 
-    borderTopRightRadius: 28, 
-    padding: 24,
-  },
-  modalHandle: { 
-    width: 40, 
-    height: 4, 
-    backgroundColor: colors.textMuted, 
-    borderRadius: 2, 
-    alignSelf: 'center', 
-    marginBottom: 20,
-  },
-  modalHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 24,
-  },
+  modalContent: { backgroundColor: colors.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24 },
+  modalHandle: { width: 40, height: 4, backgroundColor: colors.textMuted, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { color: colors.text, fontSize: 22, fontWeight: 'bold' },
-  modalCloseBtn: { 
-    width: 36, 
-    height: 36, 
-    borderRadius: 10, 
-    backgroundColor: colors.cardLight, 
-    alignItems: 'center', 
-    justifyContent: 'center',
-  },
+  modalCloseBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.cardLight, alignItems: 'center', justifyContent: 'center' },
   modalCloseBtnText: { color: colors.textMuted, fontSize: 22 },
   modalAvatar: { alignItems: 'center', marginBottom: 24 },
-  avatarLarge: { 
-    width: 80, 
-    height: 80, 
-    borderRadius: 24, 
-    backgroundColor: colors.primary, 
-    alignItems: 'center', 
-    justifyContent: 'center',
-  },
+  avatarLarge: { width: 80, height: 80, borderRadius: 24, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   avatarLargeText: { color: colors.bg, fontSize: 32, fontWeight: 'bold' },
   inputGroup: { marginBottom: 16 },
   inputLabel: { color: colors.textMuted, fontSize: 13, marginBottom: 8, fontWeight: '500' },
-  input: { 
-    backgroundColor: colors.cardLight, 
-    color: colors.text, 
-    padding: 16, 
-    borderRadius: 12, 
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-  },
-  saveButton: { 
-    backgroundColor: colors.primary, 
-    borderRadius: 14, 
-    padding: 16, 
-    alignItems: 'center', 
-    marginTop: 8,
-  },
+  input: { backgroundColor: colors.cardLight, color: colors.text, padding: 16, borderRadius: 12, fontSize: 16, borderWidth: 1, borderColor: colors.primaryBorder },
+  saveButton: { backgroundColor: colors.primary, borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 8 },
   saveButtonText: { color: colors.bg, fontSize: 16, fontWeight: 'bold' },
+
+  // Currency Modal
+  currencyHint: { color: colors.textMuted, fontSize: 14, marginBottom: 20 },
+  currencyList: { gap: 10 },
+  currencyItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.cardLight, borderRadius: 14, padding: 16, borderWidth: 2, borderColor: colors.primaryBorder },
+  currencyItemActive: { borderColor: colors.primary, backgroundColor: colors.primaryMuted },
+  currencyLeft: { flexDirection: 'row', alignItems: 'center' },
+  currencyFlag: { fontSize: 28, marginRight: 14 },
+  currencyInfo: {},
+  currencyCode: { color: colors.text, fontSize: 17, fontWeight: 'bold' },
+  currencyCodeActive: { color: colors.primary },
+  currencyName: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  currencyRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  currencySymbol: { color: colors.text, fontSize: 22, fontWeight: 'bold' },
+  currencySymbolActive: { color: colors.primary },
+  currencyCheck: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  currencyCheckText: { color: colors.bg, fontSize: 14, fontWeight: 'bold' },
+  currencyNote: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardLight, borderRadius: 12, padding: 14, marginTop: 20, gap: 12 },
+  currencyNoteEmoji: { fontSize: 18 },
+  currencyNoteText: { flex: 1, color: colors.textMuted, fontSize: 12, lineHeight: 18 },
 });

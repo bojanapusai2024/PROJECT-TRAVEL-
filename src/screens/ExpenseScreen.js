@@ -19,7 +19,7 @@ const CATEGORIES = [
 ];
 
 export default function ExpenseScreen() {
-  const { expenses, addExpense, deleteExpense, getTotalExpenses, budget, getRemainingBudget, getExpensesByCategory } = useTravelContext();
+  const { expenses, addExpense, deleteExpense, getTotalExpenses, budget, getRemainingBudget, getExpensesByCategory, formatCurrency, currency } = useTravelContext();
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
   const [filterCategory, setFilterCategory] = useState('all');
@@ -118,10 +118,10 @@ export default function ExpenseScreen() {
           <View style={styles.overviewMain}>
             <View style={styles.overviewLeft}>
               <Text style={styles.overviewLabel}>Total Spent</Text>
-              <Text style={styles.overviewAmount}>${totalExpenses.toLocaleString()}</Text>
+              <Text style={styles.overviewAmount}>{formatCurrency(totalExpenses)}</Text>
               <View style={styles.overviewBudgetInfo}>
                 <Text style={styles.overviewBudgetText}>
-                  of ${budget.total.toLocaleString()} budget
+                  of {formatCurrency(budget.total)} budget
                 </Text>
               </View>
             </View>
@@ -157,7 +157,7 @@ export default function ExpenseScreen() {
                 <Text style={styles.quickStatEmoji}>💵</Text>
               </View>
               <View>
-                <Text style={styles.quickStatValue}>${remainingBudget}</Text>
+                <Text style={styles.quickStatValue}>{formatCurrency(remainingBudget)}</Text>
                 <Text style={styles.quickStatLabel}>Remaining</Text>
               </View>
             </View>
@@ -167,7 +167,7 @@ export default function ExpenseScreen() {
                 <Text style={styles.quickStatEmoji}>📊</Text>
               </View>
               <View>
-                <Text style={styles.quickStatValue}>${dailyAverage}</Text>
+                <Text style={styles.quickStatValue}>{formatCurrency(dailyAverage)}</Text>
                 <Text style={styles.quickStatLabel}>Daily Avg</Text>
               </View>
             </View>
@@ -205,7 +205,7 @@ export default function ExpenseScreen() {
                     <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
                   </View>
                   <Text style={styles.categoryName}>{cat.label}</Text>
-                  <Text style={[styles.categoryAmount, { color: cat.color }]}>${spent}</Text>
+                  <Text style={[styles.categoryAmount, { color: cat.color }]}>{formatCurrency(spent)}</Text>
                   <View style={styles.categoryProgressBar}>
                     <View style={[styles.categoryProgressFill, { width: `${percentage}%`, backgroundColor: cat.color }]} />
                   </View>
@@ -280,7 +280,7 @@ export default function ExpenseScreen() {
                     </View>
                     <View style={styles.dateLine} />
                     <Text style={styles.dateTotalText}>
-                      ${groupedExpenses[date].reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
+                      {formatCurrency(groupedExpenses[date].reduce((sum, e) => sum + e.amount, 0))}
                     </Text>
                   </View>
 
@@ -310,7 +310,7 @@ export default function ExpenseScreen() {
                             </View>
                           </View>
                           <View style={styles.expenseRight}>
-                            <Text style={styles.expenseAmount}>-${expense.amount.toFixed(2)}</Text>
+                            <Text style={styles.expenseAmount}>-{formatCurrency(expense.amount)}</Text>
                             <Pressable 
                               style={styles.deleteButton}
                               onPress={() => deleteExpense(expense.id)}
@@ -361,7 +361,7 @@ export default function ExpenseScreen() {
               <View style={styles.amountSection}>
                 <Text style={styles.amountLabel}>Amount</Text>
                 <View style={styles.amountInputContainer}>
-                  <Text style={styles.amountCurrency}>$</Text>
+                  <Text style={styles.amountCurrency}>{currency.symbol}</Text>
                   <TextInput
                     style={styles.amountInput}
                     placeholder="0.00"
