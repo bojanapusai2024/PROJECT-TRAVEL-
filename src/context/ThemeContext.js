@@ -3,36 +3,36 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ThemeContext = createContext(null);
 
-// Premium Midnight Dark Theme
+// Custom Deep Blue Dark Theme
 const darkColors = {
-  bg: '#0D0D0F',              // Deep black with slight blue
-  card: '#16161A',            // Elevated surface
-  cardLight: '#1E1E24',       // Lighter card
-  primary: '#00E676',         // Vibrant green
-  primaryMuted: 'rgba(0, 230, 118, 0.12)',
-  primaryBorder: 'rgba(0, 230, 118, 0.25)',
-  secondary: '#FF6B6B',       // Coral accent
-  text: '#FAFAFA',            // Pure white text
-  textMuted: '#71717A',       // Zinc gray
-  textLight: '#52525B',       // Darker muted
-  success: '#22C55E',
-  warning: '#F59E0B',
-  error: '#EF4444',
+  bg: '#070F2B',                    // Deepest blue-black
+  card: '#1B1A55',                  // Dark purple-blue
+  cardLight: '#535C91',             // Medium purple-blue
+  primary: '#9290C3',               // Light lavender
+  primaryMuted: 'rgba(146, 144, 195, 0.15)',
+  primaryBorder: 'rgba(146, 144, 195, 0.3)',
+  secondary: '#FF6B9D',             // Soft pink accent
+  text: '#FAFAFA',                  // Pure white
+  textMuted: '#9290C3',             // Lavender gray
+  textLight: '#535C91',             // Muted purple
+  success: '#4ADE80',
+  warning: '#FBBF24',
+  error: '#F87171',
 };
 
-// Clean Light Theme
+// Sunrise Light Theme - Warm & Inviting
 const lightColors = {
-  bg: '#F8FAFC',              // Soft white
-  card: '#FFFFFF',            // Pure white cards
-  cardLight: '#F1F5F9',       // Slight gray
-  primary: '#059669',         // Emerald green
-  primaryMuted: 'rgba(5, 150, 105, 0.1)',
-  primaryBorder: 'rgba(5, 150, 105, 0.2)',
-  secondary: '#F43F5E',       // Rose accent
-  text: '#0F172A',            // Dark slate
-  textMuted: '#64748B',       // Slate gray
-  textLight: '#94A3B8',       // Light slate
-  success: '#22C55E',
+  bg: '#FFF8F0',                    // Warm cream white
+  card: '#FFFFFF',                  // Pure white cards
+  cardLight: '#FFF1E6',             // Soft peach tint
+  primary: '#FF6B35',               // Sunrise orange
+  primaryMuted: 'rgba(255, 107, 53, 0.12)',
+  primaryBorder: 'rgba(255, 107, 53, 0.25)',
+  secondary: '#004E89',             // Deep ocean blue
+  text: '#1A1A2E',                  // Dark navy text
+  textMuted: '#6B7280',             // Warm gray
+  textLight: '#9CA3AF',             // Light warm gray
+  success: '#10B981',
   warning: '#F59E0B',
   error: '#EF4444',
 };
