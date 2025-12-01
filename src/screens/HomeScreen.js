@@ -171,6 +171,7 @@ export default function HomeScreen({ onBackToHome }) {
   };
 
   const handleEndTrip = () => {
+    console.log('handleEndTrip called, tripInfo:', tripInfo);
     if (endTrip) {
       endTrip();
     }

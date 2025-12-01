@@ -27,7 +27,8 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     expenses, 
     currency, 
     allTrips = [],
-    saveCurrentTripToList 
+    saveCurrentTripToList,
+    switchToTrip, // Add this
   } = useTravelContext();
   
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -254,6 +255,19 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     ]);
   };
 
+  // Handle trip card press - switch to that trip first
+  const handleTripPress = (trip, index) => {
+    console.log('Trip pressed:', trip.id, trip.destination);
+    
+    // Switch to the selected trip's data
+    if (switchToTrip) {
+      switchToTrip(trip);
+    }
+    
+    // Then navigate to the trip
+    onMyTrip(trip, index);
+  };
+
   // Render Current Trip Card - Updated with trip code
   const renderCurrentTripCard = (trip) => {
     const tripTypeData = getTripTypeInfo(trip.tripType);
@@ -267,7 +281,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             styles.currentTripCard, 
             pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
           ]} 
-          onPress={() => onMyTrip(trip, 0)}
+          onPress={() => handleTripPress(trip, 0)}
         >
           <View style={styles.currentTripGlow} />
           
@@ -287,7 +301,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             </View>
           </View>
 
-          {/* Trip Code Section - NEW */}
+          {/* Trip Code Section */}
           {trip.tripCode && (
             <Pressable 
               style={({ pressed }) => [styles.tripCodeSection, pressed && { opacity: 0.8 }]}
@@ -377,7 +391,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           styles.upcomingTripCard, 
           pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
         ]} 
-        onPress={() => onMyTrip(trip, index + 1)}
+        onPress={() => handleTripPress(trip, index + 1)}
       >
         <View style={styles.upcomingTripLeft}>
           <View style={[styles.upcomingTripIconBg, { backgroundColor: tripTypeData.color + '20' }]}>
@@ -388,22 +402,23 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             <Text style={styles.upcomingTripDates}>
               {trip.startDate} • {tripDays} days
             </Text>
-            {/* Show trip code in compact view */}
             {trip.tripCode && (
               <Text style={styles.upcomingTripCode}>Code: {trip.tripCode}</Text>
             )}
           </View>
         </View>
         <View style={styles.upcomingTripRight}>
-          <Pressable 
-            style={styles.miniShareBtn}
-            onPress={(e) => {
-              e.stopPropagation();
-              handleShareTripCode(trip.tripCode, trip.destination);
-            }}
-          >
-            <Text style={styles.miniShareBtnText}>📤</Text>
-          </Pressable>
+          {trip.tripCode && (
+            <Pressable 
+              style={styles.miniShareBtn}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleShareTripCode(trip.tripCode, trip.destination);
+              }}
+            >
+              <Text style={styles.miniShareBtnText}>📤</Text>
+            </Pressable>
+          )}
           <Text style={styles.upcomingTripArrow}>→</Text>
         </View>
       </Pressable>
@@ -1359,8 +1374,18 @@ const createStyles = (colors) => StyleSheet.create({
     marginBottom: 8,
   },
   emptyUpcomingText: {
-    fontSize: 15,
-    fontWeight: '600',
+
+
+
+
+
+
+
+
+
+
+
+});  },    textAlign: 'center',    marginTop: 4,    color: colors.textMuted,    fontSize: 13,  emptyUpcomingHint: {  },    textAlign: 'center',    color: colors.text,    fontSize: 15,    fontWeight: '600',
     color: colors.text,
     marginBottom: 4,
   },
