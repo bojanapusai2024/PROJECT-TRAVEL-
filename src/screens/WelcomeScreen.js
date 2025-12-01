@@ -1374,23 +1374,14 @@ const createStyles = (colors) => StyleSheet.create({
     marginBottom: 8,
   },
   emptyUpcomingText: {
-
-
-
-
-
-
-
-
-
-
-
-});  },    textAlign: 'center',    marginTop: 4,    color: colors.textMuted,    fontSize: 13,  emptyUpcomingHint: {  },    textAlign: 'center',    color: colors.text,    fontSize: 15,    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '600',
     color: colors.text,
     marginBottom: 4,
   },
   emptyUpcomingHint: {
     fontSize: 13,
     color: colors.textMuted,
+    textAlign: 'center',
   },
 });
