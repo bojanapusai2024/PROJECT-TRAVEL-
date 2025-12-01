@@ -72,81 +72,33 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     }
   };
 
-  // Generate a simple test code for display - Move this BEFORE buildDisplayTrips
-  const generateTestCode = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let code = '';
-    for (let i = 0; i < 8; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
-  };
-
-  // Build the display trips list - FIXED VERSION
+  // Build the display trips list - REAL DATA ONLY, NO TEST/MOCK DATA
   const buildDisplayTrips = () => {
-    // TEMPORARY TEST DATA - Shows when no real trips exist
-    const testTrips = [
-      {
-        id: 'test-1',
-        destination: 'Paris, France',
-        tripType: 'couple',
-        startDate: '15 Jan 2025',
-        endDate: '22 Jan 2025',
-        totalExpenses: 1250,
-        tripCode: 'AB1234CD',
-      },
-      {
-        id: 'test-2',
-        destination: 'Tokyo, Japan',
-        tripType: 'solo',
-        startDate: '01 Mar 2025',
-        endDate: '10 Mar 2025',
-        totalExpenses: 2800,
-        tripCode: 'XY5678ZW',
-      },
-      {
-        id: 'test-3',
-        destination: 'New York, USA',
-        tripType: 'friends',
-        startDate: '20 Apr 2025',
-        endDate: '28 Apr 2025',
-        totalExpenses: 3500,
-        tripCode: 'MN9012PQ',
-      },
-    ];
-    
     let trips = [];
     
     // First, check if there's an active trip from context
     if (hasActiveTrip && tripInfo && tripInfo.destination) {
       const currentTripData = {
         ...tripInfo,
-        id: tripInfo.id || 'current-' + Date.now(),
-        tripCode: tripInfo.tripCode || generateTestCode(),
+        id: tripInfo.id || 'current',
+        tripCode: tripInfo.tripCode || null,
         totalExpenses: getTotalExpenses(),
       };
       trips.push(currentTripData);
     }
     
-    // Add trips from context if available
+    // Add trips from context if available (excluding duplicates)
     if (allTrips && allTrips.length > 0) {
       allTrips.forEach(trip => {
-        // Don't add duplicates
-        const exists = trips.some(t => t.id === trip.id);
+        const exists = trips.some(t => t.id === trip.id || 
+          (t.destination === trip.destination && t.startDate === trip.startDate));
         if (!exists) {
           trips.push(trip);
         }
       });
     }
     
-    // If still no trips, use test data
-    if (trips.length === 0) {
-      trips = testTrips;
-    } else if (trips.length === 1) {
-      // If only current trip, add some test trips as upcoming
-      trips = [...trips, ...testTrips.slice(1)];
-    }
-    
+    // Return only real trips - NO TEST DATA
     return trips;
   };
 
@@ -459,51 +411,63 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             </Animated.View>
           </View>
 
-          {/* CURRENT TRIP DASHBOARD - Always visible if exists */}
+          {/* CURRENT TRIP DASHBOARD - Only show if exists */}
           {currentTrip && renderCurrentTripCard(currentTrip)}
 
-          {/* UPCOMING TRIPS SECTION - Collapsible */}
-          {upcomingTrips.length > 0 && (
-            <View style={styles.upcomingTripsSection}>
-              {/* Section Header with Toggle */}
-              <Pressable 
-                style={({ pressed }) => [styles.upcomingTripsHeader, pressed && { opacity: 0.8 }]}
-                onPress={() => setShowAllTrips(!showAllTrips)}
-              >
-                <View style={styles.upcomingTripsLeft}>
-                  <View style={styles.upcomingTripsIconBg}>
-                    <Text style={styles.upcomingTripsIcon}>📋</Text>
-                  </View>
-                  <View>
-                    <Text style={styles.upcomingTripsTitle}>Upcoming Trips</Text>
-                    <Text style={styles.upcomingTripsSubtitle}>
-                      {upcomingTrips.length} more trip{upcomingTrips.length > 1 ? 's' : ''} planned
-                    </Text>
-                  </View>
+          {/* UPCOMING TRIPS SECTION - Always show header, but list is empty until user adds trips */}
+          <View style={styles.upcomingTripsSection}>
+            {/* Section Header - Always visible */}
+            <Pressable 
+              style={({ pressed }) => [styles.upcomingTripsHeader, pressed && { opacity: 0.8 }]}
+              onPress={() => setShowAllTrips(!showAllTrips)}
+            >
+              <View style={styles.upcomingTripsLeft}>
+                <View style={styles.upcomingTripsIconBg}>
+                  <Text style={styles.upcomingTripsIcon}>📋</Text>
                 </View>
-                <View style={styles.upcomingTripsRight}>
-                  <View style={styles.upcomingTripsBadge}>
-                    <Text style={styles.upcomingTripsBadgeText}>{upcomingTrips.length}</Text>
-                  </View>
+                <View>
+                  <Text style={styles.upcomingTripsTitle}>Upcoming Trips</Text>
+                  <Text style={styles.upcomingTripsSubtitle}>
+                    {upcomingTrips.length > 0 
+                      ? `${upcomingTrips.length} trip${upcomingTrips.length > 1 ? 's' : ''} planned`
+                      : 'No upcoming trips yet'
+                    }
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.upcomingTripsRight}>
+                <View style={styles.upcomingTripsBadge}>
+                  <Text style={styles.upcomingTripsBadgeText}>{upcomingTrips.length}</Text>
+                </View>
+                {upcomingTrips.length > 0 && (
                   <View style={[styles.expandIconBg, showAllTrips && styles.expandIconBgActive]}>
                     <Text style={[styles.expandIcon, showAllTrips && styles.expandIconActive]}>
                       {showAllTrips ? '▲' : '▼'}
                     </Text>
                   </View>
-                </View>
-              </Pressable>
+                )}
+              </View>
+            </Pressable>
 
-              {/* Upcoming Trip Cards List */}
-              {showAllTrips && (
-                <View style={styles.upcomingTripsList}>
-                  {upcomingTrips.map((trip, index) => renderUpcomingTripCard(trip, index))}
-                </View>
-              )}
-            </View>
-          )}
+            {/* Upcoming Trip Cards List - Only show if there are trips */}
+            {showAllTrips && upcomingTrips.length > 0 && (
+              <View style={styles.upcomingTripsList}>
+                {upcomingTrips.map((trip, index) => renderUpcomingTripCard(trip, index))}
+              </View>
+            )}
 
-          {/* No Trips Message */}
-          {!currentTrip && upcomingTrips.length === 0 && (
+            {/* Empty state message when expanded but no trips */}
+            {showAllTrips && upcomingTrips.length === 0 && (
+              <View style={styles.emptyUpcomingContainer}>
+                <Text style={styles.emptyUpcomingEmoji}>✈️</Text>
+                <Text style={styles.emptyUpcomingText}>No upcoming trips</Text>
+                <Text style={styles.emptyUpcomingHint}>Plan a new trip to see it here</Text>
+              </View>
+            )}
+          </View>
+
+          {/* No Trips Message - Only show when no current trip at all */}
+          {!currentTrip && (
             <View style={styles.noTripsContainer}>
               <View style={styles.noTripsIconBg}>
                 <Text style={styles.noTripsIcon}>🌍</Text>
@@ -1295,5 +1259,31 @@ const createStyles = (colors) => StyleSheet.create({
   },
   miniShareBtnText: {
     fontSize: 14,
+  },
+
+  // Add empty upcoming trips state styles
+  emptyUpcomingContainer: {
+    alignItems: 'center',
+    padding: 24,
+    marginTop: 12,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+    borderStyle: 'dashed',
+  },
+  emptyUpcomingEmoji: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  emptyUpcomingText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  emptyUpcomingHint: {
+    fontSize: 13,
+    color: colors.textMuted,
   },
 });
