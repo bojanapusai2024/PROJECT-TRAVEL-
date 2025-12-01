@@ -41,6 +41,7 @@ export function TravelProvider({ children }) {
   const [tripHistory, setTripHistory] = useState([]);
   const [currency, setCurrency] = useState(CURRENCIES[0]);
   const [customCategories, setCustomCategories] = useState(DEFAULT_CATEGORIES);
+  const [allTrips, setAllTrips] = useState([]); // Manage multiple trips
 
   // Check if trip is multi-user (not solo)
   const isMultiUserTrip = () => {
@@ -263,6 +264,32 @@ export function TravelProvider({ children }) {
     return `${currency.symbol}${num.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
   };
 
+  // Add a new trip
+  const addTrip = (newTripInfo) => {
+    const tripWithId = {
+      ...newTripInfo,
+      id: Date.now().toString(),
+      totalExpenses: 0,
+      createdAt: new Date().toISOString(),
+    };
+    setAllTrips(prevTrips => [...prevTrips, tripWithId]);
+    return tripWithId;
+  };
+
+  // Update an existing trip
+  const updateTrip = (tripId, updates) => {
+    setAllTrips(prevTrips => 
+      prevTrips.map(trip => 
+        trip.id === tripId ? { ...trip, ...updates } : trip
+      )
+    );
+  };
+
+  // Delete a trip
+  const deleteTrip = (tripId) => {
+    setAllTrips(prevTrips => prevTrips.filter(trip => trip.id !== tripId));
+  };
+
   // Make sure deleteExpense is included in the context value
   return (
     <TravelContext.Provider value={{
@@ -286,6 +313,8 @@ export function TravelProvider({ children }) {
       getAllTravelers,
       getBalances,
       getSettlements,
+      // Manage multiple trips
+      allTrips, addTrip, updateTrip, deleteTrip,
     }}>
       {children}
     </TravelContext.Provider>

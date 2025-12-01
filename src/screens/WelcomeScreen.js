@@ -17,12 +17,41 @@ const TRIP_TYPES = [
   { key: 'business', label: 'Business Trip', emoji: '💼', description: 'Work travel with leisure', color: '#8B5CF6' },
 ];
 
+// MOCK TRIPS DATA - For testing multiple trips display
+const MOCK_TRIPS = [
+  {
+    id: '1',
+    destination: 'Paris, France',
+    tripType: 'couple',
+    startDate: '15 Jan 2025',
+    endDate: '22 Jan 2025',
+    totalExpenses: 1250,
+  },
+  {
+    id: '2',
+    destination: 'Tokyo, Japan',
+    tripType: 'solo',
+    startDate: '01 Mar 2025',
+    endDate: '10 Mar 2025',
+    totalExpenses: 2800,
+  },
+  {
+    id: '3',
+    destination: 'New York, USA',
+    tripType: 'friends',
+    startDate: '20 Apr 2025',
+    endDate: '28 Apr 2025',
+    totalExpenses: 3500,
+  },
+];
+
 export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProfile, hasActiveTrip }) {
   const { colors } = useTheme();
-  const { tripInfo, getTotalExpenses, packingItems, itinerary, expenses, formatCurrency, currency } = useTravelContext();
+  const { tripInfo, getTotalExpenses, packingItems, itinerary, expenses, formatCurrency, currency, allTrips = [] } = useTravelContext();
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showTripTypeModal, setShowTripTypeModal] = useState(false);
   const [tripCode, setTripCode] = useState('');
+  const [showAllTrips, setShowAllTrips] = useState(true); // Toggle to show/hide trips
   
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim1 = useState(new Animated.Value(0.8))[0];
@@ -38,16 +67,22 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   const totalExpenses = getTotalExpenses();
   const lastExpense = expenses.length > 0 ? expenses[expenses.length - 1] : null;
 
-  // Calculate trip days
-  const getTripDays = () => {
-    if (!tripInfo.startDate || !tripInfo.endDate) return 0;
+  // Get trip type info - make it accept a tripType parameter
+  const getTripTypeInfo = (tripType) => {
+    const type = TRIP_TYPES.find(t => t.key === tripType);
+    return type || { key: 'solo', label: 'Solo', emoji: '🧑', color: '#3B82F6' };
+  };
+
+  // Calculate trip days - make it accept trip dates as parameters
+  const calculateTripDays = (startDate, endDate) => {
+    if (!startDate || !endDate) return 0;
     try {
-      const parts1 = tripInfo.startDate.split(' ');
-      const parts2 = tripInfo.endDate.split(' ');
+      const parts1 = startDate.split(' ');
+      const parts2 = endDate.split(' ');
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const startDate = new Date(parseInt(parts1[2]), months.indexOf(parts1[1]), parseInt(parts1[0]));
-      const endDate = new Date(parseInt(parts2[2]), months.indexOf(parts2[1]), parseInt(parts2[0]));
-      const diffTime = endDate - startDate;
+      const start = new Date(parseInt(parts1[2]), months.indexOf(parts1[1]), parseInt(parts1[0]));
+      const end = new Date(parseInt(parts2[2]), months.indexOf(parts2[1]), parseInt(parts2[0]));
+      const diffTime = end - start;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
       return diffDays > 0 ? diffDays : 0;
     } catch {
@@ -55,8 +90,11 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     }
   };
 
-  const tripDays = getTripDays();
-  const participantCount = (tripInfo.participants?.length || 0) + 1;
+  // For backward compatibility - use allTrips from context, or current tripInfo if no trips
+  const displayTrips = MOCK_TRIPS; // Use this for testing
+  // const displayTrips = allTrips.length > 0 ? allTrips : (hasActiveTrip ? [{ ...tripInfo, id: 'current', totalExpenses: getTotalExpenses() }] : []);
+
+  const tripTypeInfo = getTripTypeInfo(tripInfo.tripType);
 
   useEffect(() => {
     Animated.parallel([
@@ -106,13 +144,104 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     onPlanTrip(tripType);
   };
 
-  // Get trip type info
-  const getTripTypeInfo = () => {
-    const type = TRIP_TYPES.find(t => t.key === tripInfo.tripType);
-    return type || { key: 'solo', label: 'Solo', emoji: '🧑', color: '#3B82F6' };
-  };
+  // Render a single trip card
+  const renderTripCard = (trip, index) => {
+    const tripTypeData = getTripTypeInfo(trip.tripType);
+    const tripDays = calculateTripDays(trip.startDate, trip.endDate);
+    const tripExpenses = trip.totalExpenses || getTotalExpenses();
+    const isCurrentTrip = index === 0;
 
-  const tripTypeInfo = getTripTypeInfo();
+    return (
+      <Animated.View key={trip.id || index} style={{ transform: [{ scale: scaleAnim3 }] }}>
+        <Pressable 
+          style={({ pressed }) => [
+            styles.currentTripCard, 
+            !isCurrentTrip && styles.secondaryTripCard,
+            pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
+          ]} 
+          onPress={() => onMyTrip(trip, index)}
+        >
+          <View style={styles.currentTripGlow} />
+          
+          {/* Header Row */}
+          <View style={styles.currentTripHeader}>
+            <View style={[styles.currentTripIconBg, !isCurrentTrip && styles.secondaryTripIconBg]}>
+              <Text style={styles.currentTripIcon}>🧳</Text>
+            </View>
+            <View style={styles.currentTripInfo}>
+              <View style={[styles.currentTripBadge, !isCurrentTrip && styles.secondaryTripBadge]}>
+                <Text style={[styles.currentTripBadgeText, !isCurrentTrip && styles.secondaryTripBadgeText]}>
+                  {isCurrentTrip ? 'CURRENT TRIP' : `TRIP ${index + 1}`}
+                </Text>
+              </View>
+              <Text style={styles.currentTripName}>{trip.destination || trip.name || 'My Trip'}</Text>
+            </View>
+            <View style={styles.currentTripArrow}>
+              <Text style={styles.arrowText}>→</Text>
+            </View>
+          </View>
+
+          {/* Dates */}
+          {trip.startDate && trip.endDate && (
+            <View style={styles.currentTripDates}>
+              <View style={styles.dateChip}>
+                <Text style={styles.dateChipEmoji}>📅</Text>
+                <Text style={styles.dateChipText}>{trip.startDate}</Text>
+              </View>
+              <Text style={styles.dateArrow}>→</Text>
+              <View style={styles.dateChip}>
+                <Text style={styles.dateChipText}>{trip.endDate}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Stats */}
+          <View style={styles.currentTripStats}>
+            {/* Trip Type */}
+            <View style={styles.tripStatItem}>
+              <View style={styles.tripStatIconBg}>
+                <Text style={styles.tripStatEmoji}>{tripTypeData.emoji}</Text>
+              </View>
+              <View>
+                <Text style={styles.tripStatValue}>{tripTypeData.label.split(' ')[0]}</Text>
+                <Text style={styles.tripStatLabel}>Trip Type</Text>
+              </View>
+            </View>
+            <View style={styles.tripStatDivider} />
+            {/* Days */}
+            <View style={styles.tripStatItem}>
+              <View style={styles.tripStatIconBg}>
+                <Text style={styles.tripStatEmoji}>📆</Text>
+              </View>
+              <View>
+                <Text style={styles.tripStatValue}>{tripDays}</Text>
+                <Text style={styles.tripStatLabel}>Days</Text>
+              </View>
+            </View>
+            <View style={styles.tripStatDivider} />
+            {/* Total Spent */}
+            <View style={styles.tripStatItem}>
+              <View style={styles.tripStatIconBg}>
+                <Text style={styles.tripStatEmoji}>💳</Text>
+              </View>
+              <View>
+                <Text style={styles.tripStatValue}>{currency.symbol}{tripExpenses}</Text>
+                <Text style={styles.tripStatLabel}>Total Spent</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Continue Button */}
+          <View style={[styles.continueBtn, !isCurrentTrip && styles.secondaryContinueBtn]}>
+            <Text style={[styles.continueBtnText, !isCurrentTrip && styles.secondaryContinueBtnText]}>
+              {isCurrentTrip ? 'Continue Planning' : 'View Trip'}
+            </Text>
+            <Text style={[styles.continueBtnArrow, !isCurrentTrip && styles.secondaryContinueBtnText]}>→</Text>
+          </View>
+        </Pressable>
+      </Animated.View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -162,7 +291,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
         {/* Action Cards */}
         <View style={styles.actionsContainer}>
-          {/* Plan a Trip and Join a Trip - Side by Side (Always on top) */}
+          {/* Plan a Trip and Join a Trip - Side by Side */}
           <View style={styles.optionCardsRow}>
             <Animated.View style={[styles.optionCardHalf, { transform: [{ scale: scaleAnim1 }] }]}>
               <Pressable 
@@ -188,85 +317,49 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             </Animated.View>
           </View>
 
-          {/* Current Trip Card - Now below the options */}
-          {hasActiveTrip && (
-            <Animated.View style={{ transform: [{ scale: scaleAnim3 }] }}>
-              <Pressable style={({ pressed }) => [styles.currentTripCard, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]} onPress={onMyTrip}>
-                <View style={styles.currentTripGlow} />
-                
-                {/* Header Row */}
-                <View style={styles.currentTripHeader}>
-                  <View style={styles.currentTripIconBg}>
-                    <Text style={styles.currentTripIcon}>🧳</Text>
+          {/* YOUR TRIPS SECTION - NEW */}
+          {displayTrips.length > 0 && (
+            <View style={styles.tripsSection}>
+              {/* Section Header with Toggle */}
+              <Pressable 
+                style={({ pressed }) => [styles.tripsSectionHeader, pressed && { opacity: 0.8 }]}
+                onPress={() => setShowAllTrips(!showAllTrips)}
+              >
+                <View style={styles.tripsSectionLeft}>
+                  <View style={styles.tripsSectionIconBg}>
+                    <Text style={styles.tripsSectionIcon}>🧳</Text>
                   </View>
-                  <View style={styles.currentTripInfo}>
-                    <View style={styles.currentTripBadge}>
-                      <Text style={styles.currentTripBadgeText}>CURRENT TRIP</Text>
-                    </View>
-                    <Text style={styles.currentTripName}>{tripInfo.destination || tripInfo.name || 'My Trip'}</Text>
-                  </View>
-                  <View style={styles.currentTripArrow}>
-                    <Text style={styles.arrowText}>→</Text>
+                  <View>
+                    <Text style={styles.tripsSectionTitle}>Your Trips</Text>
+                    <Text style={styles.tripsSectionSubtitle}>{displayTrips.length} trip{displayTrips.length > 1 ? 's' : ''} planned</Text>
                   </View>
                 </View>
-
-                {/* Dates */}
-                {tripInfo.startDate && tripInfo.endDate && (
-                  <View style={styles.currentTripDates}>
-                    <View style={styles.dateChip}>
-                      <Text style={styles.dateChipEmoji}>📅</Text>
-                      <Text style={styles.dateChipText}>{tripInfo.startDate}</Text>
-                    </View>
-                    <Text style={styles.dateArrow}>→</Text>
-                    <View style={styles.dateChip}>
-                      <Text style={styles.dateChipText}>{tripInfo.endDate}</Text>
-                    </View>
+                <View style={styles.tripsSectionRight}>
+                  <View style={styles.tripCountBadge}>
+                    <Text style={styles.tripCountText}>{displayTrips.length}</Text>
                   </View>
-                )}
-
-                {/* Stats - Updated */}
-                <View style={styles.currentTripStats}>
-                  {/* Trip Type instead of Travelers */}
-                  <View style={styles.tripStatItem}>
-                    <View style={styles.tripStatIconBg}>
-                      <Text style={styles.tripStatEmoji}>{tripTypeInfo.emoji}</Text>
-                    </View>
-                    <View>
-                      <Text style={styles.tripStatValue}>{tripTypeInfo.label.split(' ')[0]}</Text>
-                      <Text style={styles.tripStatLabel}>Trip Type</Text>
-                    </View>
-                  </View>
-                  <View style={styles.tripStatDivider} />
-                  {/* Days */}
-                  <View style={styles.tripStatItem}>
-                    <View style={styles.tripStatIconBg}>
-                      <Text style={styles.tripStatEmoji}>📆</Text>
-                    </View>
-                    <View>
-                      <Text style={styles.tripStatValue}>{tripDays}</Text>
-                      <Text style={styles.tripStatLabel}>Days</Text>
-                    </View>
-                  </View>
-                  <View style={styles.tripStatDivider} />
-                  {/* Total Spent instead of Last Spent */}
-                  <View style={styles.tripStatItem}>
-                    <View style={styles.tripStatIconBg}>
-                      <Text style={styles.tripStatEmoji}>💳</Text>
-                    </View>
-                    <View>
-                      <Text style={styles.tripStatValue}>{currency.symbol}{totalExpenses}</Text>
-                      <Text style={styles.tripStatLabel}>Total Spent</Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Continue Button */}
-                <View style={styles.continueBtn}>
-                  <Text style={styles.continueBtnText}>Continue Planning</Text>
-                  <Text style={styles.continueBtnArrow}>→</Text>
+                  <Text style={styles.expandIcon}>{showAllTrips ? '▼' : '▶'}</Text>
                 </View>
               </Pressable>
-            </Animated.View>
+
+              {/* Trip Cards List */}
+              {showAllTrips && (
+                <View style={styles.tripsListContainer}>
+                  {displayTrips.map((trip, index) => renderTripCard(trip, index))}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* No Trips Message - Show when no trips exist */}
+          {displayTrips.length === 0 && (
+            <View style={styles.noTripsContainer}>
+              <View style={styles.noTripsIconBg}>
+                <Text style={styles.noTripsIcon}>🌍</Text>
+              </View>
+              <Text style={styles.noTripsTitle}>No trips yet</Text>
+              <Text style={styles.noTripsSubtitle}>Start planning your next adventure!</Text>
+            </View>
           )}
         </View>
 
@@ -703,4 +796,147 @@ const createStyles = (colors) => StyleSheet.create({
   tripTypeDesc: { fontSize: 13, color: colors.textMuted, marginTop: 4 },
   tripTypeArrow: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   tripTypeArrowText: { fontSize: 18, fontWeight: 'bold' },
+
+  // Trips List Container
+  tripsListContainer: {
+    gap: 14,
+  },
+  tripsListHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    marginBottom: 4,
+  },
+  tripsListTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  tripsListCount: {
+    fontSize: 14,
+    color: colors.textMuted,
+    backgroundColor: colors.cardLight,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+
+  // Secondary Trip Card Styles
+  secondaryTripCard: {
+    borderColor: colors.border || colors.primaryBorder,
+    opacity: 0.95,
+  },
+  secondaryTripIconBg: {
+    backgroundColor: colors.cardLight,
+  },
+  secondaryTripBadge: {
+    backgroundColor: colors.textMuted + '20',
+  },
+  secondaryTripBadgeText: {
+    color: colors.textMuted,
+  },
+  secondaryContinueBtn: {
+    backgroundColor: colors.cardLight,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  secondaryContinueBtnText: {
+    color: colors.text,
+  },
+
+  // Trips Section Styles - NEW
+  tripsSection: {
+    marginTop: 6,
+  },
+  tripsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  tripsSectionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  tripsSectionIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tripsSectionIcon: {
+    fontSize: 22,
+  },
+  tripsSectionTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  tripsSectionSubtitle: {
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  tripsSectionRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  tripCountBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  tripCountText: {
+    color: colors.bg,
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  expandIcon: {
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+
+  // No Trips State
+  noTripsContainer: {
+    alignItems: 'center',
+    padding: 40,
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+    borderStyle: 'dashed',
+  },
+  noTripsIconBg: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  noTripsIcon: {
+    fontSize: 40,
+  },
+  noTripsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 6,
+  },
+  noTripsSubtitle: {
+    fontSize: 14,
+    color: colors.textMuted,
+  },
 });
