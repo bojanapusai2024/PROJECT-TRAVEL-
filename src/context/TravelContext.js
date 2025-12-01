@@ -68,7 +68,12 @@ export function TravelProvider({ children }) {
   };
 
   const deleteExpense = (id) => {
-    setExpenses(prev => prev.filter(e => e.id !== id));
+    console.log('Deleting expense with id:', id);
+    setExpenses(prevExpenses => {
+      const newExpenses = prevExpenses.filter(expense => expense.id !== id);
+      console.log('Expenses after delete:', newExpenses.length);
+      return newExpenses;
+    });
   };
 
   const getTotalExpenses = () => {
@@ -258,11 +263,16 @@ export function TravelProvider({ children }) {
     return `${currency.symbol}${num.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
   };
 
+  // Make sure deleteExpense is included in the context value
   return (
     <TravelContext.Provider value={{
       tripInfo, setTripInfo,
       budget, setBudget,
-      expenses, addExpense, deleteExpense, getTotalExpenses, getExpensesByCategory,
+      expenses,
+      setExpenses,
+      addExpense,
+      deleteExpense,  // Ensure this is included
+      getTotalExpenses, getExpensesByCategory,
       packingItems, addPackingItem, togglePackingItem, deletePackingItem,
       itinerary, addItineraryItem, deleteItineraryItem, updateItineraryItem,
       getRemainingBudget,

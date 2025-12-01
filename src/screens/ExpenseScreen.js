@@ -108,6 +108,7 @@ export default function ExpenseScreen() {
     if (newExpense.title.trim() && newExpense.amount) {
       const expenseData = {
         ...newExpense,
+        id: `expense_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Ensure unique ID
         amount: parseFloat(newExpense.amount) || 0,
         timestamp: Date.now(),
       };
@@ -119,13 +120,31 @@ export default function ExpenseScreen() {
 
   // Delete expense handler
   const handleDeleteExpense = (id, title) => {
+    console.log('Delete button pressed for:', id, title); // Debug log
     Alert.alert(
       'Delete Expense',
       `Are you sure you want to delete "${title}"?`,
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteExpense(id) }
-      ]
+        { 
+          text: 'Cancel', 
+          style: 'cancel',
+          onPress: () => console.log('Cancel pressed')
+        },
+        { 
+          text: 'Delete', 
+          style: 'destructive', 
+          onPress: () => {
+            console.log('Delete confirmed for:', id);
+            if (deleteExpense) {
+              deleteExpense(id);
+            } else {
+              console.log('deleteExpense function not available');
+              Alert.alert('Error', 'Delete function not available');
+            }
+          } 
+        }
+      ],
+      { cancelable: true }
     );
   };
 
@@ -333,13 +352,13 @@ export default function ExpenseScreen() {
                 <View style={styles.balanceCardRight}>
                   <Text style={[
                     styles.balanceAmount,
-                    { color: isPositive ? '#059669' : '#DC2626' }
+                    { color: isPositive ? '#2563EB' : '#DC2626' }
                   ]}>
                     {isPositive ? '+' : '-'}{safeFormatCurrency(balanceAbs)}
                   </Text>
                   <Text style={[
                     styles.balanceStatus,
-                    { color: isPositive ? '#059669' : '#DC2626' }
+                    { color: isPositive ? '#2563EB' : '#DC2626' }
                   ]}>
                     {balanceAbs < 1 ? 'Settled' : isPositive ? 'to receive' : 'to pay'}
                   </Text>
@@ -451,10 +470,13 @@ export default function ExpenseScreen() {
                   const isTransfer = expense.splitType === 'transfer';
                   
                   return (
-                    <View key={expense.id} style={[
-                      styles.expenseCard, 
-                      { borderLeftColor: isTransfer ? '#10B981' : cat.color }
-                    ]}>
+                    <View 
+                      key={expense.id} 
+                      style={[
+                        styles.expenseCard, 
+                        { borderLeftColor: isTransfer ? '#10B981' : cat.color }
+                      ]}
+                    >
                       <View style={[
                         styles.expenseIcon, 
                         { backgroundColor: isTransfer ? '#10B98120' : cat.color + '20' }
@@ -499,6 +521,7 @@ export default function ExpenseScreen() {
                         <TouchableOpacity 
                           onPress={() => handleDeleteExpense(expense.id, expense.title)} 
                           style={styles.deleteBtn}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
                           <Text style={styles.deleteBtnText}>🗑️</Text>
                         </TouchableOpacity>
@@ -526,39 +549,9 @@ export default function ExpenseScreen() {
               : 'Track your spending'}
           </Text>
         </View>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {/* Debug Button - Long press to add test participants */}
-          <TouchableOpacity 
-            style={[styles.addBtn, { backgroundColor: colors.cardLight }]} 
-            onLongPress={addTestParticipants}
-            onPress={() => setShowDebug(!showDebug)}
-          >
-            <Text style={[styles.addBtnText, { color: colors.text }]}>🔧</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)}>
-            <Text style={styles.addBtnText}>+ Add</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Debug Info Card */}
-        {showDebug && (
-          <View style={styles.debugCard}>
-            <Text style={styles.debugTitle}>🔧 Debug Info</Text>
-            <Text style={styles.debugText}>Trip Type: {tripInfo?.tripType || 'Not set'}</Text>
-            <Text style={styles.debugText}>Participants: {tripInfo?.participants?.length || 0}</Text>
-            <Text style={styles.debugText}>Is Multi-User: {isMultiUser ? 'YES ✅' : 'NO ❌'}</Text>
-            <Text style={styles.debugText}>Travelers: {travelers.map(t => t.name).join(', ')}</Text>
-            <TouchableOpacity 
-              style={styles.debugBtn} 
-              onPress={addTestParticipants}
-            >
-              <Text style={styles.debugBtnText}>+ Add Test Participants</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
         {/* Budget Summary Card */}
         <View style={styles.budgetCard}>
           <View style={styles.budgetTop}>
@@ -577,14 +570,14 @@ export default function ExpenseScreen() {
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { 
               width: `${Math.min(spentPercentage, 100)}%`,
-              backgroundColor: spentPercentage > 90 ? '#EF4444' : spentPercentage > 70 ? '#F59E0B' : '#10B981'
+              backgroundColor: spentPercentage > 90 ? '#EF4444' : spentPercentage > 70 ? '#F59E0B' : colors.primary
             }]} />
           </View>
 
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statEmoji}>💵</Text>
-              <Text style={[styles.statValue, { color: remainingBudget >= 0 ? '#10B981' : '#EF4444' }]}>
+              <Text style={[styles.statValue, { color: remainingBudget >= 0 ? colors.primary : '#EF4444' }]}>
                 {safeFormatCurrency(Math.abs(remainingBudget))}
               </Text>
               <Text style={styles.statLabel}>{remainingBudget >= 0 ? 'Remaining' : 'Over budget'}</Text>
@@ -909,6 +902,8 @@ const createStyles = (colors) => StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
   headerTitle: { color: colors.text, fontSize: 24, fontWeight: 'bold' },
   headerSubtitle: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
+  debugBtn2: { backgroundColor: colors.cardLight, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12 },
+  debugBtn2Text: { fontSize: 16 },
   addBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
   addBtnText: { color: colors.bg, fontSize: 14, fontWeight: 'bold' },
   budgetCard: { marginHorizontal: 20, backgroundColor: colors.card, borderRadius: 20, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: colors.primaryBorder },
@@ -947,7 +942,7 @@ const createStyles = (colors) => StyleSheet.create({
   
   sectionTitle: { fontSize: 15, fontWeight: '600', color: colors.text, marginBottom: 12 },
   
-  // Balance Cards - Clean Design
+  // Balance Cards - Clean Design (updated colors)
   balanceCardsContainer: { gap: 8, marginBottom: 24 },
   balanceCard: { 
     flexDirection: 'row', 
@@ -977,7 +972,7 @@ const createStyles = (colors) => StyleSheet.create({
   balanceAmount: { fontSize: 16, fontWeight: 'bold' },
   balanceStatus: { fontSize: 10, marginTop: 2 },
 
-  // Settlements - Cleaner
+  // Settlements - Cleaner (updated colors)
   settlementsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   settlementCount: { fontSize: 12, color: colors.textMuted },
   settledCard: { 
@@ -989,7 +984,7 @@ const createStyles = (colors) => StyleSheet.create({
     borderColor: colors.primaryBorder,
     marginBottom: 20,
   },
-  settledEmoji: { fontSize: 24, color: '#059669', marginBottom: 8 },
+  settledEmoji: { fontSize: 24, color: '#2563EB', marginBottom: 8 },
   settledText: { fontSize: 14, color: colors.textMuted },
   settlementsContainer: { gap: 10, marginBottom: 20 },
   settlementCard: { 
@@ -1041,12 +1036,11 @@ const createStyles = (colors) => StyleSheet.create({
   expenseNotes: { color: colors.textMuted, fontSize: 11, marginTop: 6 },
   expenseRight: { alignItems: 'flex-end' },
   expenseAmount: { color: '#DC2626', fontSize: 16, fontWeight: 'bold' },
-  deleteBtn: { marginTop: 6, padding: 4 },
+  deleteBtn: { 
+    marginTop: 6, 
+    padding: 4,
+  },
   deleteBtnText: { fontSize: 14 },
-  transferInfoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 6 },
-  transferFromText: { fontSize: 12, color: colors.primary, fontWeight: '500' },
-  transferArrowSmall: { fontSize: 14, color: colors.textMuted },
-  transferToText: { fontSize: 12, color: '#059669', fontWeight: '500' },
 
   // FAB
   fab: { position: 'absolute', bottom: 20, right: 20, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary, paddingVertical: 14, paddingHorizontal: 18, borderRadius: 16, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 },
@@ -1215,12 +1209,12 @@ const createStyles = (colors) => StyleSheet.create({
     borderColor: 'transparent',
   },
   transferToChipActive: {
-    backgroundColor: '#05966910',
-    borderColor: '#059669',
+    backgroundColor: '#2563EB10',
+    borderColor: '#2563EB',
   },
   transferToAvatar: { fontSize: 14 },
   transferToName: { fontSize: 12, color: colors.text },
-  transferToNameActive: { color: '#059669', fontWeight: '600' },
+  transferToNameActive: { color: '#2563EB', fontWeight: '600' },
 
   // Beneficiaries
   beneficiarySection: { marginTop: 4 },
