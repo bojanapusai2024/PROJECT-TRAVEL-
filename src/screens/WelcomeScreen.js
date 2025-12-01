@@ -51,7 +51,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showTripTypeModal, setShowTripTypeModal] = useState(false);
   const [tripCode, setTripCode] = useState('');
-  const [showAllTrips, setShowAllTrips] = useState(true); // Toggle to show/hide trips
+  const [showAllTrips, setShowAllTrips] = useState(false); // Default to collapsed
   
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim1 = useState(new Animated.Value(0.8))[0];
@@ -90,9 +90,12 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     }
   };
 
-  // For backward compatibility - use allTrips from context, or current tripInfo if no trips
-  const displayTrips = MOCK_TRIPS; // Use this for testing
-  // const displayTrips = allTrips.length > 0 ? allTrips : (hasActiveTrip ? [{ ...tripInfo, id: 'current', totalExpenses: getTotalExpenses() }] : []);
+  // Use MOCK_TRIPS for testing
+  const allDisplayTrips = MOCK_TRIPS;
+  
+  // Separate current trip from upcoming trips
+  const currentTrip = allDisplayTrips.length > 0 ? allDisplayTrips[0] : null;
+  const upcomingTrips = allDisplayTrips.length > 1 ? allDisplayTrips.slice(1) : [];
 
   const tripTypeInfo = getTripTypeInfo(tripInfo.tripType);
 
@@ -144,35 +147,31 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     onPlanTrip(tripType);
   };
 
-  // Render a single trip card
-  const renderTripCard = (trip, index) => {
+  // Render Current Trip Card (standalone, always visible)
+  const renderCurrentTripCard = (trip) => {
     const tripTypeData = getTripTypeInfo(trip.tripType);
     const tripDays = calculateTripDays(trip.startDate, trip.endDate);
     const tripExpenses = trip.totalExpenses || getTotalExpenses();
-    const isCurrentTrip = index === 0;
 
     return (
-      <Animated.View key={trip.id || index} style={{ transform: [{ scale: scaleAnim3 }] }}>
+      <Animated.View style={{ transform: [{ scale: scaleAnim3 }] }}>
         <Pressable 
           style={({ pressed }) => [
             styles.currentTripCard, 
-            !isCurrentTrip && styles.secondaryTripCard,
             pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
           ]} 
-          onPress={() => onMyTrip(trip, index)}
+          onPress={() => onMyTrip(trip, 0)}
         >
           <View style={styles.currentTripGlow} />
           
           {/* Header Row */}
           <View style={styles.currentTripHeader}>
-            <View style={[styles.currentTripIconBg, !isCurrentTrip && styles.secondaryTripIconBg]}>
+            <View style={styles.currentTripIconBg}>
               <Text style={styles.currentTripIcon}>🧳</Text>
             </View>
             <View style={styles.currentTripInfo}>
-              <View style={[styles.currentTripBadge, !isCurrentTrip && styles.secondaryTripBadge]}>
-                <Text style={[styles.currentTripBadgeText, !isCurrentTrip && styles.secondaryTripBadgeText]}>
-                  {isCurrentTrip ? 'CURRENT TRIP' : `TRIP ${index + 1}`}
-                </Text>
+              <View style={styles.currentTripBadge}>
+                <Text style={styles.currentTripBadgeText}>CURRENT TRIP</Text>
               </View>
               <Text style={styles.currentTripName}>{trip.destination || trip.name || 'My Trip'}</Text>
             </View>
@@ -197,7 +196,6 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
           {/* Stats */}
           <View style={styles.currentTripStats}>
-            {/* Trip Type */}
             <View style={styles.tripStatItem}>
               <View style={styles.tripStatIconBg}>
                 <Text style={styles.tripStatEmoji}>{tripTypeData.emoji}</Text>
@@ -208,7 +206,6 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
               </View>
             </View>
             <View style={styles.tripStatDivider} />
-            {/* Days */}
             <View style={styles.tripStatItem}>
               <View style={styles.tripStatIconBg}>
                 <Text style={styles.tripStatEmoji}>📆</Text>
@@ -219,7 +216,6 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
               </View>
             </View>
             <View style={styles.tripStatDivider} />
-            {/* Total Spent */}
             <View style={styles.tripStatItem}>
               <View style={styles.tripStatIconBg}>
                 <Text style={styles.tripStatEmoji}>💳</Text>
@@ -232,14 +228,45 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           </View>
 
           {/* Continue Button */}
-          <View style={[styles.continueBtn, !isCurrentTrip && styles.secondaryContinueBtn]}>
-            <Text style={[styles.continueBtnText, !isCurrentTrip && styles.secondaryContinueBtnText]}>
-              {isCurrentTrip ? 'Continue Planning' : 'View Trip'}
-            </Text>
-            <Text style={[styles.continueBtnArrow, !isCurrentTrip && styles.secondaryContinueBtnText]}>→</Text>
+          <View style={styles.continueBtn}>
+            <Text style={styles.continueBtnText}>Continue Planning</Text>
+            <Text style={styles.continueBtnArrow}>→</Text>
           </View>
         </Pressable>
       </Animated.View>
+    );
+  };
+
+  // Render Upcoming Trip Card (compact version)
+  const renderUpcomingTripCard = (trip, index) => {
+    const tripTypeData = getTripTypeInfo(trip.tripType);
+    const tripDays = calculateTripDays(trip.startDate, trip.endDate);
+
+    return (
+      <Pressable 
+        key={trip.id || index}
+        style={({ pressed }) => [
+          styles.upcomingTripCard, 
+          pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
+        ]} 
+        onPress={() => onMyTrip(trip, index + 1)}
+      >
+        <View style={styles.upcomingTripLeft}>
+          <View style={[styles.upcomingTripIconBg, { backgroundColor: tripTypeData.color + '20' }]}>
+            <Text style={styles.upcomingTripEmoji}>{tripTypeData.emoji}</Text>
+          </View>
+          <View style={styles.upcomingTripInfo}>
+            <Text style={styles.upcomingTripName}>{trip.destination || trip.name || 'My Trip'}</Text>
+            <Text style={styles.upcomingTripDates}>
+              {trip.startDate} • {tripDays} days
+            </Text>
+          </View>
+        </View>
+        <View style={styles.upcomingTripRight}>
+          <Text style={styles.upcomingTripExpense}>{currency.symbol}{trip.totalExpenses || 0}</Text>
+          <Text style={styles.upcomingTripArrow}>→</Text>
+        </View>
+      </Pressable>
     );
   };
 
@@ -317,42 +344,51 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             </Animated.View>
           </View>
 
-          {/* YOUR TRIPS SECTION - NEW */}
-          {displayTrips.length > 0 && (
-            <View style={styles.tripsSection}>
+          {/* CURRENT TRIP DASHBOARD - Always visible if exists */}
+          {currentTrip && renderCurrentTripCard(currentTrip)}
+
+          {/* UPCOMING TRIPS SECTION - Collapsible */}
+          {upcomingTrips.length > 0 && (
+            <View style={styles.upcomingTripsSection}>
               {/* Section Header with Toggle */}
               <Pressable 
-                style={({ pressed }) => [styles.tripsSectionHeader, pressed && { opacity: 0.8 }]}
+                style={({ pressed }) => [styles.upcomingTripsHeader, pressed && { opacity: 0.8 }]}
                 onPress={() => setShowAllTrips(!showAllTrips)}
               >
-                <View style={styles.tripsSectionLeft}>
-                  <View style={styles.tripsSectionIconBg}>
-                    <Text style={styles.tripsSectionIcon}>🧳</Text>
+                <View style={styles.upcomingTripsLeft}>
+                  <View style={styles.upcomingTripsIconBg}>
+                    <Text style={styles.upcomingTripsIcon}>📋</Text>
                   </View>
                   <View>
-                    <Text style={styles.tripsSectionTitle}>Your Trips</Text>
-                    <Text style={styles.tripsSectionSubtitle}>{displayTrips.length} trip{displayTrips.length > 1 ? 's' : ''} planned</Text>
+                    <Text style={styles.upcomingTripsTitle}>Upcoming Trips</Text>
+                    <Text style={styles.upcomingTripsSubtitle}>
+                      {upcomingTrips.length} more trip{upcomingTrips.length > 1 ? 's' : ''} planned
+                    </Text>
                   </View>
                 </View>
-                <View style={styles.tripsSectionRight}>
-                  <View style={styles.tripCountBadge}>
-                    <Text style={styles.tripCountText}>{displayTrips.length}</Text>
+                <View style={styles.upcomingTripsRight}>
+                  <View style={styles.upcomingTripsBadge}>
+                    <Text style={styles.upcomingTripsBadgeText}>{upcomingTrips.length}</Text>
                   </View>
-                  <Text style={styles.expandIcon}>{showAllTrips ? '▼' : '▶'}</Text>
+                  <View style={[styles.expandIconBg, showAllTrips && styles.expandIconBgActive]}>
+                    <Text style={[styles.expandIcon, showAllTrips && styles.expandIconActive]}>
+                      {showAllTrips ? '▲' : '▼'}
+                    </Text>
+                  </View>
                 </View>
               </Pressable>
 
-              {/* Trip Cards List */}
+              {/* Upcoming Trip Cards List */}
               {showAllTrips && (
-                <View style={styles.tripsListContainer}>
-                  {displayTrips.map((trip, index) => renderTripCard(trip, index))}
+                <View style={styles.upcomingTripsList}>
+                  {upcomingTrips.map((trip, index) => renderUpcomingTripCard(trip, index))}
                 </View>
               )}
             </View>
           )}
 
-          {/* No Trips Message - Show when no trips exist */}
-          {displayTrips.length === 0 && (
+          {/* No Trips Message */}
+          {!currentTrip && upcomingTrips.length === 0 && (
             <View style={styles.noTripsContainer}>
               <View style={styles.noTripsIconBg}>
                 <Text style={styles.noTripsIcon}>🌍</Text>
@@ -843,6 +879,141 @@ const createStyles = (colors) => StyleSheet.create({
   },
   secondaryContinueBtnText: {
     color: colors.text,
+  },
+
+  // Upcoming Trips Section
+  upcomingTripsSection: {
+    marginTop: 8,
+  },
+  upcomingTripsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  upcomingTripsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  upcomingTripsIconBg: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upcomingTripsIcon: {
+    fontSize: 20,
+  },
+  upcomingTripsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  upcomingTripsSubtitle: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  upcomingTripsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  upcomingTripsBadge: {
+    backgroundColor: colors.primary + '20',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  upcomingTripsBadgeText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  expandIconBg: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: colors.cardLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  expandIconBgActive: {
+    backgroundColor: colors.primary + '20',
+  },
+  expandIcon: {
+    fontSize: 10,
+    color: colors.textMuted,
+  },
+  expandIconActive: {
+    color: colors.primary,
+  },
+
+  // Upcoming Trips List
+  upcomingTripsList: {
+    marginTop: 12,
+    gap: 10,
+  },
+  upcomingTripCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  upcomingTripLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  upcomingTripIconBg: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upcomingTripEmoji: {
+    fontSize: 22,
+  },
+  upcomingTripInfo: {
+    flex: 1,
+  },
+  upcomingTripName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  upcomingTripDates: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 3,
+  },
+  upcomingTripRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  upcomingTripExpense: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  upcomingTripArrow: {
+    fontSize: 16,
+    color: colors.primary,
+    fontWeight: 'bold',
   },
 
   // Trips Section Styles - NEW
