@@ -26,23 +26,29 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>⚠️ Something went wrong</Text>
-          <Text style={styles.errorText}>{this.state.error?.message || 'Unknown error'}</Text>
-          <Text style={styles.errorHint}>Please restart the app</Text>
+        <View style={errorStyles.container}>
+          <Text style={errorStyles.emoji}>⚠️</Text>
+          <Text style={errorStyles.title}>Something went wrong</Text>
+          <Text style={errorStyles.message}>{this.state.error?.message || 'Unknown error'}</Text>
+          <Text style={errorStyles.hint}>Please restart the app</Text>
         </View>
       );
     }
-
     return this.props.children;
   }
 }
 
+const errorStyles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#1F2937' },
+  emoji: { fontSize: 60, marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#EF4444', marginBottom: 12 },
+  message: { fontSize: 14, color: '#D1D5DB', textAlign: 'center', marginBottom: 8 },
+  hint: { fontSize: 12, color: '#9CA3AF', marginTop: 16 },
+});
+
 function AppContent() {
   const { colors, isDark } = useTheme();
   const { isAuthenticated, loading } = useAuth();
-
-  console.log('AppContent render:', { isAuthenticated, loading });
 
   // Show loading screen while checking auth state
   if (loading) {
@@ -51,6 +57,7 @@ function AppContent() {
         <Text style={styles.loadingEmoji}>✈️</Text>
         <Text style={[styles.loadingText, { color: colors.text }]}>TripNest</Text>
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+        <Text style={[styles.loadingHint, { color: colors.textMuted }]}>Loading...</Text>
       </View>
     );
   }
@@ -67,8 +74,6 @@ function AppContent() {
 }
 
 export default function App() {
-  console.log('App starting...');
-  
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
@@ -100,28 +105,8 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#1F2937',
-  },
-  errorTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#EF4444',
-    marginBottom: 16,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#D1D5DB',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  errorHint: {
+  loadingHint: {
     fontSize: 14,
-    color: '#9CA3AF',
-    marginTop: 16,
+    marginTop: 12,
   },
 });
