@@ -10,6 +10,17 @@ import {
   updateProfile,
   onAuthStateChanged
 } from 'firebase/auth';
+import { 
+  getDatabase, 
+  ref, 
+  set, 
+  get, 
+  push, 
+  update, 
+  remove, 
+  onValue,
+  off 
+} from 'firebase/database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
@@ -39,18 +50,30 @@ try {
     });
   }
 } catch (error) {
-  // Auth already initialized, get existing instance
   auth = getAuth(app);
 }
 
+// Initialize Realtime Database
+const database = getDatabase(app);
+
 export { 
   auth, 
+  database,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
   updateProfile,
-  onAuthStateChanged
+  onAuthStateChanged,
+  // Database exports
+  ref,
+  set,
+  get,
+  push,
+  update,
+  remove,
+  onValue,
+  off
 };
 
 export default app;

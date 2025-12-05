@@ -1,171 +1,165 @@
-import { ref, set, get, update, remove, onValue, push, query, orderByChild, equalTo } from 'firebase/database';
-import { database } from '../config/firebase';
+import { 
+  database, 
+  ref, 
+  set, 
+  get, 
+  push, 
+  update, 
+  remove, 
+  onValue,
+  off,
+  auth
+} from '../config/firebase';
 
-// Subscribe to user's trips
-export const subscribeToTrips = (userId, callback) => {
-  const tripsRef = ref(database, `users/${userId}/trips`);
-  
-  const unsubscribe = onValue(tripsRef, (snapshot) => {
-    const data = snapshot.val();
-    const trips = data ? Object.keys(data).map(key => ({ ...data[key], id: key })) : [];
-    callback(trips);
-  });
-  
-  return unsubscribe;
-};
+const getUserId = () => auth.currentUser?.uid;
 
-// Subscribe to trip history
-export const subscribeToTripHistory = (userId, callback) => {
-  const historyRef = ref(database, `users/${userId}/history`);
+// ============ TRIPS ============
+export const saveTrip = async (tripData) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
   
-  const unsubscribe = onValue(historyRef, (snapshot) => {
-    const data = snapshot.val();
-    const history = data ? Object.keys(data).map(key => ({ ...data[key], historyId: key })) : [];
-    callback(history);
-  });
-  
-  return unsubscribe;
-};
-
-// Subscribe to a specific trip
-export const subscribeToTrip = (userId, tripId, callback) => {
+  const tripId = tripData.id || push(ref(database, `users/${userId}/trips`)).key;
   const tripRef = ref(database, `users/${userId}/trips/${tripId}`);
   
-  const unsubscribe = onValue(tripRef, (snapshot) => {
-    callback(snapshot.val());
-  });
-  
-  return unsubscribe;
+  await set(tripRef, { ...tripData, id: tripId, updatedAt: Date.now(), createdAt: tripData.createdAt || Date.now() });
+  return { ...tripData, id: tripId };
 };
 
-// Create a new trip
-export const createTrip = async (userId, trip) => {
-  const tripRef = ref(database, `users/${userId}/trips/${trip.id}`);
-  await set(tripRef, trip);
+export const getTrips = async () => {
+  const userId = getUserId();
+  if (!userId) return [];
   
-  // Also save trip code mapping
-  if (trip.tripCode) {
-    const codeRef = ref(database, `tripCodes/${trip.tripCode}`);
-    await set(codeRef, {
-      tripId: trip.id,
-      ownerId: userId,
-      destination: trip.destination,
-      createdAt: new Date().toISOString(),
-    });
-  }
+  const snapshot = await get(ref(database, `users/${userId}/trips`));
+  return snapshot.exists() ? Object.values(snapshot.val()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)) : [];
 };
 
-// Save/update trip
-export const saveTrip = async (userId, tripId, trip) => {
-  const tripRef = ref(database, `users/${userId}/trips/${tripId}`);
-  await update(tripRef, trip);
+export const deleteTrip = async (tripId) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+  await remove(ref(database, `users/${userId}/trips/${tripId}`));
 };
 
-// Delete trip
-export const deleteTrip = async (userId, tripId, tripCode) => {
-  const tripRef = ref(database, `users/${userId}/trips/${tripId}`);
-  await remove(tripRef);
-  
-  // Remove trip code mapping
-  if (tripCode) {
-    const codeRef = ref(database, `tripCodes/${tripCode}`);
-    await remove(codeRef);
-  }
+// ============ CURRENT TRIP ============
+export const saveCurrentTripInfo = async (tripInfo) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+  await set(ref(database, `users/${userId}/currentTrip/info`), { ...tripInfo, updatedAt: Date.now() });
 };
 
-// Save expenses
-export const saveExpenses = async (userId, tripId, expenses) => {
-  const expensesRef = ref(database, `users/${userId}/trips/${tripId}/expenses`);
-  await set(expensesRef, expenses);
+export const getCurrentTripInfo = async () => {
+  const userId = getUserId();
+  if (!userId) return null;
+  const snapshot = await get(ref(database, `users/${userId}/currentTrip/info`));
+  return snapshot.exists() ? snapshot.val() : null;
 };
 
-// Save packing items
-export const savePackingItems = async (userId, tripId, items) => {
-  const itemsRef = ref(database, `users/${userId}/trips/${tripId}/packingItems`);
-  await set(itemsRef, items);
+// ============ EXPENSES ============
+export const saveExpense = async (expense) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+  
+  const expenseId = expense.id || push(ref(database, `users/${userId}/currentTrip/expenses`)).key;
+  await set(ref(database, `users/${userId}/currentTrip/expenses/${expenseId}`), { ...expense, id: expenseId, createdAt: expense.createdAt || Date.now() });
+  return { ...expense, id: expenseId };
 };
 
-// Save itinerary
-export const saveItinerary = async (userId, tripId, itinerary) => {
-  const itineraryRef = ref(database, `users/${userId}/trips/${tripId}/itinerary`);
-  await set(itineraryRef, itinerary);
+export const getExpenses = async () => {
+  const userId = getUserId();
+  if (!userId) return [];
+  const snapshot = await get(ref(database, `users/${userId}/currentTrip/expenses`));
+  return snapshot.exists() ? Object.values(snapshot.val()) : [];
 };
 
-// Save budget
-export const saveBudget = async (userId, tripId, budget) => {
-  const budgetRef = ref(database, `users/${userId}/trips/${tripId}/budget`);
-  await set(budgetRef, budget);
+export const deleteExpenseFromDB = async (expenseId) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+  await remove(ref(database, `users/${userId}/currentTrip/expenses/${expenseId}`));
 };
 
-// Save trip to history
-export const saveTripToHistory = async (userId, trip) => {
-  const historyRef = ref(database, `users/${userId}/history`);
-  const newHistoryRef = push(historyRef);
-  await set(newHistoryRef, trip);
+// ============ PACKING ITEMS ============
+export const savePackingItem = async (item) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+  
+  const itemId = item.id || push(ref(database, `users/${userId}/currentTrip/packingItems`)).key;
+  await set(ref(database, `users/${userId}/currentTrip/packingItems/${itemId}`), { ...item, id: itemId });
+  return { ...item, id: itemId };
 };
 
-// Delete trip from history
-export const deleteTripFromHistory = async (userId, historyId) => {
-  const historyRef = ref(database, `users/${userId}/history/${historyId}`);
-  await remove(historyRef);
+export const getPackingItems = async () => {
+  const userId = getUserId();
+  if (!userId) return [];
+  const snapshot = await get(ref(database, `users/${userId}/currentTrip/packingItems`));
+  return snapshot.exists() ? Object.values(snapshot.val()) : [];
 };
 
-// Join trip by code
-export const joinTrip = async (userId, tripCode, userName) => {
-  const codeRef = ref(database, `tripCodes/${tripCode}`);
-  const snapshot = await get(codeRef);
-  
-  if (!snapshot.exists()) {
-    return { success: false, error: 'Trip code not found' };
-  }
-  
-  const tripData = snapshot.val();
-  const ownerId = tripData.ownerId;
-  const tripId = tripData.tripId;
-  
-  // Get the trip details
-  const tripRef = ref(database, `users/${ownerId}/trips/${tripId}`);
-  const tripSnapshot = await get(tripRef);
-  
-  if (!tripSnapshot.exists()) {
-    return { success: false, error: 'Trip not found' };
-  }
-  
-  const trip = tripSnapshot.val();
-  
-  // Add user to participants
-  const participants = trip.participants || [];
-  participants.push({ name: userName, joinedAt: new Date().toISOString() });
-  
-  await update(tripRef, { participants });
-  
-  // Create a copy for the joining user
-  const userTripRef = ref(database, `users/${userId}/trips/${tripId}`);
-  await set(userTripRef, {
-    ...trip,
-    participants,
-    joinedViaCode: true,
-    originalOwnerId: ownerId,
-  });
-  
-  return { success: true, trip: { ...trip, id: tripId } };
+export const updatePackingItem = async (itemId, updates) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+  await update(ref(database, `users/${userId}/currentTrip/packingItems/${itemId}`), updates);
 };
 
-// Get trip by code
-export const getTripByCode = async (tripCode) => {
-  const codeRef = ref(database, `tripCodes/${tripCode}`);
-  const snapshot = await get(codeRef);
+export const deletePackingItemFromDB = async (itemId) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+  await remove(ref(database, `users/${userId}/currentTrip/packingItems/${itemId}`));
+};
+
+// ============ ITINERARY ============
+export const saveItineraryItem = async (item) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
   
-  if (!snapshot.exists()) {
-    return null;
-  }
+  const itemId = item.id || push(ref(database, `users/${userId}/currentTrip/itinerary`)).key;
+  await set(ref(database, `users/${userId}/currentTrip/itinerary/${itemId}`), { ...item, id: itemId });
+  return { ...item, id: itemId };
+};
+
+export const getItinerary = async () => {
+  const userId = getUserId();
+  if (!userId) return [];
+  const snapshot = await get(ref(database, `users/${userId}/currentTrip/itinerary`));
+  return snapshot.exists() ? Object.values(snapshot.val()) : [];
+};
+
+export const deleteItineraryItemFromDB = async (itemId) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+  await remove(ref(database, `users/${userId}/currentTrip/itinerary/${itemId}`));
+};
+
+// ============ BUDGET ============
+export const saveBudget = async (budget) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+  await set(ref(database, `users/${userId}/currentTrip/budget`), budget);
+};
+
+export const getBudget = async () => {
+  const userId = getUserId();
+  if (!userId) return { total: 0, categories: {} };
+  const snapshot = await get(ref(database, `users/${userId}/currentTrip/budget`));
+  return snapshot.exists() ? snapshot.val() : { total: 0, categories: {} };
+};
+
+// ============ CLEAR & HISTORY ============
+export const clearCurrentTripData = async () => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+  await remove(ref(database, `users/${userId}/currentTrip`));
+};
+
+export const saveToHistory = async (tripData) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
   
-  const tripData = snapshot.val();
-  const ownerId = tripData.ownerId;
-  const tripId = tripData.tripId;
-  
-  const tripRef = ref(database, `users/${ownerId}/trips/${tripId}`);
-  const tripSnapshot = await get(tripRef);
-  
-  return tripSnapshot.exists() ? { ...tripSnapshot.val(), id: tripId } : null;
+  const historyId = push(ref(database, `users/${userId}/tripHistory`)).key;
+  await set(ref(database, `users/${userId}/tripHistory/${historyId}`), { ...tripData, id: historyId, completedAt: Date.now() });
+};
+
+export const getTripHistory = async () => {
+  const userId = getUserId();
+  if (!userId) return [];
+  const snapshot = await get(ref(database, `users/${userId}/tripHistory`));
+  return snapshot.exists() ? Object.values(snapshot.val()).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)) : [];
 };
