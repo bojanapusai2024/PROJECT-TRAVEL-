@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Travel Companion",
-    "slug": "travel-companion",
+    "name": "TripNest",
+    "slug": "tripnest",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -19,6 +19,7 @@
     "web": {
       "bundler": "metro",
       "output": "single"
-    }
+    },
+    "scheme": "tripnest"
   }
 }

@@ -1,31 +1,60 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateUniqueTripCode } from '../utils/tripCodeGenerator';
 import { useAuth } from './AuthContext';
 import * as DB from '../services/databaseService';
 
-const TravelContext = createContext();
+const DEFAULT_CATEGORIES = [
+  { id: '1', name: 'Food & Dining', emoji: '🍽️', color: '#FF6B6B' },
+  { id: '2', name: 'Transportation', emoji: '🚗', color: '#4ECDC4' },
+  { id: '3', name: 'Accommodation', emoji: '🏨', color: '#45B7D1' },
+  { id: '4', name: 'Activities', emoji: '🎯', color: '#96CEB4' },
+  { id: '5', name: 'Shopping', emoji: '🛍️', color: '#FFEAA7' },
+  { id: '6', name: 'Entertainment', emoji: '🎬', color: '#DDA0DD' },
+  { id: '7', name: 'Health', emoji: '💊', color: '#98D8C8' },
+  { id: '8', name: 'Other', emoji: '📦', color: '#B8B8B8' },
+];
 
-const CURRENCIES = [
-  { code: 'INR', symbol: '₹', name: 'Indian Rupee', flag: '🇮🇳' },
+const currencies = [
   { code: 'USD', symbol: '$', name: 'US Dollar', flag: '🇺🇸' },
   { code: 'EUR', symbol: '€', name: 'Euro', flag: '🇪🇺' },
   { code: 'GBP', symbol: '£', name: 'British Pound', flag: '🇬🇧' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee', flag: '🇮🇳' },
   { code: 'JPY', symbol: '¥', name: 'Japanese Yen', flag: '🇯🇵' },
-  { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham', flag: '🇦🇪' },
-  { code: 'THB', symbol: '฿', name: 'Thai Baht', flag: '🇹🇭' },
-  { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar', flag: '🇸🇬' },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', flag: '🇦🇺' },
+  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar', flag: '🇨🇦' },
 ];
 
-const DEFAULT_CATEGORIES = [
-  { key: 'accommodation', label: 'Stay', emoji: '🏨', color: '#8B5CF6', tip: '30-40%' },
-  { key: 'transport', label: 'Transport', emoji: '🚗', color: '#3B82F6', tip: '15-25%' },
-  { key: 'food', label: 'Food', emoji: '🍽️', color: '#F59E0B', tip: '20-30%' },
-  { key: 'activities', label: 'Activities', emoji: '🎭', color: '#10B981', tip: '10-15%' },
-  { key: 'shopping', label: 'Shopping', emoji: '🛍️', color: '#EC4899', tip: '5-10%' },
-  { key: 'other', label: 'Other', emoji: '📦', color: '#6B7280', tip: '5-10%' },
-];
+const TravelContext = createContext(null);
 
-export function TravelProvider({ children }) {
+export const useTravelContext = () => {
+  const context = useContext(TravelContext);
+  if (!context) {
+    return {
+      tripInfo: {},
+      budget: { total: 0 },
+      expenses: [],
+      packingItems: [],
+      itinerary: [],
+      tripHistory: [],
+      allTrips: [],
+      currency: currencies[0],
+      currencies,
+      setTripInfo: () => {},
+      setBudget: () => {},
+      setExpenses: () => {},
+      addExpense: () => {},
+      setPackingItems: () => {},
+      setItinerary: () => {},
+      setCurrency: () => {},
+      clearTrip: async () => {},
+      deleteTripFromHistory: () => {},
+    };
+  }
+  return context;
+};
+
+export const TravelProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   
   const [tripInfo, setTripInfoState] = useState({
@@ -45,7 +74,7 @@ export function TravelProvider({ children }) {
   const [itinerary, setItinerary] = useState([]);
   const [tripHistory, setTripHistory] = useState([]);
   const [allTrips, setAllTrips] = useState([]);
-  const [currency, setCurrency] = useState(CURRENCIES[0]);
+  const [currency, setCurrency] = useState(currencies[0]);
   const [customCategories, setCustomCategories] = useState(DEFAULT_CATEGORIES);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -393,6 +422,43 @@ export function TravelProvider({ children }) {
   const getBalances = () => ({});
   const getSettlements = () => [];
 
+  // Load data on mount
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Save data when it changes
+  useEffect(() => {
+    saveData();
+  }, [tripInfo, budget, expenses, packingItems, itinerary, tripHistory, currency]);
+
+  const loadData = async () => {
+    try {
+      const data = await AsyncStorage.getItem('travelData');
+      if (data) {
+        const parsed = JSON.parse(data);
+        setTripInfoState(parsed.tripInfo || {});
+        setBudgetState(parsed.budget || { total: 0 });
+        setExpenses(parsed.expenses || []);
+        setPackingItems(parsed.packingItems || []);
+        setItinerary(parsed.itinerary || []);
+        setTripHistory(parsed.tripHistory || []);
+        if (parsed.currency) setCurrency(parsed.currency);
+      }
+    } catch (e) {
+      console.log('Load data error:', e);
+    }
+  };
+
+  const saveData = async () => {
+    try {
+      const data = { tripInfo, budget, expenses, packingItems, itinerary, tripHistory, currency };
+      await AsyncStorage.setItem('travelData', JSON.stringify(data));
+    } catch (e) {
+      console.log('Save data error:', e);
+    }
+  };
+
   return (
     <TravelContext.Provider value={{
       tripInfo, setTripInfo,
@@ -404,7 +470,7 @@ export function TravelProvider({ children }) {
       getRemainingBudget,
       clearTrip, endTrip,
       tripHistory, setTripHistory, deleteTripFromHistory,
-      currency, setCurrency, currencies: CURRENCIES,
+      currency, setCurrency, currencies,
       formatCurrency,
       customCategories, setCustomCategories,
       isMultiUserTrip, getAllTravelers, getBalances, getSettlements,
@@ -414,12 +480,4 @@ export function TravelProvider({ children }) {
       {children}
     </TravelContext.Provider>
   );
-}
-
-export function useTravelContext() {
-  const context = useContext(TravelContext);
-  if (!context) {
-    throw new Error('useTravelContext must be used within a TravelProvider');
-  }
-  return context;
-}
+};

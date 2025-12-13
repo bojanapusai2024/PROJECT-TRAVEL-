@@ -1,169 +1,72 @@
-import React, { useState } from 'react';
-import { View, Text } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-
-import WelcomeScreen from '../screens/WelcomeScreen';
-import TripSetupScreen from '../screens/TripSetupScreen';
-import HomeScreen from '../screens/HomeScreen';
-import BudgetScreen from '../screens/BudgetScreen';
-import ExpenseScreen from '../screens/ExpenseScreen';
-import PackingScreen from '../screens/PackingScreen';
-import MapScreen from '../screens/MapScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import { useTravelContext } from '../context/TravelContext';
+import React, { useState, useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { TravelProvider } from '../context/TravelContext';
 
-const Tab = createBottomTabNavigator();
-
-function TripTabs({ onBackToHome }) {
-  const { colors } = useTheme();
-
-  return (
-    <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarStyle: {
-            backgroundColor: colors.bg,
-            borderTopColor: colors.primaryBorder,
-            borderTopWidth: 1,
-            height: 70,
-            paddingBottom: 10,
-            paddingTop: 10,
-          },
-          tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: colors.textMuted,
-          tabBarIcon: ({ focused }) => {
-            let emoji = '🏠';
-            if (route.name === 'Itinerary') emoji = '🗺️';
-            if (route.name === 'Expenses') emoji = '💳';
-            if (route.name === 'Budget') emoji = '💰';
-            if (route.name === 'Packing') emoji = '🎒';
-            return (
-              <View style={[
-                { padding: 8, borderRadius: 12 },
-                focused && { backgroundColor: colors.primaryMuted }
-              ]}>
-                <Text style={{ fontSize: 22 }}>{emoji}</Text>
-              </View>
-            );
-          },
-        })}
-      >
-        <Tab.Screen name="Dashboard">
-          {() => <HomeScreen onBackToHome={onBackToHome} />}
-        </Tab.Screen>
-        <Tab.Screen name="Itinerary" component={MapScreen} />
-        <Tab.Screen name="Expenses" component={ExpenseScreen} />
-        <Tab.Screen name="Budget" component={BudgetScreen} />
-        <Tab.Screen name="Packing" component={PackingScreen} />
-      </Tab.Navigator>
-    </NavigationContainer>
-  );
-}
+// Import screens
+import SignInScreen from '../screens/SignInScreen';
+import SignUpScreen from '../screens/SignUpScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import MainApp from './MainApp';
 
 export default function AppNavigator() {
-  const [screen, setScreen] = useState('welcome');
-  const { setTripInfo, setBudget, tripInfo } = useTravelContext();
   const { colors } = useTheme();
+  const { user, initializing } = useAuth();
+  const [authScreen, setAuthScreen] = useState('signIn');
 
-  // Check if there's an active trip based on tripInfo
-  const hasActiveTrip = !!(tripInfo.destination || tripInfo.startDate || tripInfo.name);
+  useEffect(() => {
+    console.log('AppNavigator: user =', user?.email || 'null', ', initializing =', initializing);
+  }, [user, initializing]);
 
-  const handlePlanTrip = () => {
-    console.log('Plan trip pressed');
-    setScreen('setup');
-  };
-
-  const handleJoinTrip = (code) => {
-    console.log('Joining trip with code:', code);
-    setScreen('trip');
-  };
-
-  const handleSetupComplete = (tripData) => {
-    console.log('Trip setup complete:', tripData);
-    setTripInfo({
-      destination: tripData.destination,
-      startDate: tripData.startDate,
-      endDate: tripData.endDate,
-      name: tripData.name,
-      participants: tripData.participants || [],
-      tripCode: tripData.tripCode,
-      tripType: tripData.tripType, // Add this line
-    });
-    setBudget(prev => ({ ...prev, total: parseFloat(tripData.budget) || 0 }));
-    setScreen('trip');
-  };
-
-  const handleBackToWelcome = () => {
-    console.log('Going back to welcome');
-    setScreen('welcome');
-  };
-
-  const handleMyTrip = () => {
-    console.log('My trip pressed');
-    setScreen('trip');
-  };
-
-  const handleProfile = () => {
-    console.log('Profile pressed - navigating to profile');
-    setScreen('profile');
-  };
-
-  console.log('Current screen:', screen);
-
-  // Setup screen
-  if (screen === 'setup') {
+  // Loading screen
+  if (initializing) {
     return (
-      <TripSetupScreen 
-        onComplete={handleSetupComplete}
-        onBack={handleBackToWelcome}
-      />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
+        <Text style={styles.loadingLogo}>✈️</Text>
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+        <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading TripNest...</Text>
+      </View>
     );
   }
 
-  // Profile screen
-  if (screen === 'profile') {
+  // Authenticated - show main app
+  if (user && user.email) {
     return (
-      <ProfileScreen onBack={handleBackToWelcome} />
+      <TravelProvider>
+        <MainApp />
+      </TravelProvider>
     );
   }
 
-  // Trip tabs
-  if (screen === 'trip') {
-    return <TripTabs onBackToHome={handleBackToWelcome} />;
+  // Not authenticated - show auth screens
+  if (authScreen === 'signUp') {
+    return <SignUpScreen onNavigateToSignIn={() => setAuthScreen('signIn')} />;
   }
-
-  // Welcome screen (default)
+  
+  if (authScreen === 'forgotPassword') {
+    return <ForgotPasswordScreen onNavigateToSignIn={() => setAuthScreen('signIn')} />;
+  }
+  
   return (
-    <WelcomeScreen 
-      onPlanTrip={handlePlanTrip}
-      onJoinTrip={handleJoinTrip}
-      onMyTrip={handleMyTrip}
-      onProfile={handleProfile}
-      hasActiveTrip={hasActiveTrip}
+    <SignInScreen
+      onNavigateToSignUp={() => setAuthScreen('signUp')}
+      onNavigateToForgotPassword={() => setAuthScreen('forgotPassword')}
     />
   );
 }
 
-const createTabStyles = (colors) => StyleSheet.create({
-  tabBar: {
-    backgroundColor: colors.bg,
-    borderTopColor: colors.primaryBorder,
-    borderTopWidth: 1,
-    height: 70,
-    paddingBottom: 10,
-    paddingTop: 10,
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  iconWrap: {
-    padding: 8,
-    borderRadius: 12,
+  loadingLogo: {
+    fontSize: 64,
   },
-  iconActive: {
-    backgroundColor: colors.primaryMuted,
-  },
-  icon: {
-    fontSize: 22,
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
   },
 });
