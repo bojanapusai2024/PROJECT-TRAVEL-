@@ -37,6 +37,62 @@ const lightColors = {
   error: '#EF4444',
 };
 
+// Warm Dark Theme - Cozy & Premium
+const warmDarkColors = {
+  bg: '#111111',                    // Background
+  card: '#191919',                  // Card
+  cardLight: '#222222',             // Muted
+  primary: '#ffe0c2',               // Primary
+  primaryMuted: 'rgba(255, 224, 194, 0.12)',
+  primaryBorder: 'rgba(255, 224, 194, 0.25)',
+  secondary: '#393028',             // Secondary
+  text: '#eeeeee',                  // Foreground
+  textMuted: '#b4b4b4',             // Muted Foreground
+  textLight: '#888888',             // Lighter muted
+  success: '#4ADE80',
+  warning: '#FBBF24',
+  error: '#e54d2e',                 // Destructive
+  accent: '#2a2a2a',                // Accent
+  accentForeground: '#eeeeee',      // Accent Foreground
+  border: '#201e18',                // Border
+  input: '#484848',                 // Input
+  ring: '#ffe0c2',                  // Ring
+  // Sidebar colors
+  sidebarBg: '#18181b',
+  sidebarForeground: '#f4f4f5',
+  sidebarPrimary: '#1d4ed8',
+  sidebarPrimaryForeground: '#ffffff',
+  sidebarAccent: '#27272a',
+  sidebarAccentForeground: '#f4f4f5',
+  sidebarBorder: '#27272a',
+  sidebarRing: '#d4d4d8',
+};
+
+// Theme definitions with metadata
+export const THEMES = {
+  dark: {
+    id: 'dark',
+    name: 'Dark Green',
+    description: 'Charcoal & Light Green',
+    icon: '🌙',
+    colors: darkColors,
+  },
+  light: {
+    id: 'light',
+    name: 'Sunrise Light',
+    description: 'Warm & Inviting',
+    icon: '☀️',
+    colors: lightColors,
+  },
+  warmDark: {
+    id: 'warmDark',
+    name: 'Warm Dark',
+    description: 'Cozy & Premium',
+    icon: '🔥',
+    colors: warmDarkColors,
+  },
+};
+
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
@@ -46,7 +102,7 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [isDark, setIsDark] = useState(true);
+  const [currentTheme, setCurrentTheme] = useState('dark');
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -56,8 +112,8 @@ export const ThemeProvider = ({ children }) => {
   const loadTheme = async () => {
     try {
       const savedTheme = await AsyncStorage.getItem('theme');
-      if (savedTheme !== null) {
-        setIsDark(savedTheme === 'dark');
+      if (savedTheme !== null && THEMES[savedTheme]) {
+        setCurrentTheme(savedTheme);
       }
     } catch (error) {
       console.log('Error loading theme:', error);
@@ -66,23 +122,36 @@ export const ThemeProvider = ({ children }) => {
     }
   };
 
-  const toggleTheme = async () => {
+  const setTheme = async (themeName) => {
     try {
-      const newTheme = !isDark;
-      setIsDark(newTheme);
-      await AsyncStorage.setItem('theme', newTheme ? 'dark' : 'light');
+      if (THEMES[themeName]) {
+        setCurrentTheme(themeName);
+        await AsyncStorage.setItem('theme', themeName);
+      }
     } catch (error) {
       console.log('Error saving theme:', error);
     }
   };
 
-  const colors = isDark ? darkColors : lightColors;
+  // Legacy support for toggleTheme
+  const toggleTheme = async () => {
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    await setTheme(newTheme);
+  };
+
+  const theme = THEMES[currentTheme];
+  const colors = theme.colors;
+  const isDark = currentTheme !== 'light';
 
   const value = {
+    currentTheme,
+    theme,
     isDark,
     toggleTheme,
+    setTheme,
     colors,
     isLoaded,
+    availableThemes: Object.values(THEMES),
   };
 
   return (

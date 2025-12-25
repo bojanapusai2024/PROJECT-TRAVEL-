@@ -15,7 +15,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, THEMES } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useTravelContext } from '../context/TravelContext';
 
@@ -68,7 +68,7 @@ const AnimatedCard = ({ children, style, onPress, delay = 0 }) => {
 };
 
 export default function ProfileScreen({ onBack }) {
-  const { colors, isDark, toggleTheme } = useTheme();
+  const { colors, isDark, toggleTheme, setTheme, currentTheme, availableThemes } = useTheme();
   const { user, signOut, updateUserProfile, resetPassword, changePassword } = useAuth();
   const {
     currency,
@@ -80,6 +80,7 @@ export default function ProfileScreen({ onBack }) {
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showThemePicker, setShowThemePicker] = useState(false);
   const [editForm, setEditForm] = useState({
     displayName: user?.displayName || '',
     avatar: '👤',
@@ -263,25 +264,20 @@ export default function ProfileScreen({ onBack }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Preferences</Text>
 
-          <AnimatedCard delay={200}>
+          <AnimatedCard delay={200} onPress={() => setShowThemePicker(true)}>
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#8B5CF640' : '#8B5CF620' }]}>
-                  <Text style={styles.settingIcon}>{isDark ? '🌙' : '☀️'}</Text>
+                  <Text style={styles.settingIcon}>{THEMES[currentTheme]?.icon || '🎨'}</Text>
                 </View>
                 <View style={styles.settingInfo}>
-                  <Text style={styles.settingLabel}>Dark Mode</Text>
+                  <Text style={styles.settingLabel}>Theme</Text>
                   <Text style={styles.settingValue}>
-                    {isDark ? 'Currently using dark theme' : 'Currently using light theme'}
+                    {THEMES[currentTheme]?.name || 'Dark Green'} - {THEMES[currentTheme]?.description || 'Charcoal & Light Green'}
                   </Text>
                 </View>
               </View>
-              <Switch
-                value={isDark}
-                onValueChange={toggleTheme}
-                trackColor={{ false: colors.cardLight, true: colors.primary + '60' }}
-                thumbColor={isDark ? colors.primary : colors.textMuted}
-              />
+              <Text style={styles.settingArrow}>›</Text>
             </View>
           </AnimatedCard>
 
@@ -637,6 +633,55 @@ export default function ProfileScreen({ onBack }) {
                 </TouchableOpacity>
               ))}
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Theme Picker Modal */}
+      <Modal visible={showThemePicker} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: '70%' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Choose Theme</Text>
+              <TouchableOpacity onPress={() => setShowThemePicker(false)}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.themeList}>
+              {availableThemes?.map((theme) => (
+                <TouchableOpacity
+                  key={theme.id}
+                  style={[
+                    styles.themeItem,
+                    currentTheme === theme.id && styles.themeItemActive
+                  ]}
+                  onPress={() => {
+                    setTheme(theme.id);
+                    setShowThemePicker(false);
+                  }}
+                >
+                  <View style={styles.themeIconContainer}>
+                    <Text style={styles.themeIcon}>{theme.icon}</Text>
+                  </View>
+                  <View style={styles.themeInfo}>
+                    <Text style={styles.themeName}>{theme.name}</Text>
+                    <Text style={styles.themeDescription}>{theme.description}</Text>
+                    <View style={styles.themeColorPreview}>
+                      <View style={[styles.colorDot, { backgroundColor: theme.colors.primary }]} />
+                      <View style={[styles.colorDot, { backgroundColor: theme.colors.secondary }]} />
+                      <View style={[styles.colorDot, { backgroundColor: theme.colors.bg }]} />
+                      <View style={[styles.colorDot, { backgroundColor: theme.colors.card }]} />
+                    </View>
+                  </View>
+                  {currentTheme === theme.id && (
+                    <View style={styles.themeCheck}>
+                      <Text style={styles.themeCheckText}>✓</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1031,4 +1076,56 @@ const createStyles = (colors, isDark) => StyleSheet.create({
     backgroundColor: colors.primaryMuted,
   },
   avatarOptionText: { fontSize: 28 },
+
+  // Theme Picker
+  themeList: { maxHeight: 500 },
+  themeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    marginHorizontal: 16,
+    marginVertical: 6,
+    borderRadius: 16,
+    backgroundColor: colors.cardLight,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  themeItemActive: {
+    backgroundColor: colors.primaryMuted,
+    borderColor: colors.primary,
+  },
+  themeIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  themeIcon: { fontSize: 26 },
+  themeInfo: { flex: 1 },
+  themeName: { fontSize: 16, fontWeight: 'bold', color: colors.text, marginBottom: 4 },
+  themeDescription: { fontSize: 13, color: colors.textMuted, marginBottom: 8 },
+  themeColorPreview: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  colorDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  themeCheck: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
+  },
+  themeCheckText: { color: colors.bg, fontSize: 16, fontWeight: 'bold' },
 });
