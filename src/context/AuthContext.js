@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   updateProfile,
@@ -9,8 +9,10 @@ import {
   updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
+  deleteUser,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import * as DB from '../services/databaseService';
 
 const AuthContext = createContext(null);
 
@@ -29,10 +31,10 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     console.log('AuthProvider: Setting up listener');
-    
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       console.log('onAuthStateChanged:', firebaseUser?.email || 'null');
-      
+
       if (firebaseUser) {
         setUser({
           uid: firebaseUser.uid,
@@ -44,7 +46,7 @@ export function AuthProvider({ children }) {
       } else {
         setUser(null);
       }
-      
+
       setInitializing(false);
     });
 
@@ -93,12 +95,12 @@ export function AuthProvider({ children }) {
     console.log('AuthContext.signOut: Starting...');
     try {
       setLoading(true);
-      
+
       await firebaseSignOut(auth);
-      
+
       console.log('AuthContext.signOut: Firebase signOut complete');
       // onAuthStateChanged will set user to null
-      
+
       return { success: true };
     } catch (error) {
       console.error('AuthContext.signOut: Error:', error);
@@ -130,20 +132,26 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const changePassword = async (currentPassword, newPassword) => {
+  const deleteAccount = async () => {
     try {
       const currentUser = auth.currentUser;
-      if (!currentUser?.email) return { success: false, error: 'No user' };
-      
-      const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
-      await reauthenticateWithCredential(currentUser, credential);
-      await updatePassword(currentUser, newPassword);
+      if (!currentUser) return { success: false, error: 'No user logged in' };
+
+      // First delete all user data from database
+      await DB.deleteAllUserData();
+
+      // Then delete the user from Firebase Authentication
+      await deleteUser(currentUser);
+
+      // User will be automatically signed out
       return { success: true };
     } catch (error) {
-      if (error.code === 'auth/wrong-password') {
-        return { success: false, error: 'Current password incorrect' };
+      console.error('Delete account error:', error);
+      let msg = 'Failed to delete account';
+      if (error.code === 'auth/requires-recent-login') {
+        msg = 'Please sign in again before deleting your account';
       }
-      return { success: false, error: 'Failed to change password' };
+      return { success: false, error: msg };
     }
   };
 
@@ -157,7 +165,7 @@ export function AuthProvider({ children }) {
     signOut,
     updateUserProfile,
     resetPassword,
-    changePassword,
+    deleteAccount,
   };
 
   return (

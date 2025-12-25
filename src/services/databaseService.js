@@ -1,11 +1,11 @@
-import { 
-  database, 
-  ref, 
-  set, 
-  get, 
-  push, 
-  update, 
-  remove, 
+import {
+  database,
+  ref,
+  set,
+  get,
+  push,
+  update,
+  remove,
   onValue,
   off,
   auth
@@ -17,10 +17,10 @@ const getUserId = () => auth.currentUser?.uid;
 export const saveTrip = async (tripData) => {
   const userId = getUserId();
   if (!userId) throw new Error('User not authenticated');
-  
+
   const tripId = tripData.id || push(ref(database, `users/${userId}/trips`)).key;
   const tripRef = ref(database, `users/${userId}/trips/${tripId}`);
-  
+
   await set(tripRef, { ...tripData, id: tripId, updatedAt: Date.now(), createdAt: tripData.createdAt || Date.now() });
   return { ...tripData, id: tripId };
 };
@@ -28,7 +28,7 @@ export const saveTrip = async (tripData) => {
 export const getTrips = async () => {
   const userId = getUserId();
   if (!userId) return [];
-  
+
   const snapshot = await get(ref(database, `users/${userId}/trips`));
   return snapshot.exists() ? Object.values(snapshot.val()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)) : [];
 };
@@ -57,7 +57,7 @@ export const getCurrentTripInfo = async () => {
 export const saveExpense = async (expense) => {
   const userId = getUserId();
   if (!userId) throw new Error('User not authenticated');
-  
+
   const expenseId = expense.id || push(ref(database, `users/${userId}/currentTrip/expenses`)).key;
   await set(ref(database, `users/${userId}/currentTrip/expenses/${expenseId}`), { ...expense, id: expenseId, createdAt: expense.createdAt || Date.now() });
   return { ...expense, id: expenseId };
@@ -80,7 +80,7 @@ export const deleteExpenseFromDB = async (expenseId) => {
 export const savePackingItem = async (item) => {
   const userId = getUserId();
   if (!userId) throw new Error('User not authenticated');
-  
+
   const itemId = item.id || push(ref(database, `users/${userId}/currentTrip/packingItems`)).key;
   await set(ref(database, `users/${userId}/currentTrip/packingItems/${itemId}`), { ...item, id: itemId });
   return { ...item, id: itemId };
@@ -109,7 +109,7 @@ export const deletePackingItemFromDB = async (itemId) => {
 export const saveItineraryItem = async (item) => {
   const userId = getUserId();
   if (!userId) throw new Error('User not authenticated');
-  
+
   const itemId = item.id || push(ref(database, `users/${userId}/currentTrip/itinerary`)).key;
   await set(ref(database, `users/${userId}/currentTrip/itinerary/${itemId}`), { ...item, id: itemId });
   return { ...item, id: itemId };
@@ -152,7 +152,7 @@ export const clearCurrentTripData = async () => {
 export const saveToHistory = async (tripData) => {
   const userId = getUserId();
   if (!userId) throw new Error('User not authenticated');
-  
+
   const historyId = push(ref(database, `users/${userId}/tripHistory`)).key;
   await set(ref(database, `users/${userId}/tripHistory/${historyId}`), { ...tripData, id: historyId, completedAt: Date.now() });
 };
@@ -162,4 +162,14 @@ export const getTripHistory = async () => {
   if (!userId) return [];
   const snapshot = await get(ref(database, `users/${userId}/tripHistory`));
   return snapshot.exists() ? Object.values(snapshot.val()).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)) : [];
+};
+
+// ============ DELETE ALL USER DATA ============
+export const deleteAllUserData = async () => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+
+  // Remove all user data from database
+  await remove(ref(database, `users/${userId}`));
+  console.log('All user data deleted from database');
 };

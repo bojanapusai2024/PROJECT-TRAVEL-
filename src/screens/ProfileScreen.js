@@ -69,7 +69,7 @@ const AnimatedCard = ({ children, style, onPress, delay = 0 }) => {
 
 export default function ProfileScreen({ onBack }) {
   const { colors, isDark, toggleTheme, setTheme, currentTheme, availableThemes } = useTheme();
-  const { user, signOut, updateUserProfile, resetPassword, changePassword } = useAuth();
+  const { user, signOut, updateUserProfile, resetPassword, deleteAccount } = useAuth();
   const {
     currency,
     setCurrency,
@@ -79,18 +79,12 @@ export default function ProfileScreen({ onBack }) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [editForm, setEditForm] = useState({
     displayName: user?.displayName || '',
     avatar: '👤',
   });
   const [selectedAvatar, setSelectedAvatar] = useState('👤');
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
 
   const headerAnim = useRef(new Animated.Value(0)).current;
 
@@ -126,47 +120,24 @@ export default function ProfileScreen({ onBack }) {
     }
   };
 
-  const handleChangePassword = async () => {
-    const { currentPassword, newPassword, confirmPassword } = passwordForm;
-
-    // Validation
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      return;
-    }
-
-    if (currentPassword === newPassword) {
-      return;
-    }
-
-    try {
-      const result = await changePassword(currentPassword, newPassword);
-
-      if (result.success) {
-        setShowChangePasswordModal(false);
-        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      }
-    } catch (error) {
-      console.error('Change password error:', error);
-    }
-  };
-
   const handleResetPassword = async () => {
     if (user?.email) {
       await resetPassword(user.email);
     }
   };
 
-  const handleDeleteAccount = () => {
-    // Account deletion would be handled here
-    console.log('Delete account requested');
+  const handleDeleteAccount = async () => {
+    try {
+      const result = await deleteAccount();
+      if (result.success) {
+        console.log('Account deleted successfully');
+        // User will be automatically signed out and redirected
+      } else {
+        console.error('Delete account failed:', result.error);
+      }
+    } catch (error) {
+      console.error('Delete account error:', error);
+    }
   };
 
   const getInitials = () => {
@@ -320,21 +291,6 @@ export default function ProfileScreen({ onBack }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account & Security</Text>
 
-          <AnimatedCard delay={275} onPress={() => setShowChangePasswordModal(true)}>
-            <View style={styles.settingItem}>
-              <View style={styles.settingLeft}>
-                <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#3B82F640' : '#3B82F620' }]}>
-                  <Text style={styles.settingIcon}>🔑</Text>
-                </View>
-                <View style={styles.settingInfo}>
-                  <Text style={styles.settingLabel}>Change Password</Text>
-                  <Text style={styles.settingValue}>Update your password</Text>
-                </View>
-              </View>
-              <Text style={styles.settingArrow}>›</Text>
-            </View>
-          </AnimatedCard>
-
           <AnimatedCard delay={300} onPress={() => { }}>
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
@@ -486,77 +442,6 @@ export default function ProfileScreen({ onBack }) {
                 onPress={handleUpdateProfile}
               >
                 <Text style={styles.modalSaveText}>Save Changes</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-
-      {/* Change Password Modal */}
-      <Modal visible={showChangePasswordModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Change Password</Text>
-              <TouchableOpacity onPress={() => {
-                setShowChangePasswordModal(false);
-                setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-              }}>
-                <Text style={styles.modalClose}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>Current Password</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={passwordForm.currentPassword}
-                onChangeText={(text) => setPasswordForm({ ...passwordForm, currentPassword: text })}
-                placeholder="Enter current password"
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry
-                autoCapitalize="none"
-              />
-
-              <Text style={[styles.inputLabel, { marginTop: 16 }]}>New Password</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={passwordForm.newPassword}
-                onChangeText={(text) => setPasswordForm({ ...passwordForm, newPassword: text })}
-                placeholder="Enter new password (min 6 characters)"
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry
-                autoCapitalize="none"
-              />
-
-              <Text style={[styles.inputLabel, { marginTop: 16 }]}>Confirm New Password</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={passwordForm.confirmPassword}
-                onChangeText={(text) => setPasswordForm({ ...passwordForm, confirmPassword: text })}
-                placeholder="Confirm new password"
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry
-                autoCapitalize="none"
-              />
-            </View>
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
-                onPress={() => {
-                  setShowChangePasswordModal(false);
-                  setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                }}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalSaveBtn}
-                onPress={handleChangePassword}
-              >
-                <Text style={styles.modalSaveText}>Change Password</Text>
               </TouchableOpacity>
             </View>
           </View>
