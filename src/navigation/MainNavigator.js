@@ -122,15 +122,12 @@ export default function MainNavigator() {
           setTripInfo(result.trip);
         }
       }
-      // Navigate to dashboard
-      setCurrentScreen('TripDashboard');
+
+      // USER REQUEST: Stay on Welcome Screen
+      Alert.alert('Success', 'You have joined the trip! It is now visible in your trips list.');
+      // setCurrentScreen('TripDashboard'); // Removed per user request
     } else {
-      // Show error (would be better to pass back to WelcomeScreen, but Alert works for now)
-      // Note: WelcomeScreen might have closed the modal already.
-      // Ideally we pass a callback or return promise. 
-      // But WelcomeScreen calls onJoinTrip and doesn't wait.
-      // We'll rely on Alert from here.
-      Alert.alert('Error', `Could not join trip: ${result.error}`);
+      Alert.alert('Error', `Could not join trip: ${result.error || 'Unknown error'}`);
     }
   };
 

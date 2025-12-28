@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  View, Text, TouchableOpacity, StyleSheet, Dimensions, 
+import {
+  View, Text, TouchableOpacity, StyleSheet, Dimensions,
   Animated, TextInput, Modal, ScrollView, Pressable, Share, Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,22 +20,22 @@ const TRIP_TYPES = [
 
 export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProfile, hasActiveTrip }) {
   const { colors } = useTheme();
-  const { 
-    tripInfo, 
-    getTotalExpenses, 
-    packingItems, 
-    expenses, 
-    currency, 
+  const {
+    tripInfo,
+    getTotalExpenses,
+    packingItems,
+    expenses,
+    currency,
     allTrips = [],
     saveCurrentTripToList,
     switchToTrip, // Add this
   } = useTravelContext();
-  
+
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showTripTypeModal, setShowTripTypeModal] = useState(false);
   const [tripCode, setTripCode] = useState('');
   const [showAllTrips, setShowAllTrips] = useState(false); // Default to collapsed
-  
+
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim1 = useState(new Animated.Value(0.8))[0];
   const scaleAnim2 = useState(new Animated.Value(0.8))[0];
@@ -93,12 +93,12 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   const getDaysUntilStart = (startDateString) => {
     const startDate = parseDate(startDateString);
     if (!startDate) return Infinity; // Put trips without dates at the end
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
-    
+
     const diffTime = start.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -110,80 +110,78 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   // Build the display trips list - SORTED BY NEAREST START DATE
   const allDisplayTrips = useMemo(() => {
     let trips = [];
-    
-    // Add all trips from allTrips
+
+    // 1. Add all trips from allTrips context
     if (allTrips && allTrips.length > 0) {
+      // Create a unique map to avoid duplicates
+      const tripMap = new Map();
+
       allTrips.forEach(trip => {
-        if (trip && trip.destination) {
-          const exists = trips.some(t => t.id === trip.id);
-          if (!exists) {
-            trips.push({
-              ...trip,
-              totalExpenses: trip.totalExpenses || 0,
-            });
-          }
+        if (trip && trip.id) {
+          tripMap.set(trip.id, {
+            ...trip,
+            totalExpenses: trip.totalExpenses || 0,
+          });
         }
       });
+
+      trips = Array.from(tripMap.values());
     }
-    
-    // Also check current tripInfo if it has a destination but isn't in trips yet
+
+    // 2. Also check current tripInfo if it has a destination but isn't in trips yet
     if (hasActiveTrip && tripInfo && tripInfo.destination) {
-      const currentExists = trips.some(t => t.id === tripInfo.id || 
-        (t.destination === tripInfo.destination && t.startDate === tripInfo.startDate));
-      if (!currentExists) {
+      const currentId = tripInfo.id || 'current';
+      const exists = trips.some(t => t.id === currentId);
+
+      if (!exists) {
         trips.unshift({
           ...tripInfo,
-          id: tripInfo.id || 'current',
+          id: currentId,
           tripCode: tripInfo.tripCode || null,
           totalExpenses: getTotalExpenses(),
         });
       }
     }
-    
-    // Sort trips by start date - nearest to current date first
-    if (trips.length > 1) {
+
+    // 3. Sort trips
+    // Logic: Active/Current -> Upcoming (Soonest first) -> Past (Most recent first) -> No Date
+    if (trips.length > 0) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       trips.sort((a, b) => {
         const startA = parseDate(a.startDate);
         const startB = parseDate(b.startDate);
         const endA = parseDate(a.endDate);
         const endB = parseDate(b.endDate);
-        
-        // Handle null dates - put them at the end
+
+        // Handling missing dates - put at top if active, else bottom
         if (!startA && !startB) return 0;
         if (!startA) return 1;
         if (!startB) return -1;
-        
-        // Check if trips are ongoing (started but not ended)
-        const isOngoingA = startA <= today && endA && endA >= today;
-        const isOngoingB = startB <= today && endB && endB >= today;
-        
-        // Ongoing trips come first
+
+        // Ongoing?
+        const isOngoingA = startA <= today && (!endA || endA >= today);
+        const isOngoingB = startB <= today && (!endB || endB >= today);
+
         if (isOngoingA && !isOngoingB) return -1;
         if (!isOngoingA && isOngoingB) return 1;
-        
-        // Calculate days until start
-        const daysUntilA = getDaysUntilStart(a.startDate);
-        const daysUntilB = getDaysUntilStart(b.startDate);
-        
-        // For upcoming trips (positive days), sort ascending (soonest first)
-        // For past trips (negative days), sort descending (most recent first)
-        if (daysUntilA >= 0 && daysUntilB >= 0) {
-          return daysUntilA - daysUntilB;
-        } else if (daysUntilA < 0 && daysUntilB < 0) {
-          return daysUntilB - daysUntilA;
-        } else {
-          return daysUntilA >= 0 ? -1 : 1;
-        }
+
+        // Both upcoming or both past
+        const diffA = startA - today;
+        const diffB = startB - today;
+
+        if (diffA >= 0 && diffB >= 0) return diffA - diffB; // Ascending for upcoming
+        return diffB - diffA; // Descending for past
       });
     }
-    
+
     return trips;
   }, [hasActiveTrip, tripInfo, allTrips, getTotalExpenses]);
-  
+
   // Separate current trip from upcoming trips
+  // If there are trips, the first one is "Current", rest are "Upcoming"
+  // If no trips but we have active tripInfo, that's "Current"
   const currentTrip = allDisplayTrips.length > 0 ? allDisplayTrips[0] : null;
   const upcomingTrips = allDisplayTrips.length > 1 ? allDisplayTrips.slice(1) : [];
 
@@ -262,12 +260,12 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   // Handle trip card press - switch to that trip first
   const handleTripPress = (trip, index) => {
     console.log('Trip pressed:', trip.id, trip.destination);
-    
+
     // Switch to the selected trip's data
     if (switchToTrip) {
       switchToTrip(trip);
     }
-    
+
     // Then navigate to the trip
     onMyTrip(trip, index);
   };
@@ -280,15 +278,15 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
     return (
       <Animated.View style={{ transform: [{ scale: scaleAnim3 }] }}>
-        <Pressable 
+        <Pressable
           style={({ pressed }) => [
-            styles.currentTripCard, 
+            styles.currentTripCard,
             pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
-          ]} 
+          ]}
           onPress={() => handleTripPress(trip, 0)}
         >
           <View style={styles.currentTripGlow} />
-          
+
           {/* Header Row */}
           <View style={styles.currentTripHeader}>
             <View style={styles.currentTripIconBg}>
@@ -307,7 +305,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
           {/* Trip Code Section */}
           {trip.tripCode && (
-            <Pressable 
+            <Pressable
               style={({ pressed }) => [styles.tripCodeSection, pressed && { opacity: 0.8 }]}
               onPress={() => handleShareTripCode(trip.tripCode, trip.destination)}
             >
@@ -316,7 +314,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
                 <Text style={styles.tripCodeValue}>{trip.tripCode}</Text>
               </View>
               <View style={styles.tripCodeActions}>
-                <Pressable 
+                <Pressable
                   style={styles.shareBtn}
                   onPress={() => handleShareTripCode(trip.tripCode, trip.destination)}
                 >
@@ -389,12 +387,12 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     const tripDays = calculateTripDays(trip.startDate, trip.endDate);
 
     return (
-      <Pressable 
+      <Pressable
         key={trip.id || index}
         style={({ pressed }) => [
-          styles.upcomingTripCard, 
+          styles.upcomingTripCard,
           pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
-        ]} 
+        ]}
         onPress={() => handleTripPress(trip, index + 1)}
       >
         <View style={styles.upcomingTripLeft}>
@@ -413,7 +411,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
         </View>
         <View style={styles.upcomingTripRight}>
           {trip.tripCode && (
-            <Pressable 
+            <Pressable
               style={styles.miniShareBtn}
               onPress={(e) => {
                 e.stopPropagation();
@@ -460,7 +458,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
         <View style={[styles.bgCircle, styles.bgCircle3]} />
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -489,8 +487,8 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           {/* Plan a Trip and Join a Trip - Side by Side */}
           <View style={styles.optionCardsRow}>
             <Animated.View style={[styles.optionCardHalf, { transform: [{ scale: scaleAnim1 }] }]}>
-              <Pressable 
-                style={({ pressed }) => [styles.optionCardSmall, pressed && styles.cardPressed]} 
+              <Pressable
+                style={({ pressed }) => [styles.optionCardSmall, pressed && styles.cardPressed]}
                 onPress={onPlanTrip}
               >
                 <View style={styles.optionGlowSmall} />
@@ -501,8 +499,8 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             </Animated.View>
 
             <Animated.View style={[styles.optionCardHalf, { transform: [{ scale: scaleAnim2 }] }]}>
-              <Pressable 
-                style={({ pressed }) => [styles.optionCardSmall, pressed && styles.cardPressed]} 
+              <Pressable
+                style={({ pressed }) => [styles.optionCardSmall, pressed && styles.cardPressed]}
                 onPress={() => setShowJoinModal(true)}
               >
                 <View style={styles.optionIconBgSmall}><Text style={styles.optionIconSmall}>👥</Text></View>
@@ -518,7 +516,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           {/* UPCOMING TRIPS SECTION - Always show header, but list is empty until user adds trips */}
           <View style={styles.upcomingTripsSection}>
             {/* Section Header - Always visible */}
-            <Pressable 
+            <Pressable
               style={({ pressed }) => [styles.upcomingTripsHeader, pressed && { opacity: 0.8 }]}
               onPress={() => setShowAllTrips(!showAllTrips)}
             >
@@ -529,7 +527,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
                 <View>
                   <Text style={styles.upcomingTripsTitle}>Upcoming Trips</Text>
                   <Text style={styles.upcomingTripsSubtitle}>
-                    {upcomingTrips.length > 0 
+                    {upcomingTrips.length > 0
                       ? `${upcomingTrips.length} trip${upcomingTrips.length > 1 ? 's' : ''} planned`
                       : 'No upcoming trips yet'
                     }
@@ -630,7 +628,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
         <View style={styles.modalOverlay}>
           <View style={styles.tripTypeModalContent}>
             <View style={styles.modalHandle} />
-            
+
             <View style={styles.tripTypeHeader}>
               <View>
                 <Text style={styles.tripTypeTitle}>Choose Trip Type</Text>
@@ -688,9 +686,9 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
               autoCapitalize="characters"
               maxLength={8}
             />
-            <Pressable 
-              style={({ pressed }) => [styles.joinButton, !tripCode.trim() && styles.joinButtonDisabled, pressed && styles.buttonPressed]} 
-              onPress={handleJoinTrip} 
+            <Pressable
+              style={({ pressed }) => [styles.joinButton, !tripCode.trim() && styles.joinButtonDisabled, pressed && styles.buttonPressed]}
+              onPress={handleJoinTrip}
               disabled={!tripCode.trim()}
             >
               <Text style={styles.joinButtonText}>Join Trip</Text>
@@ -707,13 +705,13 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
 const createStyles = (colors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  
+
   // Top Bar
-  topBar: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: 20, 
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
     paddingVertical: 12,
     backgroundColor: colors.bg,
   },
@@ -729,12 +727,12 @@ const createStyles = (colors) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
-  scrollContent: { 
+  scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
     backgroundColor: colors.bg,
   },
-  
+
   bgElements: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: -1, overflow: 'hidden' },
   bgCircle: { position: 'absolute', borderRadius: 999, backgroundColor: colors.primary, opacity: 0.04 },
   bgCircle1: { width: 400, height: 400, top: -100, right: -150 },
@@ -742,8 +740,8 @@ const createStyles = (colors) => StyleSheet.create({
   bgCircle3: { width: 200, height: 200, top: 700, right: -50 },
 
   // Illustration Section
-  illustrationSection: { 
-    alignItems: 'center', 
+  illustrationSection: {
+    alignItems: 'center',
     paddingVertical: 20,
     backgroundColor: colors.bg,
   },
@@ -760,8 +758,8 @@ const createStyles = (colors) => StyleSheet.create({
   floatingEmoji: { fontSize: 22 },
 
   // Actions Container
-  actionsContainer: { 
-    paddingHorizontal: 20, 
+  actionsContainer: {
+    paddingHorizontal: 20,
     gap: 14,
     backgroundColor: colors.bg,
   },
@@ -771,87 +769,87 @@ const createStyles = (colors) => StyleSheet.create({
   buttonPressed: { opacity: 0.8 },
 
   // Current Trip Card - SOFTER COLORS
-  currentTripCard: { 
-    backgroundColor: colors.card, 
-    borderRadius: 24, 
-    padding: 20, 
+  currentTripCard: {
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    padding: 20,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: colors.primaryBorder,
   },
-  currentTripGlow: { 
-    position: 'absolute', 
-    top: -60, 
-    right: -60, 
-    width: 180, 
-    height: 180, 
-    backgroundColor: colors.primary, 
-    opacity: 0.06, 
+  currentTripGlow: {
+    position: 'absolute',
+    top: -60,
+    right: -60,
+    width: 180,
+    height: 180,
+    backgroundColor: colors.primary,
+    opacity: 0.06,
     borderRadius: 90,
   },
-  currentTripHeader: { 
-    flexDirection: 'row', 
+  currentTripHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  currentTripIconBg: { 
-    width: 52, 
-    height: 52, 
-    borderRadius: 16, 
-    backgroundColor: colors.primaryMuted, 
-    alignItems: 'center', 
+  currentTripIconBg: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.primaryBorder,
   },
   currentTripIcon: { fontSize: 26 },
   currentTripInfo: { flex: 1, marginLeft: 14 },
-  currentTripBadge: { 
-    backgroundColor: colors.primary + '20', 
-    paddingHorizontal: 10, 
-    paddingVertical: 4, 
-    borderRadius: 6, 
+  currentTripBadge: {
+    backgroundColor: colors.primary + '20',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
     alignSelf: 'flex-start',
     marginBottom: 4,
   },
-  currentTripBadgeText: { 
-    fontSize: 9, 
-    color: colors.primary, 
-    fontWeight: '700', 
+  currentTripBadgeText: {
+    fontSize: 9,
+    color: colors.primary,
+    fontWeight: '700',
     letterSpacing: 1,
   },
-  currentTripName: { 
-    fontSize: 20, 
-    fontWeight: 'bold', 
+  currentTripName: {
+    fontSize: 20,
+    fontWeight: 'bold',
     color: colors.text,
   },
-  currentTripArrow: { 
-    width: 40, 
-    height: 40, 
-    borderRadius: 12, 
-    backgroundColor: colors.primaryMuted, 
-    alignItems: 'center', 
+  currentTripArrow: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.primaryBorder,
   },
   arrowText: { fontSize: 18, color: colors.primary, fontWeight: 'bold' },
-  
+
   // Dates
-  currentTripDates: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginTop: 16, 
-    paddingTop: 16, 
-    borderTopWidth: 1, 
+  currentTripDates: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
     borderTopColor: colors.primaryBorder,
     gap: 10,
   },
-  dateChip: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: colors.cardLight, 
-    paddingHorizontal: 12, 
-    paddingVertical: 8, 
+  dateChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cardLight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.primaryBorder,
@@ -861,19 +859,19 @@ const createStyles = (colors) => StyleSheet.create({
   dateArrow: { color: colors.textMuted, fontSize: 14 },
 
   // Stats
-  currentTripStats: { 
-    flexDirection: 'row', 
-    marginTop: 16, 
-    backgroundColor: colors.cardLight, 
-    borderRadius: 16, 
+  currentTripStats: {
+    flexDirection: 'row',
+    marginTop: 16,
+    backgroundColor: colors.cardLight,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.primaryBorder,
   },
-  tripStatItem: { 
-    flex: 1, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  tripStatItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
   },
@@ -927,13 +925,13 @@ const createStyles = (colors) => StyleSheet.create({
   // Option Cards Row (Side by Side)
   optionCardsRow: { flexDirection: 'row', gap: 12 },
   optionCardHalf: { flex: 1 },
-  optionCardSmall: { 
-    backgroundColor: colors.card, 
-    borderRadius: 20, 
-    padding: 18, 
-    alignItems: 'center', 
-    borderWidth: 1, 
-    borderColor: colors.primaryBorder, 
+  optionCardSmall: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 18,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
     overflow: 'hidden',
     minHeight: 140,
   },
@@ -944,8 +942,8 @@ const createStyles = (colors) => StyleSheet.create({
   optionDescriptionSmall: { fontSize: 12, color: colors.textMuted, marginTop: 4, textAlign: 'center' },
 
   // Features Section
-  featuresSection: { 
-    marginTop: 40, 
+  featuresSection: {
+    marginTop: 40,
     paddingHorizontal: 20,
     backgroundColor: colors.bg,
   },
@@ -959,8 +957,8 @@ const createStyles = (colors) => StyleSheet.create({
   featureDesc: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
 
   // Why Section
-  whySection: { 
-    marginTop: 30, 
+  whySection: {
+    marginTop: 30,
     paddingHorizontal: 20,
     backgroundColor: colors.bg,
   },
@@ -971,9 +969,9 @@ const createStyles = (colors) => StyleSheet.create({
   whyItemText: { fontSize: 15, color: colors.text, flex: 1 },
 
   // Footer
-  footer: { 
-    alignItems: 'center', 
-    marginTop: 40, 
+  footer: {
+    alignItems: 'center',
+    marginTop: 40,
     paddingVertical: 20,
     backgroundColor: colors.bg,
   },
