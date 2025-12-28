@@ -258,12 +258,14 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   };
 
   // Handle trip card press - switch to that trip first
-  const handleTripPress = (trip, index) => {
+  const handleTripPress = async (trip, index) => {
     console.log('Trip pressed:', trip.id, trip.destination);
 
     // Switch to the selected trip's data
     if (switchToTrip) {
-      switchToTrip(trip);
+      // If we are switching to a different trip, ensure data is loaded
+      // Add a small delay/await to ensure state updates propagate if needed
+      await switchToTrip(trip);
     }
 
     // Then navigate to the trip
