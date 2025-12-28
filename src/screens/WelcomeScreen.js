@@ -27,8 +27,9 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     expenses,
     currency,
     allTrips = [],
+    tripHistory = [],
     saveCurrentTripToList,
-    switchToTrip, // Add this
+    switchToTrip,
   } = useTravelContext();
 
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -109,13 +110,10 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
   // Build the display trips list - SORTED BY NEAREST START DATE
   const allDisplayTrips = useMemo(() => {
-    let trips = [];
+    const tripMap = new Map();
 
     // 1. Add all trips from allTrips context
     if (allTrips && allTrips.length > 0) {
-      // Create a unique map to avoid duplicates
-      const tripMap = new Map();
-
       allTrips.forEach(trip => {
         if (trip && trip.id) {
           tripMap.set(trip.id, {
@@ -124,17 +122,29 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           });
         }
       });
-
-      trips = Array.from(tripMap.values());
     }
 
-    // 2. Also check current tripInfo if it has a destination but isn't in trips yet
+    // 2. Add all trips from tripHistory context
+    if (tripHistory && tripHistory.length > 0) {
+      tripHistory.forEach(trip => {
+        if (trip && trip.id && !tripMap.has(trip.id)) {
+          tripMap.set(trip.id, {
+            ...trip,
+            id: trip.id,
+            totalExpenses: trip.totalSpent || 0,
+            isCompleted: true,
+          });
+        }
+      });
+    }
+
+    // 3. Also check current tripInfo if it has a destination but isn't in trips yet
     if (hasActiveTrip && tripInfo && tripInfo.destination) {
       const currentId = tripInfo.id || 'current';
-      const exists = trips.some(t => t.id === currentId);
+      const exists = tripMap.has(currentId);
 
       if (!exists) {
-        trips.unshift({
+        tripMap.set(currentId, {
           ...tripInfo,
           id: currentId,
           tripCode: tripInfo.tripCode || null,
@@ -143,19 +153,31 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
       }
     }
 
-    // 3. Sort trips
+    const trips = Array.from(tripMap.values());
+
+    // 4. Sort trips
     // Logic: Active/Current -> Upcoming (Soonest first) -> Past (Most recent first) -> No Date
     if (trips.length > 0) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       trips.sort((a, b) => {
+        // Handle explicit "Current" status (active tripInfo)
+        const isCurrentActiveA = a.id === (tripInfo.id || 'current');
+        const isCurrentActiveB = b.id === (tripInfo.id || 'current');
+        if (isCurrentActiveA && !isCurrentActiveB) return -1;
+        if (!isCurrentActiveA && isCurrentActiveB) return 1;
+
         const startA = parseDate(a.startDate);
         const startB = parseDate(b.startDate);
         const endA = parseDate(a.endDate);
         const endB = parseDate(b.endDate);
 
-        // Handling missing dates - put at top if active, else bottom
+        // Completed trips go to the very bottom
+        if (a.isCompleted && !b.isCompleted) return 1;
+        if (!a.isCompleted && b.isCompleted) return -1;
+
+        // Handling missing dates
         if (!startA && !startB) return 0;
         if (!startA) return 1;
         if (!startB) return -1;
@@ -177,7 +199,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     }
 
     return trips;
-  }, [hasActiveTrip, tripInfo, allTrips, getTotalExpenses]);
+  }, [hasActiveTrip, tripInfo, allTrips, tripHistory, getTotalExpenses]);
 
   // Separate current trip from upcoming trips
   // If there are trips, the first one is "Current", rest are "Upcoming"
@@ -259,17 +281,23 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
   // Handle trip card press - switch to that trip first
   const handleTripPress = async (trip, index) => {
-    console.log('Trip pressed:', trip.id, trip.destination);
+    try {
+      console.log('Trip pressed:', trip.id, trip.destination);
 
-    // Switch to the selected trip's data
-    if (switchToTrip) {
-      // If we are switching to a different trip, ensure data is loaded
-      // Add a small delay/await to ensure state updates propagate if needed
-      await switchToTrip(trip);
+      // Switch to the selected trip's data
+      if (switchToTrip) {
+        // If we are switching to a different trip, ensure data is loaded
+        await switchToTrip(trip);
+      }
+
+      // Then navigate to the trip
+      if (onMyTrip) {
+        onMyTrip(trip, index);
+      }
+    } catch (error) {
+      console.error('Error switching trip:', error);
+      Alert.alert('Error', 'Could not open trip. Please try again.');
     }
-
-    // Then navigate to the trip
-    onMyTrip(trip, index);
   };
 
   // Render Current Trip Card - Updated with trip code
@@ -404,7 +432,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           <View style={styles.upcomingTripInfo}>
             <Text style={styles.upcomingTripName}>{trip.destination || trip.name || 'My Trip'}</Text>
             <Text style={styles.upcomingTripDates}>
-              {trip.startDate} • {tripDays} days
+              {trip.startDate} • {tripDays} days {trip.isCompleted && '(Completed)'}
             </Text>
             {trip.tripCode && (
               <Text style={styles.upcomingTripCode}>Code: {trip.tripCode}</Text>

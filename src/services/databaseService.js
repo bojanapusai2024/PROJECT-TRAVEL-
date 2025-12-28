@@ -123,9 +123,10 @@ export const saveExpense = async (expense, tripId = null, ownerId = null) => {
   const userId = ownerId || getUserId(); // Use ownerId if provided (shared trip), else active user
   if (!userId) throw new Error('User not authenticated');
 
-  const path = tripId
-    ? `users/${userId}/trips/${tripId}/expenses`
-    : `users/${userId}/currentTrip/expenses`;
+  const isCurrent = !tripId || tripId === 'current';
+  const path = isCurrent
+    ? `users/${userId}/currentTrip/expenses`
+    : `users/${userId}/trips/${tripId}/expenses`;
 
   const expenseId = expense.id || push(ref(database, path)).key;
   await set(ref(database, `${path}/${expenseId}`), { ...expense, id: expenseId, createdAt: expense.createdAt || Date.now() });
@@ -136,9 +137,10 @@ export const getExpenses = async (tripId = null, ownerId = null) => {
   const userId = ownerId || getUserId();
   if (!userId) return [];
 
-  const path = tripId
-    ? `users/${userId}/trips/${tripId}/expenses`
-    : `users/${userId}/currentTrip/expenses`;
+  const isCurrent = !tripId || tripId === 'current';
+  const path = isCurrent
+    ? `users/${userId}/currentTrip/expenses`
+    : `users/${userId}/trips/${tripId}/expenses`;
 
   const snapshot = await get(ref(database, path));
   return snapshot.exists() ? Object.values(snapshot.val()) : [];
@@ -148,9 +150,10 @@ export const deleteExpenseFromDB = async (expenseId, tripId = null, ownerId = nu
   const userId = ownerId || getUserId();
   if (!userId) throw new Error('User not authenticated');
 
-  const path = tripId
-    ? `users/${userId}/trips/${tripId}/expenses/${expenseId}`
-    : `users/${userId}/currentTrip/expenses/${expenseId}`;
+  const isCurrent = !tripId || tripId === 'current';
+  const path = isCurrent
+    ? `users/${userId}/currentTrip/expenses/${expenseId}`
+    : `users/${userId}/trips/${tripId}/expenses/${expenseId}`;
 
   await remove(ref(database, path));
 };
@@ -161,9 +164,10 @@ export const savePackingItem = async (item, tripId = null, ownerId = null) => {
   const userId = ownerId || getUserId();
   if (!userId) throw new Error('User not authenticated');
 
-  const path = tripId
-    ? `users/${userId}/trips/${tripId}/packingItems`
-    : `users/${userId}/currentTrip/packingItems`;
+  const isCurrent = !tripId || tripId === 'current';
+  const path = isCurrent
+    ? `users/${userId}/currentTrip/packingItems`
+    : `users/${userId}/trips/${tripId}/packingItems`;
 
   const itemId = item.id || push(ref(database, path)).key;
   await set(ref(database, `${path}/${itemId}`), { ...item, id: itemId });
@@ -174,9 +178,10 @@ export const getPackingItems = async (tripId = null, ownerId = null) => {
   const userId = ownerId || getUserId();
   if (!userId) return [];
 
-  const path = tripId
-    ? `users/${userId}/trips/${tripId}/packingItems`
-    : `users/${userId}/currentTrip/packingItems`;
+  const isCurrent = !tripId || tripId === 'current';
+  const path = isCurrent
+    ? `users/${userId}/currentTrip/packingItems`
+    : `users/${userId}/trips/${tripId}/packingItems`;
 
   const snapshot = await get(ref(database, path));
   return snapshot.exists() ? Object.values(snapshot.val()) : [];
@@ -186,9 +191,10 @@ export const updatePackingItem = async (itemId, updates, tripId = null, ownerId 
   const userId = ownerId || getUserId();
   if (!userId) throw new Error('User not authenticated');
 
-  const path = tripId
-    ? `users/${userId}/trips/${tripId}/packingItems/${itemId}`
-    : `users/${userId}/currentTrip/packingItems/${itemId}`;
+  const isCurrent = !tripId || tripId === 'current';
+  const path = isCurrent
+    ? `users/${userId}/currentTrip/packingItems/${itemId}`
+    : `users/${userId}/trips/${tripId}/packingItems/${itemId}`;
 
   await update(ref(database, path), updates);
 };
@@ -197,9 +203,10 @@ export const deletePackingItemFromDB = async (itemId, tripId = null, ownerId = n
   const userId = ownerId || getUserId();
   if (!userId) throw new Error('User not authenticated');
 
-  const path = tripId
-    ? `users/${userId}/trips/${tripId}/packingItems/${itemId}`
-    : `users/${userId}/currentTrip/packingItems/${itemId}`;
+  const isCurrent = !tripId || tripId === 'current';
+  const path = isCurrent
+    ? `users/${userId}/currentTrip/packingItems/${itemId}`
+    : `users/${userId}/trips/${tripId}/packingItems/${itemId}`;
 
   await remove(ref(database, path));
 };
@@ -210,9 +217,10 @@ export const saveItineraryItem = async (item, tripId = null, ownerId = null) => 
   const userId = ownerId || getUserId();
   if (!userId) throw new Error('User not authenticated');
 
-  const path = tripId
-    ? `users/${userId}/trips/${tripId}/itinerary`
-    : `users/${userId}/currentTrip/itinerary`;
+  const isCurrent = !tripId || tripId === 'current';
+  const path = isCurrent
+    ? `users/${userId}/currentTrip/itinerary`
+    : `users/${userId}/trips/${tripId}/itinerary`;
 
   const itemId = item.id || push(ref(database, path)).key;
   await set(ref(database, `${path}/${itemId}`), { ...item, id: itemId });
@@ -223,9 +231,10 @@ export const getItinerary = async (tripId = null, ownerId = null) => {
   const userId = ownerId || getUserId();
   if (!userId) return [];
 
-  const path = tripId
-    ? `users/${userId}/trips/${tripId}/itinerary`
-    : `users/${userId}/currentTrip/itinerary`;
+  const isCurrent = !tripId || tripId === 'current';
+  const path = isCurrent
+    ? `users/${userId}/currentTrip/itinerary`
+    : `users/${userId}/trips/${tripId}/itinerary`;
 
   const snapshot = await get(ref(database, path));
   return snapshot.exists() ? Object.values(snapshot.val()) : [];
@@ -235,9 +244,10 @@ export const deleteItineraryItemFromDB = async (itemId, tripId = null, ownerId =
   const userId = ownerId || getUserId();
   if (!userId) throw new Error('User not authenticated');
 
-  const path = tripId
-    ? `users/${userId}/trips/${tripId}/itinerary/${itemId}`
-    : `users/${userId}/currentTrip/itinerary/${itemId}`;
+  const isCurrent = !tripId || tripId === 'current';
+  const path = isCurrent
+    ? `users/${userId}/currentTrip/itinerary/${itemId}`
+    : `users/${userId}/trips/${tripId}/itinerary/${itemId}`;
 
   await remove(ref(database, path));
 };
@@ -248,9 +258,10 @@ export const saveBudget = async (budget, tripId = null, ownerId = null) => {
   const userId = ownerId || getUserId();
   if (!userId) throw new Error('User not authenticated');
 
-  const path = tripId
-    ? `users/${userId}/trips/${tripId}/budget`
-    : `users/${userId}/currentTrip/budget`;
+  const isCurrent = !tripId || tripId === 'current';
+  const path = isCurrent
+    ? `users/${userId}/currentTrip/budget`
+    : `users/${userId}/trips/${tripId}/budget`;
 
   await set(ref(database, path), budget);
 };
@@ -259,9 +270,10 @@ export const getBudget = async (tripId = null, ownerId = null) => {
   const userId = ownerId || getUserId();
   if (!userId) return { total: 0, categories: {} };
 
-  const path = tripId
-    ? `users/${userId}/trips/${tripId}/budget`
-    : `users/${userId}/currentTrip/budget`;
+  const isCurrent = !tripId || tripId === 'current';
+  const path = isCurrent
+    ? `users/${userId}/currentTrip/budget`
+    : `users/${userId}/trips/${tripId}/budget`;
 
   const snapshot = await get(ref(database, path));
   return snapshot.exists() ? snapshot.val() : { total: 0, categories: {} };
