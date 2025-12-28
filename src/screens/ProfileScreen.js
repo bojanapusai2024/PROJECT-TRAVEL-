@@ -915,6 +915,7 @@ const createStyles = (colors, isDark) => StyleSheet.create({
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.primaryBorder,
+    outlineStyle: 'none',
   },
   disabledInput: {
     backgroundColor: colors.cardLight,

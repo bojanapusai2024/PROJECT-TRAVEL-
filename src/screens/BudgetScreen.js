@@ -191,7 +191,7 @@ export default function BudgetScreen() {
           <View style={styles.totalInputContainer}>
             <Text style={styles.currencyPrefix}>{currency.symbol}</Text>
             <TextInput
-              style={styles.totalInput}
+              style={[styles.totalInput, { outlineStyle: 'none' }]}
               keyboardType="decimal-pad"
               value={totalBudget}
               onChangeText={setTotalBudget}
@@ -251,7 +251,7 @@ export default function BudgetScreen() {
                     <View style={styles.catInputWrapper}>
                       <Text style={styles.catCurrency}>{currency.symbol}</Text>
                       <TextInput
-                        style={styles.catInput}
+                        style={[styles.catInput, { outlineStyle: 'none' }]}
                         value={categoryInputs[cat.key]}
                         onChangeText={(t) => handleCategoryChange(cat.key, t)}
                         onBlur={() => handleCategoryBlur(cat.key)}
@@ -302,7 +302,7 @@ export default function BudgetScreen() {
               {/* Name Input */}
               <Text style={styles.inputLabel}>Name</Text>
               <TextInput
-                style={styles.modalInput}
+                style={[styles.modalInput, { outlineStyle: 'none' }]}
                 value={newCategory.label}
                 onChangeText={t => setNewCategory({ ...newCategory, label: t })}
                 placeholder="e.g. Souvenirs"
@@ -425,7 +425,7 @@ const createStyles = (colors) => StyleSheet.create({
   colorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   colorItem: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   colorSelected: { borderWidth: 3, borderColor: colors.text },
-  checkMark: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  checkMark: { color: 'black', fontSize: 16, fontWeight: 'bold' },
 
   saveBtn: { backgroundColor: colors.primary, padding: 18, borderRadius: 20, alignItems: 'center', marginTop: 32 },
   saveBtnText: { color: 'white', fontSize: 16, fontWeight: '800' },

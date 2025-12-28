@@ -445,7 +445,9 @@ export const TravelProvider = ({ children }) => {
     return newTrip;
   };
 
-  const getTotalExpenses = () => expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+  const getTotalExpenses = () => expenses
+    .filter(e => !e.type || e.type === 'expense')
+    .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
 
   const getExpensesByCategory = () => expenses.reduce((acc, e) => {
     const amount = parseFloat(e.amount) || 0;

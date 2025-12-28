@@ -509,7 +509,7 @@ const createStyles = (colors) => StyleSheet.create({
   // Inputs
   inputGroup: { marginBottom: 16 },
   inputLabel: { color: colors.textMuted, fontSize: 13, marginBottom: 8 },
-  input: { backgroundColor: colors.cardLight, color: colors.text, padding: 14, borderRadius: 12, fontSize: 15, borderWidth: 1, borderColor: colors.primaryBorder },
+  input: { backgroundColor: colors.cardLight, color: colors.text, padding: 14, borderRadius: 12, fontSize: 15, borderWidth: 1, borderColor: colors.primaryBorder, outlineStyle: 'none' },
 
   // Category Grid
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -521,7 +521,7 @@ const createStyles = (colors) => StyleSheet.create({
   quantityRow: { flexDirection: 'row', alignItems: 'center' },
   quantityBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.cardLight, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
   quantityBtnText: { color: colors.text, fontSize: 20, fontWeight: 'bold' },
-  quantityInput: { flex: 1, backgroundColor: colors.cardLight, color: colors.text, textAlign: 'center', fontSize: 18, fontWeight: 'bold', marginHorizontal: 10, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: colors.primaryBorder },
+  quantityInput: { flex: 1, backgroundColor: colors.cardLight, color: colors.text, textAlign: 'center', fontSize: 18, fontWeight: 'bold', marginHorizontal: 10, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: colors.primaryBorder, outlineStyle: 'none' },
 
   // Quick Add in Modal
   quickAddModalItems: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

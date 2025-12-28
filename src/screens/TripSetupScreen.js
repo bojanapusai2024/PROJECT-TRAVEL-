@@ -369,7 +369,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                   <Text style={styles.inputIcon}>🔍</Text>
                 </View>
                 <TextInput
-                  style={styles.mainInput}
+                  style={[styles.mainInput, { outlineStyle: 'none' }]}
                   placeholder="Search destination..."
                   placeholderTextColor={colors.textMuted}
                   value={tripData.destination}
@@ -481,7 +481,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
             <View style={styles.budgetInputSection}>
               <Text style={styles.budgetCurrency}>$</Text>
               <TextInput
-                style={styles.budgetInput}
+                style={[styles.budgetInput, { outlineStyle: 'none' }]}
                 placeholder="0"
                 placeholderTextColor={colors.textMuted}
                 keyboardType="numeric"
@@ -586,7 +586,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                   <Text style={styles.inputIcon}>👤</Text>
                 </View>
                 <TextInput
-                  style={styles.mainInput}
+                  style={[styles.mainInput, { outlineStyle: 'none' }]}
                   placeholder="Enter friend's name"
                   placeholderTextColor={colors.textMuted}
                   value={tripData.newFriendName}
@@ -691,7 +691,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                   <View style={styles.familyInputRow}>
                     <View style={[styles.inputContainer, styles.familyNameInput]}>
                       <TextInput
-                        style={styles.familyInput}
+                        style={[styles.familyInput, { outlineStyle: 'none' }]}
                         placeholder="Name"
                         placeholderTextColor={colors.textMuted}
                         value={family.newMemberName}
@@ -700,7 +700,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                     </View>
                     <View style={[styles.inputContainer, styles.familyRelationInput]}>
                       <TextInput
-                        style={styles.familyInput}
+                        style={[styles.familyInput, { outlineStyle: 'none' }]}
                         placeholder="Relation"
                         placeholderTextColor={colors.textMuted}
                         value={family.newMemberRelation}
@@ -777,7 +777,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                   <Text style={styles.inputIcon}>💕</Text>
                 </View>
                 <TextInput
-                  style={styles.mainInput}
+                  style={[styles.mainInput, { outlineStyle: 'none' }]}
                   placeholder="Partner's name"
                   placeholderTextColor={colors.textMuted}
                   value={tripData.partnerName}
@@ -798,7 +798,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                   <Text style={styles.inputIcon}>💼</Text>
                 </View>
                 <TextInput
-                  style={styles.mainInput}
+                  style={[styles.mainInput, { outlineStyle: 'none' }]}
                   placeholder="Enter colleague's name"
                   placeholderTextColor={colors.textMuted}
                   value={tripData.newColleagueName}

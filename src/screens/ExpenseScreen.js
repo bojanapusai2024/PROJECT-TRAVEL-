@@ -334,7 +334,7 @@ export default function ExpenseScreen() {
               <View style={styles.amtContainer}>
                 <Text style={styles.amtSymbol}>{currency.symbol}</Text>
                 <TextInput
-                  style={styles.amtInput}
+                  style={[styles.amtInput, { outlineStyle: 'none' }]}
                   placeholder="0"
                   value={newExpense.amount}
                   onChangeText={t => setNewExpense({ ...newExpense, amount: t })}
@@ -346,15 +346,11 @@ export default function ExpenseScreen() {
               {/* Title */}
               <Text style={styles.inputLabel}>For what?</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, { outlineStyle: 'none' }]}
                 placeholder="e.g. Dinner, Taxi"
                 value={newExpense.title}
                 onChangeText={t => setNewExpense({ ...newExpense, title: t })}
                 placeholderTextColor={colors.textMuted}
-              />
-
-              onChangeText={t => setNewExpense({ ...newExpense, title: t })}
-              placeholderTextColor={colors.textMuted}
               />
 
               {/* Type Selector */}
@@ -372,8 +368,8 @@ export default function ExpenseScreen() {
                 ))}
               </View>
 
-              {/* Category (Expense/Income only) */}
-              {newExpense.type !== 'transfer' && (
+              {/* Category (Expense only) */}
+              {(!newExpense.type || newExpense.type === 'expense') && (
                 <>
                   <Text style={styles.inputLabel}>Category</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
@@ -586,21 +582,21 @@ const createStyles = (colors) => StyleSheet.create({
   splitOpt: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 },
   splitOptActive: { backgroundColor: colors.primary },
   splitText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
-  splitTextActive: { color: 'white' },
+  splitTextActive: { color: 'black', fontWeight: '800' },
 
   checkList: { gap: 8 },
   checkRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
   checkName: { fontWeight: '600', color: colors.text },
   checkBox: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: colors.textMuted, alignItems: 'center', justifyContent: 'center' },
   checkBoxActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  checkIcon: { color: 'white', fontSize: 14, fontWeight: '800' },
+  checkIcon: { color: 'black', fontSize: 14, fontWeight: '800' },
 
   customSplitList: { gap: 12 },
   customRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   customName: { fontWeight: '600', color: colors.text },
   customInputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, flex: 1, marginLeft: 16, borderWidth: 1, borderColor: colors.primaryBorder },
   customSymbol: { color: colors.text, marginRight: 8, fontSize: 16, fontWeight: '700' },
-  customInput: { flex: 1, fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'right', padding: 0 },
+  customInput: { flex: 1, fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'right', padding: 0, outlineStyle: 'none' },
 
   valMsg: { padding: 8, borderRadius: 8, marginBottom: 12, alignItems: 'center' },
   valSuccess: { backgroundColor: '#10B98120' },
@@ -608,11 +604,11 @@ const createStyles = (colors) => StyleSheet.create({
   valText: { fontWeight: '700', fontSize: 12, color: colors.text },
 
   saveBtn: { backgroundColor: colors.primary, padding: 18, borderRadius: 20, alignItems: 'center', marginTop: 32 },
-  saveBtnText: { color: 'white', fontSize: 16, fontWeight: '800' },
+  saveBtnText: { color: 'black', fontSize: 16, fontWeight: '800' },
 
   fab: { position: 'absolute', bottom: 20, right: 20, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 30, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
-  fabIcon: { color: 'white', fontSize: 24, fontWeight: 'bold', marginRight: 8 },
-  fabText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  fabIcon: { color: 'black', fontSize: 24, fontWeight: 'bold', marginRight: 8 },
+  fabText: { color: 'black', fontSize: 16, fontWeight: 'bold' },
 
   typeSelector: { flexDirection: 'row', backgroundColor: colors.bg, padding: 4, borderRadius: 12, marginVertical: 16 },
   typeBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
