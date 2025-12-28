@@ -67,11 +67,8 @@ export default function PackingScreen() {
     });
   };
 
-  const handleDeleteItem = (id, name) => {
-    Alert.alert('Delete Item', `Remove "${name}" from packing list?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deletePackingItem(id) }
-    ]);
+  const handleDeleteItem = (id) => {
+    deletePackingItem(id);
   };
 
   const getCategoryInfo = (key) => PACKING_CATEGORIES.find(c => c.key === key) || PACKING_CATEGORIES[7];
@@ -229,7 +226,7 @@ export default function PackingScreen() {
                         key={item.id}
                         style={[styles.itemCard, item.packed && styles.itemCardPacked]}
                         onPress={() => togglePackingItem(item.id)}
-                        onLongPress={() => handleDeleteItem(item.id, item.name)}
+                        onLongPress={() => handleDeleteItem(item.id)}
                         delayLongPress={500}
                       >
                         <View style={[styles.checkbox, item.packed && { backgroundColor: '#10B981', borderColor: '#10B981' }]}>
@@ -248,7 +245,7 @@ export default function PackingScreen() {
                           style={styles.itemDelete}
                           onPress={(e) => {
                             e?.stopPropagation();
-                            handleDeleteItem(item.id, item.name);
+                            handleDeleteItem(item.id);
                           }}
                         >
                           <Text style={styles.itemDeleteText}>🗑️</Text>
