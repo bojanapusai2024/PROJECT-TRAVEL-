@@ -41,6 +41,7 @@ export default function ExpenseScreen() {
     amount: '',
     category: CATEGORIES[0]?.key || 'food',
     paidBy: 'main_user',
+    type: 'expense', // 'expense', 'income', 'transfer'
     splitType: 'equal', // 'equal', 'custom'
     beneficiaries: [], // List of user IDs involved
     splitAmounts: {}, // For custom split: { userId: amount }
@@ -146,21 +147,55 @@ export default function ExpenseScreen() {
       const amt = parseFloat(e.amount);
       const payer = e.paidBy || 'main_user';
 
-      // Payer +ve
-      bal[payer] = (bal[payer] || 0) + amt;
+      if (e.type === 'transfer') {
+        // Transfer: Payer gives (+), Receiver takes (-)
+        // In our logic: Positive = Gets Back, Negative = Owes
+        // If A pays B 100:
+        // A has given 100, so A gets back 100.
+        // B has received 100, so B owes 100.
+        const receiver = e.beneficiaries[0];
+        if (receiver) {
+          bal[payer] = (bal[payer] || 0) + amt;
+          bal[receiver] = (bal[receiver] || 0) - amt;
+        }
+      } else if (e.type === 'income') {
+        // Income: Payer (Receiver of income) owes the group (-)
+        // Beneficiaries get a share (+)
+        // E.g. A receives 100 refund for the group (split equally 2 people)
+        // A has +100 cash. A owes 50 to B.
+        // Logic:
+        // A (Payer) state change: -100 (total received is debt to group) + 50 (own share) = -50.
+        // B state change: +50.
 
-      // Debtors -ve
-      if (e.splitType === 'custom') {
-        Object.keys(e.splitAmounts || {}).forEach(uid => {
-          bal[uid] = (bal[uid] || 0) - parseFloat(e.splitAmounts[uid]);
-        });
+        // Simplified: Payer gets -amt. Beneficiaries get +share.
+        bal[payer] = (bal[payer] || 0) - amt;
+
+        if (e.splitType === 'custom') {
+          Object.keys(e.splitAmounts || {}).forEach(uid => {
+            bal[uid] = (bal[uid] || 0) + parseFloat(e.splitAmounts[uid]);
+          });
+        } else {
+          const bens = e.beneficiaries || [];
+          const splitAmt = amt / (bens.length || 1);
+          bens.forEach(uid => {
+            bal[uid] = (bal[uid] || 0) + splitAmt;
+          });
+        }
       } else {
-        // Equal split
-        const bens = e.beneficiaries || [];
-        const splitAmt = amt / (bens.length || 1);
-        bens.forEach(uid => {
-          bal[uid] = (bal[uid] || 0) - splitAmt;
-        });
+        // Expense: Payer gets back (+), Beneficiaries owe (-)
+        bal[payer] = (bal[payer] || 0) + amt;
+
+        if (e.splitType === 'custom') {
+          Object.keys(e.splitAmounts || {}).forEach(uid => {
+            bal[uid] = (bal[uid] || 0) - parseFloat(e.splitAmounts[uid]);
+          });
+        } else {
+          const bens = e.beneficiaries || [];
+          const splitAmt = amt / (bens.length || 1);
+          bens.forEach(uid => {
+            bal[uid] = (bal[uid] || 0) - splitAmt;
+          });
+        }
       }
     });
     return bal; // Positive means "owed money", Negative means "owes money"
@@ -187,9 +222,6 @@ export default function ExpenseScreen() {
             {isMultiUser ? `${travelers.length} Travelers • Group Trip` : 'Personal Spending'}
           </Text>
         </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)}>
-          <Text style={styles.addBtnText}>+ Add</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Summary Card */}
@@ -242,11 +274,13 @@ export default function ExpenseScreen() {
                     <View style={styles.exContent}>
                       <Text style={styles.exTitle}>{expense.title}</Text>
                       <Text style={styles.exSub}>
-                        {getTravelerName(expense.paidBy)} paid • {cat.label}
+                        {getTravelerName(expense.paidBy)} {expense.type === 'transfer' ? '→' : (expense.type === 'income' ? 'received' : 'paid')} • {expense.type === 'transfer' ? getTravelerName(expense.beneficiaries[0]) : cat.label}
                       </Text>
                     </View>
                     <View style={styles.exRight}>
-                      <Text style={styles.exAmount}>{safeFormat(expense.amount)}</Text>
+                      <Text style={[styles.exAmount, expense.type === 'income' && { color: '#10B981' }]}>
+                        {expense.type === 'income' ? '+' : ''}{safeFormat(expense.amount)}
+                      </Text>
                       <TouchableOpacity onPress={() => deleteExpense && deleteExpense(expense.id)} style={styles.exDelete}>
                         <Text style={styles.exDeleteText}>✕</Text>
                       </TouchableOpacity>
@@ -277,6 +311,12 @@ export default function ExpenseScreen() {
         )}
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* FAB */}
+      <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
+        <Text style={styles.fabIcon}>+</Text>
+        <Text style={styles.fabText}>Add</Text>
+      </TouchableOpacity>
 
       {/* ADD EXPENSE MODAL */}
       <Modal visible={modalVisible} animationType="slide" transparent>
@@ -313,39 +353,97 @@ export default function ExpenseScreen() {
                 placeholderTextColor={colors.textMuted}
               />
 
-              {/* Category */}
-              <Text style={styles.inputLabel}>Category</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-                {CATEGORIES.map(cat => (
-                  <TouchableOpacity key={cat.key} onPress={() => setNewExpense({ ...newExpense, category: cat.key })}
-                    style={[styles.catChip, newExpense.category === cat.key && { backgroundColor: cat.color, borderColor: cat.color }]}
+              onChangeText={t => setNewExpense({ ...newExpense, title: t })}
+              placeholderTextColor={colors.textMuted}
+              />
+
+              {/* Type Selector */}
+              <View style={styles.typeSelector}>
+                {['expense', 'income', 'transfer'].map(t => (
+                  <TouchableOpacity
+                    key={t}
+                    style={[styles.typeBtn, newExpense.type === t && styles.typeBtnActive]}
+                    onPress={() => setNewExpense({ ...newExpense, type: t })}
                   >
-                    <Text style={styles.catEmoji}>{cat.emoji}</Text>
-                    <Text style={[styles.catLabel, newExpense.category === cat.key && { color: 'white' }]}>{cat.label}</Text>
+                    <Text style={[styles.typeBtnText, newExpense.type === t && styles.typeBtnTextActive]}>
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </View>
 
-              {/* Split Section */}
+              {/* Category (Expense/Income only) */}
+              {newExpense.type !== 'transfer' && (
+                <>
+                  <Text style={styles.inputLabel}>Category</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                    {CATEGORIES.map(cat => (
+                      <TouchableOpacity key={cat.key} onPress={() => setNewExpense({ ...newExpense, category: cat.key })}
+                        style={[styles.catChip, newExpense.category === cat.key && { backgroundColor: cat.color, borderColor: cat.color }]}
+                      >
+                        <Text style={styles.catEmoji}>{cat.emoji}</Text>
+                        <Text style={[styles.catLabel, newExpense.category === cat.key && { color: 'white' }]}>{cat.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </>
+              )}
+
+              {/* Split / Paid By Section */}
               {isMultiUser && (
                 <View style={styles.splitSection}>
-                  {/* Paid By Section Removed as per User Request (Defaulting to main_user internally) */}
 
-                  <View style={styles.splitHeader}>
-                    <Text style={styles.inputLabel}>Split</Text>
-                    <View style={styles.splitToggle}>
-                      <TouchableOpacity onPress={() => setNewExpense({ ...newExpense, splitType: 'equal' })}
-                        style={[styles.splitOpt, newExpense.splitType === 'equal' && styles.splitOptActive]}>
-                        <Text style={[styles.splitText, newExpense.splitType === 'equal' && styles.splitTextActive]}>Equally</Text>
+                  {/* Paid By / Received By / From */}
+                  <Text style={styles.inputLabel}>
+                    {newExpense.type === 'income' ? 'Received By' : (newExpense.type === 'transfer' ? 'From' : 'Paid By')}
+                  </Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                    {travelers.map(t => (
+                      <TouchableOpacity key={t.id} onPress={() => setNewExpense({ ...newExpense, paidBy: t.id })}
+                        style={[styles.userChip, newExpense.paidBy === t.id && styles.userChipSelected]}
+                      >
+                        <Text style={[styles.userChipText, newExpense.paidBy === t.id && styles.userChipTextSelected]}>
+                          {t.avatar} {t.name}
+                        </Text>
                       </TouchableOpacity>
-                      <TouchableOpacity onPress={() => setNewExpense({ ...newExpense, splitType: 'custom' })}
-                        style={[styles.splitOpt, newExpense.splitType === 'custom' && styles.splitOptActive]}>
-                        <Text style={[styles.splitText, newExpense.splitType === 'custom' && styles.splitTextActive]}>Custom</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
+                    ))}
+                  </ScrollView>
 
-                  {newExpense.splitType === 'equal' ? (
+                  {/* Transfer Target (To) */}
+                  {newExpense.type === 'transfer' ? (
+                    <>
+                      <Text style={styles.inputLabel}>To</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                        {travelers.filter(t => t.id !== newExpense.paidBy).map(t => (
+                          <TouchableOpacity key={t.id} onPress={() => setNewExpense({ ...newExpense, beneficiaries: [t.id] })}
+                            style={[styles.userChip, newExpense.beneficiaries[0] === t.id && styles.userChipSelected]}
+                          >
+                            <Text style={[styles.userChipText, newExpense.beneficiaries[0] === t.id && styles.userChipTextSelected]}>
+                              {t.avatar} {t.name}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </>
+                  ) : (
+                    <>
+                      <View style={styles.splitHeader}>
+                        <Text style={styles.inputLabel}>Split</Text>
+                        <View style={styles.splitToggle}>
+                          <TouchableOpacity onPress={() => setNewExpense({ ...newExpense, splitType: 'equal' })}
+                            style={[styles.splitOpt, newExpense.splitType === 'equal' && styles.splitOptActive]}>
+                            <Text style={[styles.splitText, newExpense.splitType === 'equal' && styles.splitTextActive]}>Equally</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => setNewExpense({ ...newExpense, splitType: 'custom' })}
+                            style={[styles.splitOpt, newExpense.splitType === 'custom' && styles.splitOptActive]}>
+                            <Text style={[styles.splitText, newExpense.splitType === 'custom' && styles.splitTextActive]}>Custom</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </>
+                  )}
+
+                  {newExpense.type !== 'transfer' && newExpense.splitType === 'equal' ? (
                     <View style={styles.checkList}>
                       {travelers.map(t => {
                         const isIncluded = newExpense.beneficiaries.includes(t.id);
@@ -366,7 +464,7 @@ export default function ExpenseScreen() {
                         );
                       })}
                     </View>
-                  ) : (
+                  ) : newExpense.type !== 'transfer' ? (
                     <View style={styles.customSplitList}>
                       {/* Validation Message */}
                       <View style={[styles.valMsg, splitStatus.isValid ? styles.valSuccess : styles.valError]}>
@@ -392,7 +490,7 @@ export default function ExpenseScreen() {
                         </View>
                       ))}
                     </View>
-                  )}
+                  ) : null}
                 </View>
               )}
 
@@ -417,8 +515,9 @@ const createStyles = (colors) => StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
   headerTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
   headerSubtitle: { fontSize: 13, color: colors.textMuted },
-  addBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  addBtnText: { color: 'white', fontWeight: '700' },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
+  headerSubtitle: { fontSize: 13, color: colors.textMuted },
+  // addBtn removed
 
   summaryCard: { backgroundColor: colors.card, margin: 20, marginTop: 0, padding: 20, borderRadius: 20 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
@@ -510,4 +609,17 @@ const createStyles = (colors) => StyleSheet.create({
 
   saveBtn: { backgroundColor: colors.primary, padding: 18, borderRadius: 20, alignItems: 'center', marginTop: 32 },
   saveBtnText: { color: 'white', fontSize: 16, fontWeight: '800' },
+
+  fab: { position: 'absolute', bottom: 20, right: 20, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 30, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
+  fabIcon: { color: 'white', fontSize: 24, fontWeight: 'bold', marginRight: 8 },
+  fabText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+
+  typeSelector: { flexDirection: 'row', backgroundColor: colors.bg, padding: 4, borderRadius: 12, marginVertical: 16 },
+  typeBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
+  typeBtnActive: { backgroundColor: colors.card },
+  typeBtnText: { color: colors.textMuted, fontWeight: '600' },
+  typeBtnTextActive: { color: colors.text, fontWeight: '700' },
+
+  userChipText: { color: colors.text, fontWeight: '600', fontSize: 13 },
+  userChipTextSelected: { color: colors.primary },
 });
