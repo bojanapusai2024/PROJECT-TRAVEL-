@@ -90,12 +90,42 @@ export const TravelProvider = ({ children }) => {
   // Load data from Firebase when user logs in
   useEffect(() => {
     if (isAuthenticated && user) {
-      loadUserData();
+      loadUserData().then(() => {
+        checkAndAutoEndTrips();
+      });
     } else {
       // Clear local state when user logs out
       resetLocalState();
     }
   }, [isAuthenticated, user]);
+
+  const checkAndAutoEndTrips = async () => {
+    if (!tripInfo || !tripInfo.destination || !tripInfo.endDate) return;
+
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Parse endDate: "2 Jan 2026"
+      const parts = tripInfo.endDate.split(' ');
+      if (parts.length < 3) return;
+
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthIndex = months.indexOf(parts[1]);
+      if (monthIndex === -1) return;
+
+      const tripEndDate = new Date(parseInt(parts[2]), monthIndex, parseInt(parts[0]));
+      tripEndDate.setHours(0, 0, 0, 0);
+
+      // If today is strictly after the end date, auto-end the trip
+      if (today > tripEndDate) {
+        console.log('Automatically ending trip as end date has passed:', tripInfo.destination);
+        await endTrip();
+      }
+    } catch (error) {
+      console.error('Error in checkAndAutoEndTrips:', error);
+    }
+  };
 
   const resetLocalState = () => {
     setTripInfoState({
@@ -151,7 +181,7 @@ export const TravelProvider = ({ children }) => {
 
       // Load trip history
       const savedHistory = await DB.getTripHistory();
-      setTripHistory(savedHistory);
+      setTripHistory(savedHistory.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)));
 
       console.log('User data loaded successfully');
     } catch (error) {

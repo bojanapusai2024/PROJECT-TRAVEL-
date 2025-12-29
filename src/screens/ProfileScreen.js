@@ -20,6 +20,14 @@ import { useAuth } from '../context/AuthContext';
 import { useTravelContext } from '../context/TravelContext';
 
 const AVATARS = ['👤', '👨', '👩', '🧑', '👨‍💼', '👩‍💼', '🧳', '✈️', '🌍', '🏖️', '⛰️', '🗺️'];
+const TRIP_TYPES = [
+  { key: 'solo', label: 'Solo Trip', emoji: '🧑', color: '#3B82F6' },
+  { key: 'friends', label: 'With Friends', emoji: '👥', color: '#10B981' },
+  { key: 'family', label: 'Family Trip', emoji: '👨‍👩‍👧‍👦', color: '#F59E0B' },
+  { key: 'couple', label: 'Couple Trip', emoji: '💑', color: '#EC4899' },
+  { key: 'business', label: 'Business Trip', emoji: '💼', color: '#8B5CF6' },
+];
+
 const { width } = Dimensions.get('window');
 
 // Animated Card Component
@@ -82,6 +90,7 @@ export default function ProfileScreen({ onBack }) {
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [editForm, setEditForm] = useState({
     displayName: user?.displayName || '',
     avatar: '👤',
@@ -159,6 +168,27 @@ export default function ProfileScreen({ onBack }) {
     return 'Recently';
   };
 
+  const calculateTripDays = (startDate, endDate) => {
+    if (!startDate || !endDate) return 0;
+    try {
+      const parts1 = startDate.split(' ');
+      const parts2 = endDate.split(' ');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const start = new Date(parseInt(parts1[2]), months.indexOf(parts1[1]), parseInt(parts1[0]));
+      const end = new Date(parseInt(parts2[2]), months.indexOf(parts2[1]), parseInt(parts2[0]));
+      const diffTime = end - start;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      return diffDays > 0 ? diffDays : 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  const getTripTypeEmoji = (type) => {
+    const found = TRIP_TYPES.find(t => t.key === type);
+    return found ? found.emoji : '🧳';
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Gradient Header */}
@@ -232,6 +262,25 @@ export default function ProfileScreen({ onBack }) {
             )}
           </View>
         </AnimatedCard>
+
+        {/* Trip Management */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Trip Management</Text>
+          <AnimatedCard delay={150} onPress={() => setShowHistoryModal(true)}>
+            <View style={styles.settingItem}>
+              <View style={styles.settingLeft}>
+                <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#3B82F640' : '#3B82F620' }]}>
+                  <Text style={styles.settingIcon}>📜</Text>
+                </View>
+                <View style={styles.settingInfo}>
+                  <Text style={styles.settingLabel}>Trip History</Text>
+                  <Text style={styles.settingValue}>View your completed adventures</Text>
+                </View>
+              </View>
+              <Text style={styles.settingArrow}>›</Text>
+            </View>
+          </AnimatedCard>
+        </View>
 
         {/* Preferences */}
         <View style={styles.section}>
@@ -527,7 +576,7 @@ export default function ProfileScreen({ onBack }) {
       {/* Theme Picker Modal */}
       <Modal visible={showThemePicker} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '70%' }]}>
+          <View style={[styles.modalContent, { maxHeight: '70%', height: '70%' }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Choose Theme</Text>
               <TouchableOpacity onPress={() => setShowThemePicker(false)}>
@@ -535,7 +584,7 @@ export default function ProfileScreen({ onBack }) {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.themeList}>
+            <ScrollView style={styles.themeList} showsVerticalScrollIndicator={false}>
               {availableThemes?.map((theme) => (
                 <TouchableOpacity
                   key={theme.id}
@@ -568,6 +617,67 @@ export default function ProfileScreen({ onBack }) {
                   )}
                 </TouchableOpacity>
               ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Trip History Modal */}
+      <Modal visible={showHistoryModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: '90%', height: '90%' }]}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>Trip History</Text>
+                <Text style={styles.modalSubtitle}>{tripHistory.length} completed adventures</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowHistoryModal(false)}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.historyList} showsVerticalScrollIndicator={false}>
+              {tripHistory.length === 0 ? (
+                <View style={styles.emptyHistory}>
+                  <Text style={styles.emptyHistoryEmoji}>🏝️</Text>
+                  <Text style={styles.emptyHistoryText}>No completed trips yet.</Text>
+                  <Text style={styles.emptyHistorySubtext}>Your past adventures will appear here once they're finished.</Text>
+                </View>
+              ) : (
+                tripHistory.map((trip, index) => {
+                  const days = calculateTripDays(trip.startDate, trip.endDate);
+                  return (
+                    <TouchableOpacity
+                      key={trip.id || index}
+                      style={styles.historyCard}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.historyCardLeft}>
+                        <View style={[styles.historyIconContainer, { backgroundColor: isDark ? colors.cardLight : '#F3F4F6' }]}>
+                          <Text style={styles.historyIcon}>{getTripTypeEmoji(trip.tripType)}</Text>
+                        </View>
+                        <View style={styles.historyInfo}>
+                          <Text style={styles.historyDestination}>{trip.destination || trip.name}</Text>
+                          <Text style={styles.historyDates}>
+                            {trip.startDate} • {days} days
+                          </Text>
+                          {trip.tripCode && (
+                            <Text style={styles.historyCode}>Code: <Text style={{ fontWeight: '700' }}>{trip.tripCode}</Text></Text>
+                          )}
+                        </View>
+                      </View>
+                      <View style={styles.historyCardRight}>
+                        <TouchableOpacity style={styles.syncButton}>
+                          <View style={styles.syncIconContainer}>
+                            <Text style={styles.syncIcon}>📤</Text>
+                          </View>
+                        </TouchableOpacity>
+                        <Text style={styles.historyArrow}>→</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
             </ScrollView>
           </View>
         </View>
@@ -812,46 +922,63 @@ const createStyles = (colors, isDark) => StyleSheet.create({
   settingValue: { fontSize: 13, color: colors.textMuted },
   settingArrow: { fontSize: 20, color: colors.textMuted, fontWeight: '600' },
 
-  // Trip History Styles
+  // History Modal Styles
+  historyList: { padding: 4 },
   historyCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.card,
-    borderRadius: 18,
+    backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+    borderRadius: 20,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: colors.primaryBorder,
+    borderColor: isDark ? '#374151' : '#E5E7EB',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
-  historyLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  historyIconBg: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    backgroundColor: colors.primary + '20',
+  historyCardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  historyIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
   },
-  historyIcon: { fontSize: 22 },
+  historyIcon: { fontSize: 32 },
   historyInfo: { flex: 1 },
-  historyDest: { fontSize: 16, fontWeight: 'bold', color: colors.text, marginBottom: 2 },
-  historyDate: { fontSize: 12, color: colors.textMuted },
-  historyRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  historyStats: { alignItems: 'flex-end' },
-  historyAmount: { fontSize: 16, fontWeight: '700', color: colors.primary },
-  deleteHistoryBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.bg,
+  historyDestination: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 4 },
+  historyDates: { fontSize: 14, color: colors.textMuted, marginBottom: 4 },
+  historyCode: { fontSize: 13, color: colors.primary, fontWeight: '500' },
+  historyCardRight: { flexDirection: 'row', alignItems: 'center' },
+  historyArrow: { fontSize: 22, color: colors.textMuted, marginLeft: 12 },
+  syncButton: {
+    padding: 8,
+  },
+  syncIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: isDark ? '#374151' : '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
   },
-  deleteHistoryText: { fontSize: 14, color: colors.textMuted, fontWeight: 'bold' },
+  syncIcon: { fontSize: 18 },
+  emptyHistory: { alignItems: 'center', paddingVertical: 60 },
+  emptyHistoryEmoji: { fontSize: 64, marginBottom: 16 },
+  emptyHistoryText: { fontSize: 18, fontWeight: 'bold', color: colors.text, marginBottom: 8 },
+  emptyHistorySubtext: { fontSize: 14, color: colors.textMuted, textAlign: 'center', paddingHorizontal: 40 },
+  modalSubtitle: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
 
   // Footer
   footer: {
