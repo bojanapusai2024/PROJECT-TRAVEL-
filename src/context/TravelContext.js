@@ -353,10 +353,20 @@ export const TravelProvider = ({ children }) => {
     if (tripInfo && tripInfo.destination) {
       try {
         setIsLoading(true);
+
+        // 1. If it's a "current" trip (no real ID or id is 'current'), save it to trips list first
+        // so its expenses/itinerary are moved to a permanent path users/uid/trips/ID/...
+        let finalTrip = { ...tripInfo };
+        if (!tripInfo.id || tripInfo.id === 'current') {
+          const savedTrip = await saveCurrentTripToList();
+          finalTrip = { ...savedTrip };
+        }
+
+        // 2. Mark as completed
         const completedTrip = {
-          ...tripInfo,
-          id: tripInfo.id || `history-${Date.now()}`,
+          ...finalTrip,
           isCompleted: true,
+          completedAt: Date.now(),
           completedDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
           totalSpent: getTotalExpenses(),
           budget: budget.total,
@@ -364,13 +374,21 @@ export const TravelProvider = ({ children }) => {
           currency: currency.code,
         };
 
-        setTripHistory(prev => [completedTrip, ...prev]);
-
+        // 3. Update in main trips list (mark as completed)
         if (isAuthenticated) {
+          await DB.saveTrip(completedTrip);
+          // Also save a record in tripHistory for the specialized history list
           await DB.saveToHistory(completedTrip);
         }
 
+        setTripHistory(prev => [completedTrip, ...prev]);
+
+        // 4. Update allTrips local state so it reflects the isCompleted status
+        setAllTrips(prev => prev.map(t => t.id === completedTrip.id ? completedTrip : t));
+
+        // 5. Clear active trip state
         await clearTrip();
+
         return { success: true };
       } catch (error) {
         console.error('Error ending trip:', error);

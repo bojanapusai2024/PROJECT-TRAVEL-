@@ -698,42 +698,14 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                         onChangeText={(text) => updateFamilyInput(fIndex, 'newMemberName', text)}
                       />
                     </View>
-                    <View style={[styles.inputContainer, styles.familyRelationInput]}>
-                      <TextInput
-                        style={[styles.familyInput, { outlineStyle: 'none' }]}
-                        placeholder="Relation"
-                        placeholderTextColor={colors.textMuted}
-                        value={family.newMemberRelation}
-                        onChangeText={(text) => updateFamilyInput(fIndex, 'newMemberRelation', text)}
-                      />
-                    </View>
                     <Pressable
                       style={[styles.addBtnFamily, !family.newMemberName?.trim() && styles.addBtnDisabled]}
-                      onPress={() => addFamilyMember(fIndex, family.newMemberName, family.newMemberRelation)}
+                      onPress={() => addFamilyMember(fIndex, family.newMemberName, 'Family Member')}
                       disabled={!family.newMemberName?.trim()}
                     >
                       <Text style={styles.addBtnText}>+</Text>
                     </Pressable>
                   </View>
-
-                  {/* Quick Relations for this family */}
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickRelationsScroll}>
-                    {['Spouse', 'Child', 'Parent', 'Sibling'].map((rel, i) => (
-                      <Pressable
-                        key={i}
-                        style={[
-                          styles.relationChip,
-                          family.newMemberRelation === rel && styles.relationChipActive
-                        ]}
-                        onPress={() => updateFamilyInput(fIndex, 'newMemberRelation', rel)}
-                      >
-                        <Text style={[
-                          styles.relationChipText,
-                          family.newMemberRelation === rel && styles.relationChipTextActive
-                        ]}>{rel}</Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
 
                   {/* Members List for this family */}
                   <View style={styles.familyMembersList}>
@@ -882,14 +854,16 @@ export default function TripSetupScreen({ onComplete, onBack }) {
           </View>
         </View>
 
-        {/* Step Header */}
-        <Animated.View style={[styles.stepHeader, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <View style={styles.stepIconBg}>
-            <Text style={styles.stepIcon}>{STEPS[currentStep].icon}</Text>
-          </View>
-          <Text style={styles.stepTitle}>{STEPS[currentStep].title}</Text>
-          <Text style={styles.stepSubtitle}>{STEPS[currentStep].subtitle}</Text>
-        </Animated.View>
+        {/* Step Header - Hidden for family companions as requested */}
+        {!(STEPS[currentStep].key === 'companions' && tripData.tripType === 'family') && (
+          <Animated.View style={[styles.stepHeader, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            <View style={styles.stepIconBg}>
+              <Text style={styles.stepIcon}>{STEPS[currentStep].icon}</Text>
+            </View>
+            <Text style={styles.stepTitle}>{STEPS[currentStep].title}</Text>
+            <Text style={styles.stepSubtitle}>{STEPS[currentStep].subtitle}</Text>
+          </Animated.View>
+        )}
 
         {/* Content */}
         <ScrollView
@@ -1258,9 +1232,6 @@ const createStyles = (colors) => StyleSheet.create({
   familyNameInput: {
     flex: 1,
   },
-  familyRelationInput: {
-    flex: 0.8,
-  },
   familyInput: {
     flex: 1,
     fontSize: 15,
@@ -1300,32 +1271,6 @@ const createStyles = (colors) => StyleSheet.create({
     color: colors.bg,
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  quickRelations: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
-  },
-  relationChip: {
-    backgroundColor: colors.cardLight,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-  },
-  relationChipActive: {
-    backgroundColor: colors.primaryMuted,
-    borderColor: colors.primary,
-  },
-  relationChipText: {
-    color: colors.text,
-    fontSize: 13,
-  },
-  relationChipTextActive: {
-    color: colors.primary,
-    fontWeight: '600',
   },
   companionsList: {
     marginBottom: 20,

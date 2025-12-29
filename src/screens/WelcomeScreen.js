@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions,
-  Animated, TextInput, Modal, ScrollView, Pressable, Share, Alert
+  Animated, TextInput, Modal, ScrollView, Pressable, Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
@@ -19,7 +19,7 @@ const TRIP_TYPES = [
 ];
 
 export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProfile, hasActiveTrip }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const {
     tripInfo,
     getTotalExpenses,
@@ -108,106 +108,62 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   // Get current total expenses for memoization
   const currentTotalExpenses = getTotalExpenses();
 
-  // Build the display trips list - SORTED BY NEAREST START DATE
-  const allDisplayTrips = useMemo(() => {
-    const tripMap = new Map();
+  // 1. Determine the Featured Trip (Dashboard)
+  const featuredTrip = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // 1. Add all trips from allTrips context
-    if (allTrips && allTrips.length > 0) {
-      allTrips.forEach(trip => {
-        if (trip && trip.id) {
-          tripMap.set(trip.id, {
-            ...trip,
-            totalExpenses: trip.totalExpenses || 0,
-          });
-        }
-      });
-    }
-
-    // 2. Add all trips from tripHistory context
-    if (tripHistory && tripHistory.length > 0) {
-      tripHistory.forEach(trip => {
-        if (trip && trip.id && !tripMap.has(trip.id)) {
-          tripMap.set(trip.id, {
-            ...trip,
-            id: trip.id,
-            totalExpenses: trip.totalSpent || 0,
-            isCompleted: true,
-          });
-        }
-      });
-    }
-
-    // 3. Also check current tripInfo if it has a destination but isn't in trips yet
+    // A. Priority 1: Current active trip from context
     if (hasActiveTrip && tripInfo && tripInfo.destination) {
-      const currentId = tripInfo.id || 'current';
-      const exists = tripMap.has(currentId);
-
-      if (!exists) {
-        tripMap.set(currentId, {
-          ...tripInfo,
-          id: currentId,
-          tripCode: tripInfo.tripCode || null,
-          totalExpenses: getTotalExpenses(),
-        });
-      }
+      return {
+        ...tripInfo,
+        id: tripInfo.id || 'current',
+        totalExpenses: getTotalExpenses()
+      };
     }
 
-    const trips = Array.from(tripMap.values());
-
-    // 4. Sort trips
-    // Logic: Active/Current -> Upcoming (Soonest first) -> Past (Most recent first) -> No Date
-    if (trips.length > 0) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      trips.sort((a, b) => {
-        // Handle explicit "Current" status (active tripInfo)
-        const isCurrentActiveA = a.id === (tripInfo.id || 'current');
-        const isCurrentActiveB = b.id === (tripInfo.id || 'current');
-        if (isCurrentActiveA && !isCurrentActiveB) return -1;
-        if (!isCurrentActiveA && isCurrentActiveB) return 1;
-
+    // B. Priority 2: Ongoing trip from allTrips
+    if (allTrips && allTrips.length > 0) {
+      const activeTrips = allTrips.filter(t => !t.isCompleted);
+      const sortedActive = [...activeTrips].sort((a, b) => {
         const startA = parseDate(a.startDate);
         const startB = parseDate(b.startDate);
-        const endA = parseDate(a.endDate);
-        const endB = parseDate(b.endDate);
+        if (!startA) return 1;
+        if (!startB) return -1;
+        return startA - startB;
+      });
 
-        // Completed trips go to the very bottom
-        if (a.isCompleted && !b.isCompleted) return 1;
-        if (!a.isCompleted && b.isCompleted) return -1;
+      const ongoing = sortedActive.find(t => {
+        const start = parseDate(t.startDate);
+        const end = parseDate(t.endDate);
+        return start && start <= today && (!end || end >= today);
+      });
+      if (ongoing) return ongoing;
 
-        // Handling missing dates
+      // C. Priority 3: Soonest upcoming trip
+      if (sortedActive.length > 0) return sortedActive[0];
+    }
+
+    return null;
+  }, [hasActiveTrip, tripInfo, allTrips, getTotalExpenses]);
+
+  // 2. Upcoming Trips List (Excluding featured)
+  const upcomingTrips = useMemo(() => {
+    if (!allTrips) return [];
+
+    return allTrips
+      .filter(t => !t.isCompleted && t.id !== featuredTrip?.id)
+      .sort((a, b) => {
+        const startA = parseDate(a.startDate);
+        const startB = parseDate(b.startDate);
         if (!startA && !startB) return 0;
         if (!startA) return 1;
         if (!startB) return -1;
-
-        // Ongoing?
-        const isOngoingA = startA <= today && (!endA || endA >= today);
-        const isOngoingB = startB <= today && (!endB || endB >= today);
-
-        if (isOngoingA && !isOngoingB) return -1;
-        if (!isOngoingA && isOngoingB) return 1;
-
-        // Both upcoming or both past
-        const diffA = startA - today;
-        const diffB = startB - today;
-
-        if (diffA >= 0 && diffB >= 0) return diffA - diffB; // Ascending for upcoming
-        return diffB - diffA; // Descending for past
+        return startA - startB;
       });
-    }
+  }, [allTrips, featuredTrip]);
 
-    return trips;
-  }, [hasActiveTrip, tripInfo, allTrips, tripHistory, getTotalExpenses]);
-
-  // Separate current trip from upcoming trips
-  // If there are trips, the first one is "Current", rest are "Upcoming"
-  // If no trips but we have active tripInfo, that's "Current"
-  const currentTrip = allDisplayTrips.length > 0 ? allDisplayTrips[0] : null;
-  const upcomingTrips = allDisplayTrips.length > 1 ? allDisplayTrips.slice(1) : [];
-
-  const tripTypeInfo = getTripTypeInfo(tripInfo.tripType);
+  const tripTypeInfo = getTripTypeInfo(tripInfo?.tripType || '');
 
   useEffect(() => {
     Animated.parallel([
@@ -262,21 +218,25 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   // Share trip code function
   const handleShareTripCode = async (code, destination) => {
     try {
-      await Share.share({
-        message: `Join my trip to ${destination}! 🌍✈️\n\nUse this code in TravelMate: ${code}`,
-        title: 'Share Trip Code',
-      });
+      if (!code) return;
+
+      // Attempt to use web clipboard if available (since they are using --web)
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(code);
+        Alert.alert('Copied!', `Trip code ${code} copied to clipboard.`);
+      } else {
+        // Fallback for native or when clipboard API is blocks
+        Alert.alert('Trip Code', `Code: ${code}\n\nShare this code with friends to let them join your trip!`);
+      }
     } catch (error) {
-      Alert.alert('Error', 'Could not share trip code');
+      console.error('Error sharing trip code:', error);
+      Alert.alert('Trip Code', code);
     }
   };
 
   // Copy trip code to clipboard
-  const handleCopyTripCode = (code) => {
-    // Note: You may need to import Clipboard from @react-native-clipboard/clipboard
-    Alert.alert('Trip Code', `Code: ${code}\n\nShare this code with friends to let them join your trip!`, [
-      { text: 'OK' }
-    ]);
+  const handleCopyTripCode = async (code) => {
+    handleShareTripCode(code);
   };
 
   // Handle trip card press - switch to that trip first
@@ -306,6 +266,13 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     const tripDays = calculateTripDays(trip.startDate, trip.endDate);
     const tripExpenses = trip.totalExpenses || getTotalExpenses();
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = parseDate(trip.startDate);
+    const end = parseDate(trip.endDate);
+    const isOngoing = start && start <= today && (!end || end >= today);
+    const isActive = trip.id === (tripInfo.id || 'current');
+
     return (
       <Animated.View style={{ transform: [{ scale: scaleAnim3 }] }}>
         <Pressable
@@ -323,8 +290,10 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
               <Text style={styles.currentTripIcon}>🧳</Text>
             </View>
             <View style={styles.currentTripInfo}>
-              <View style={styles.currentTripBadge}>
-                <Text style={styles.currentTripBadgeText}>CURRENT TRIP</Text>
+              <View style={[styles.currentTripBadge, !(isActive || isOngoing) && { backgroundColor: '#3B82F630' }]}>
+                <Text style={[styles.currentTripBadgeText, !(isActive || isOngoing) && { color: '#3B82F6' }]}>
+                  {isActive || isOngoing ? 'CURRENT TRIP' : 'UPCOMING TRIP'}
+                </Text>
               </View>
               <Text style={styles.currentTripName}>{trip.destination || trip.name || 'My Trip'}</Text>
             </View>
@@ -363,6 +332,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
               </View>
               <Text style={styles.dateArrow}>→</Text>
               <View style={styles.dateChip}>
+                <Text style={styles.dateChipEmoji}>📅</Text>
                 <Text style={styles.dateChipText}>{trip.endDate}</Text>
               </View>
             </View>
@@ -371,19 +341,13 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           {/* Stats */}
           <View style={styles.currentTripStats}>
             <View style={styles.tripStatItem}>
-              <View style={styles.tripStatIconBg}>
-                <Text style={styles.tripStatEmoji}>{tripTypeData.emoji}</Text>
-              </View>
               <View>
-                <Text style={styles.tripStatValue}>{tripTypeData.label.split(' ')[0]}</Text>
+                <Text style={styles.tripStatValue}>{(tripTypeData.label || 'Solo').split(' ')[0]}</Text>
                 <Text style={styles.tripStatLabel}>Trip Type</Text>
               </View>
             </View>
             <View style={styles.tripStatDivider} />
             <View style={styles.tripStatItem}>
-              <View style={styles.tripStatIconBg}>
-                <Text style={styles.tripStatEmoji}>📆</Text>
-              </View>
               <View>
                 <Text style={styles.tripStatValue}>{tripDays}</Text>
                 <Text style={styles.tripStatLabel}>Days</Text>
@@ -391,9 +355,6 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             </View>
             <View style={styles.tripStatDivider} />
             <View style={styles.tripStatItem}>
-              <View style={styles.tripStatIconBg}>
-                <Text style={styles.tripStatEmoji}>💳</Text>
-              </View>
               <View>
                 <Text style={styles.tripStatValue}>{currency.symbol}{tripExpenses}</Text>
                 <Text style={styles.tripStatLabel}>Total Spent</Text>
@@ -432,10 +393,12 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           <View style={styles.upcomingTripInfo}>
             <Text style={styles.upcomingTripName}>{trip.destination || trip.name || 'My Trip'}</Text>
             <Text style={styles.upcomingTripDates}>
-              {trip.startDate} • {tripDays} days {trip.isCompleted && '(Completed)'}
+              {trip.startDate} • {tripDays} days
             </Text>
             {trip.tripCode && (
-              <Text style={styles.upcomingTripCode}>Code: {trip.tripCode}</Text>
+              <Text style={styles.upcomingTripCode}>
+                <Text style={{ fontWeight: 'bold', color: isDark ? '#FFF' : '#000', opacity: 0.6 }}>Code:</Text> {trip.tripCode}
+              </Text>
             )}
           </View>
         </View>
@@ -541,7 +504,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           </View>
 
           {/* CURRENT TRIP DASHBOARD - Only show if exists */}
-          {currentTrip && renderCurrentTripCard(currentTrip)}
+          {featuredTrip && renderCurrentTripCard(featuredTrip)}
 
           {/* UPCOMING TRIPS SECTION - Always show header, but list is empty until user adds trips */}
           <View style={styles.upcomingTripsSection}>
@@ -595,8 +558,8 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             )}
           </View>
 
-          {/* No Trips Message - Only show when no current trip at all */}
-          {!currentTrip && (
+          {/* No Trips Message - Only show when no featured trip at all */}
+          {!featuredTrip && (
             <View style={styles.noTripsContainer}>
               <View style={styles.noTripsIconBg}>
                 <Text style={styles.noTripsIcon}>🌍</Text>
@@ -894,16 +857,20 @@ const createStyles = (colors) => StyleSheet.create({
     marginTop: 16,
     backgroundColor: colors.cardLight,
     borderRadius: 16,
-    padding: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     borderWidth: 1,
     borderColor: colors.primaryBorder,
+    alignItems: 'center',
+    justifyContent: 'space-around',
   },
   tripStatItem: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 4,
+    gap: 8,
   },
   tripStatIconBg: {
     width: 36,

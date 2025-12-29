@@ -75,7 +75,7 @@ const AnimatedCard = ({ children, style, onPress, delay = 0 }) => {
   );
 };
 
-export default function ProfileScreen({ onBack }) {
+export default function ProfileScreen({ onBack, onOpenTrip }) {
   const { colors, isDark, toggleTheme, setTheme, currentTheme, availableThemes } = useTheme();
   const { user, signOut, updateUserProfile, resetPassword, deleteAccount } = useAuth();
   const {
@@ -83,7 +83,9 @@ export default function ProfileScreen({ onBack }) {
     setCurrency,
     currencies,
     tripHistory,
+    allTrips,
     deleteTripFromHistory,
+    switchToTrip,
   } = useTravelContext();
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -189,6 +191,83 @@ export default function ProfileScreen({ onBack }) {
     return found ? found.emoji : '🧳';
   };
 
+  const handleTripPress = async (trip) => {
+    try {
+      if (switchToTrip) {
+        await switchToTrip(trip);
+      }
+      setShowHistoryModal(false);
+      if (onOpenTrip) {
+        onOpenTrip(trip);
+      }
+    } catch (error) {
+      console.error('Error opening trip:', error);
+      Alert.alert('Error', 'Could not open trip details.');
+    }
+  };
+
+  const renderTripListModal = (visible, setVisible, title, trips, emptyMessage, emptyEmoji) => (
+    <Modal visible={visible} transparent animationType="slide">
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { maxHeight: '90%', height: '90%' }]}>
+          <View style={styles.modalHeader}>
+            <View>
+              <Text style={styles.modalTitle}>{title}</Text>
+              <Text style={styles.modalSubtitle}>{trips.length} adventures</Text>
+            </View>
+            <TouchableOpacity onPress={() => setVisible(false)}>
+              <Text style={styles.modalClose}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.historyList} showsVerticalScrollIndicator={false}>
+            {trips.length === 0 ? (
+              <View style={styles.emptyHistory}>
+                <Text style={styles.emptyHistoryEmoji}>{emptyEmoji}</Text>
+                <Text style={styles.emptyHistoryText}>{emptyMessage}</Text>
+              </View>
+            ) : (
+              trips.map((trip, index) => {
+                const days = calculateTripDays(trip.startDate, trip.endDate);
+                return (
+                  <TouchableOpacity
+                    key={trip.id || index}
+                    style={styles.historyCard}
+                    activeOpacity={0.7}
+                    onPress={() => handleTripPress(trip)}
+                  >
+                    <View style={styles.historyCardLeft}>
+                      <View style={[styles.historyIconContainer, { backgroundColor: isDark ? colors.cardLight : '#F3F4F6' }]}>
+                        <Text style={styles.historyIcon}>{getTripTypeEmoji(trip.tripType)}</Text>
+                      </View>
+                      <View style={styles.historyInfo}>
+                        <Text style={styles.historyDestination}>{trip.destination || trip.name}</Text>
+                        <Text style={styles.historyDates}>
+                          {trip.startDate} • {days} days
+                        </Text>
+                        {trip.tripCode && (
+                          <Text style={styles.historyCode}>Code: <Text style={{ fontWeight: '700' }}>{trip.tripCode}</Text></Text>
+                        )}
+                      </View>
+                    </View>
+                    <View style={styles.historyCardRight}>
+                      <TouchableOpacity style={styles.syncButton}>
+                        <View style={styles.syncIconContainer}>
+                          <Text style={styles.syncIcon}>📤</Text>
+                        </View>
+                      </TouchableOpacity>
+                      <Text style={styles.historyArrow}>→</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Gradient Header */}
@@ -263,9 +342,9 @@ export default function ProfileScreen({ onBack }) {
           </View>
         </AnimatedCard>
 
-        {/* Trip Management */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Trip Management</Text>
+
           <AnimatedCard delay={150} onPress={() => setShowHistoryModal(true)}>
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
@@ -622,66 +701,14 @@ export default function ProfileScreen({ onBack }) {
         </View>
       </Modal>
 
-      {/* Trip History Modal */}
-      <Modal visible={showHistoryModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '90%', height: '90%' }]}>
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalTitle}>Trip History</Text>
-                <Text style={styles.modalSubtitle}>{tripHistory.length} completed adventures</Text>
-              </View>
-              <TouchableOpacity onPress={() => setShowHistoryModal(false)}>
-                <Text style={styles.modalClose}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.historyList} showsVerticalScrollIndicator={false}>
-              {tripHistory.length === 0 ? (
-                <View style={styles.emptyHistory}>
-                  <Text style={styles.emptyHistoryEmoji}>🏝️</Text>
-                  <Text style={styles.emptyHistoryText}>No completed trips yet.</Text>
-                  <Text style={styles.emptyHistorySubtext}>Your past adventures will appear here once they're finished.</Text>
-                </View>
-              ) : (
-                tripHistory.map((trip, index) => {
-                  const days = calculateTripDays(trip.startDate, trip.endDate);
-                  return (
-                    <TouchableOpacity
-                      key={trip.id || index}
-                      style={styles.historyCard}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.historyCardLeft}>
-                        <View style={[styles.historyIconContainer, { backgroundColor: isDark ? colors.cardLight : '#F3F4F6' }]}>
-                          <Text style={styles.historyIcon}>{getTripTypeEmoji(trip.tripType)}</Text>
-                        </View>
-                        <View style={styles.historyInfo}>
-                          <Text style={styles.historyDestination}>{trip.destination || trip.name}</Text>
-                          <Text style={styles.historyDates}>
-                            {trip.startDate} • {days} days
-                          </Text>
-                          {trip.tripCode && (
-                            <Text style={styles.historyCode}>Code: <Text style={{ fontWeight: '700' }}>{trip.tripCode}</Text></Text>
-                          )}
-                        </View>
-                      </View>
-                      <View style={styles.historyCardRight}>
-                        <TouchableOpacity style={styles.syncButton}>
-                          <View style={styles.syncIconContainer}>
-                            <Text style={styles.syncIcon}>📤</Text>
-                          </View>
-                        </TouchableOpacity>
-                        <Text style={styles.historyArrow}>→</Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })
-              )}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      {renderTripListModal(
+        showHistoryModal,
+        setShowHistoryModal,
+        'Trip History',
+        tripHistory,
+        'No completed trips yet.',
+        '🏝️'
+      )}
     </SafeAreaView>
   );
 }

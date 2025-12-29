@@ -51,28 +51,54 @@ export default function ExpenseScreen() {
   const getTravelerName = (id) => travelers.find(t => t.id === id)?.name || 'Unknown';
   const getTravelerAvatar = (id) => travelers.find(t => t.id === id)?.avatar || '👤';
 
-  // Determine travelers
   const travelers = useMemo(() => {
-    const mainUser = { id: 'main_user', name: 'You', avatar: '👤' };
+    const isFamilyTrip = tripInfo.tripType === 'family';
+    const mainUser = {
+      id: 'main_user',
+      name: 'You',
+      avatar: '👤',
+      familyGroup: isFamilyTrip ? 'Family 1' : null
+    };
     const participants = (tripInfo.participants || []).map((p, i) => ({
       ...p,
-      id: p.id || `part_${i}_${(p.name || '').replace(/\s+/g, '')}`
+      id: p.id || `part_${i}_${(p.name || '').replace(/\s+/g, '')}`,
+      familyGroup: isFamilyTrip ? (p.familyGroup || 'Family 1') : null
     }));
     return [mainUser, ...participants];
-  }, [tripInfo.participants]);
+  }, [tripInfo.participants, tripInfo.tripType]);
+
+  // Grouped travelers for family trips
+  const displayGroups = useMemo(() => {
+    if (tripInfo.tripType !== 'family') return travelers;
+
+    const groups = {};
+    travelers.forEach(t => {
+      const gName = t.familyGroup || 'Family 1';
+      if (!groups[gName]) {
+        groups[gName] = {
+          id: gName,
+          name: gName,
+          avatar: '👨‍👩‍👧‍👦',
+          memberIds: []
+        };
+      }
+      groups[gName].memberIds.push(t.id);
+    });
+    return Object.values(groups);
+  }, [travelers, tripInfo.tripType]);
 
   // Is this a group trip?
   const isMultiUser = travelers.length > 1;
 
   // Initialize beneficiaries when modal opens or travelers change
   useEffect(() => {
-    if (travelers.length > 0 && newExpense.beneficiaries.length === 0) {
+    if (displayGroups.length > 0 && newExpense.beneficiaries.length === 0) {
       setNewExpense(prev => ({
         ...prev,
-        beneficiaries: travelers.map(t => t.id)
+        beneficiaries: displayGroups.map(t => t.id)
       }));
     }
-  }, [travelers, modalVisible]);
+  }, [displayGroups, modalVisible]);
 
   // --- Logic for Split Validation ---
   const currentTotalAmount = parseFloat(newExpense.amount) || 0;
@@ -86,7 +112,7 @@ export default function ExpenseScreen() {
 
     if (newExpense.splitType === 'custom') {
       let allocated = 0;
-      travelers.forEach(t => {
+      displayGroups.forEach(t => {
         allocated += parseFloat(newExpense.splitAmounts[t.id] || 0);
       });
 
@@ -119,6 +145,8 @@ export default function ExpenseScreen() {
       id: `expense_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       amount: parseFloat(newExpense.amount),
       timestamp: Date.now(),
+      // Add tripType info to expense for future grouping stability
+      isFamilyExpense: tripInfo.tripType === 'family'
     };
 
     addExpense(expenseData);
@@ -130,7 +158,8 @@ export default function ExpenseScreen() {
       category: CATEGORIES[0]?.key,
       paidBy: 'main_user',
       splitType: 'equal',
-      beneficiaries: travelers.map(t => t.id),
+      // Reset beneficiaries to match current grouping
+      beneficiaries: displayGroups.map(t => t.id),
       splitAmounts: {},
       date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
     });
@@ -141,65 +170,60 @@ export default function ExpenseScreen() {
   const balances = useMemo(() => {
     if (!isMultiUser) return {};
     const bal = {};
-    travelers.forEach(t => bal[t.id] = 0);
+    const isFamilyTrip = tripInfo.tripType === 'family';
+
+    // Initialize balances for display groups (families or individual travelers)
+    displayGroups.forEach(g => bal[g.id] = 0);
 
     expenses.forEach(e => {
       const amt = parseFloat(e.amount);
-      const payer = e.paidBy || 'main_user';
+      let payer = e.paidBy || 'main_user';
+
+      // If family trip, use the familyGroup of the payer
+      if (isFamilyTrip) {
+        const traveler = travelers.find(t => t.id === payer);
+        payer = traveler?.familyGroup || 'Family 1';
+      }
 
       if (e.type === 'transfer') {
-        // Transfer: Payer gives (+), Receiver takes (-)
-        // In our logic: Positive = Gets Back, Negative = Owes
-        // If A pays B 100:
-        // A has given 100, so A gets back 100.
-        // B has received 100, so B owes 100.
         const receiver = e.beneficiaries[0];
         if (receiver) {
           bal[payer] = (bal[payer] || 0) + amt;
           bal[receiver] = (bal[receiver] || 0) - amt;
         }
       } else if (e.type === 'income') {
-        // Income: Payer (Receiver of income) owes the group (-)
-        // Beneficiaries get a share (+)
-        // E.g. A receives 100 refund for the group (split equally 2 people)
-        // A has +100 cash. A owes 50 to B.
-        // Logic:
-        // A (Payer) state change: -100 (total received is debt to group) + 50 (own share) = -50.
-        // B state change: +50.
-
-        // Simplified: Payer gets -amt. Beneficiaries get +share.
         bal[payer] = (bal[payer] || 0) - amt;
 
         if (e.splitType === 'custom') {
-          Object.keys(e.splitAmounts || {}).forEach(uid => {
-            bal[uid] = (bal[uid] || 0) + parseFloat(e.splitAmounts[uid]);
+          Object.keys(e.splitAmounts || {}).forEach(gid => {
+            bal[gid] = (bal[gid] || 0) + parseFloat(e.splitAmounts[gid]);
           });
         } else {
           const bens = e.beneficiaries || [];
           const splitAmt = amt / (bens.length || 1);
-          bens.forEach(uid => {
-            bal[uid] = (bal[uid] || 0) + splitAmt;
+          bens.forEach(gid => {
+            bal[gid] = (bal[gid] || 0) + splitAmt;
           });
         }
       } else {
-        // Expense: Payer gets back (+), Beneficiaries owe (-)
+        // Expense
         bal[payer] = (bal[payer] || 0) + amt;
 
         if (e.splitType === 'custom') {
-          Object.keys(e.splitAmounts || {}).forEach(uid => {
-            bal[uid] = (bal[uid] || 0) - parseFloat(e.splitAmounts[uid]);
+          Object.keys(e.splitAmounts || {}).forEach(gid => {
+            bal[gid] = (bal[gid] || 0) - parseFloat(e.splitAmounts[gid]);
           });
         } else {
           const bens = e.beneficiaries || [];
           const splitAmt = amt / (bens.length || 1);
-          bens.forEach(uid => {
-            bal[uid] = (bal[uid] || 0) - splitAmt;
+          bens.forEach(gid => {
+            bal[gid] = (bal[gid] || 0) - splitAmt;
           });
         }
       }
     });
     return bal; // Positive means "owed money", Negative means "owes money"
-  }, [expenses, travelers]);
+  }, [expenses, displayGroups, travelers, tripInfo.tripType]);
 
   // Styles
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -292,14 +316,14 @@ export default function ExpenseScreen() {
           </>
         ) : (
           <View style={styles.balanceList}>
-            {Object.entries(balances).map(([uid, bal]) => {
-              // Show all balances, even if 0
+            {Object.entries(balances).map(([gid, bal]) => {
+              const group = displayGroups.find(g => g.id === gid) || { name: gid, avatar: '👤' };
               const isOwed = bal > 0;
               return (
-                <View key={uid} style={styles.balCard}>
+                <View key={gid} style={styles.balCard}>
                   <View style={styles.balUser}>
-                    <Text style={styles.balAvatar}>{getTravelerAvatar(uid)}</Text>
-                    <Text style={styles.balName}>{getTravelerName(uid)}</Text>
+                    <Text style={styles.balAvatar}>{group.avatar}</Text>
+                    <Text style={styles.balName}>{group.name}</Text>
                   </View>
                   <Text style={[styles.balAmount, { color: isOwed ? '#10B981' : '#EF4444' }]}>
                     {isOwed ? `gets back ${safeFormat(bal)}` : `owes ${safeFormat(Math.abs(bal))}`}
@@ -394,7 +418,7 @@ export default function ExpenseScreen() {
                     {newExpense.type === 'income' ? 'Received By' : (newExpense.type === 'transfer' ? 'From' : 'Paid By')}
                   </Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-                    {travelers.map(t => (
+                    {displayGroups.map(t => (
                       <TouchableOpacity key={t.id} onPress={() => setNewExpense({ ...newExpense, paidBy: t.id })}
                         style={[styles.userChip, newExpense.paidBy === t.id && styles.userChipSelected]}
                       >
@@ -410,7 +434,7 @@ export default function ExpenseScreen() {
                     <>
                       <Text style={styles.inputLabel}>To</Text>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-                        {travelers.filter(t => t.id !== newExpense.paidBy).map(t => (
+                        {displayGroups.filter(t => t.id !== newExpense.paidBy).map(t => (
                           <TouchableOpacity key={t.id} onPress={() => setNewExpense({ ...newExpense, beneficiaries: [t.id] })}
                             style={[styles.userChip, newExpense.beneficiaries[0] === t.id && styles.userChipSelected]}
                           >
@@ -441,7 +465,7 @@ export default function ExpenseScreen() {
 
                   {newExpense.type !== 'transfer' && newExpense.splitType === 'equal' ? (
                     <View style={styles.checkList}>
-                      {travelers.map(t => {
+                      {displayGroups.map(t => {
                         const isIncluded = newExpense.beneficiaries.includes(t.id);
                         return (
                           <TouchableOpacity key={t.id} style={styles.checkRow} onPress={() => {
@@ -467,7 +491,7 @@ export default function ExpenseScreen() {
                         <Text style={styles.valText}>{splitStatus.message || 'Adjust amounts below'}</Text>
                       </View>
 
-                      {travelers.map(t => (
+                      {displayGroups.map(t => (
                         <View key={t.id} style={styles.customRow}>
                           <Text style={styles.customName}>{t.avatar} {t.name}</Text>
                           <View style={styles.customInputWrap}>

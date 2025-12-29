@@ -76,7 +76,7 @@ export default function HomeScreen({ onBackToHome }) {
   const participantCount = (tripInfo.participants?.length || 0) + 1;
   const remainingBudget = getRemainingBudget();
   const lastExpense = expenses.length > 0 ? expenses[expenses.length - 1] : null;
-  const recentExpenses = expenses.slice(-4).reverse();
+  const recentExpenses = expenses.slice(-2).reverse();
 
   const getCategoryInfo = (key) => {
     const categories = {
@@ -150,7 +150,13 @@ export default function HomeScreen({ onBackToHome }) {
 
   const handleAddTraveler = () => {
     if (newTravelerName.trim()) {
-      const updatedTravelers = [...travelers, { name: newTravelerName.trim(), type: 'member' }];
+      const isFamilyTrip = tripInfo.tripType === 'family';
+      const newTraveler = {
+        name: newTravelerName.trim(),
+        type: 'member',
+        familyGroup: isFamilyTrip ? 'Family 1' : null
+      };
+      const updatedTravelers = [...travelers, newTraveler];
       setTravelers(updatedTravelers);
       setTripInfo(prev => ({ ...prev, participants: updatedTravelers }));
       setNewTravelerName('');
@@ -383,10 +389,10 @@ export default function HomeScreen({ onBackToHome }) {
               </TouchableOpacity>
             ) : (
               <View style={styles.overviewList}>
-                {itinerary.slice(0, 4).map((item, index) => (
+                {itinerary.slice(0, 2).map((item, index) => (
                   <TouchableOpacity
                     key={item.id}
-                    style={[styles.overviewItem, index < Math.min(itinerary.length, 4) - 1 && styles.overviewItemBorder]}
+                    style={[styles.overviewItem, index < Math.min(itinerary.length, 2) - 1 && styles.overviewItemBorder]}
                     onPress={goToItinerary}
                   >
                     <View style={styles.overviewDayBadge}>
@@ -396,9 +402,9 @@ export default function HomeScreen({ onBackToHome }) {
                     <Text style={styles.overviewTime}>{item.time || '--:--'}</Text>
                   </TouchableOpacity>
                 ))}
-                {itinerary.length > 4 && (
+                {itinerary.length > 2 && (
                   <TouchableOpacity style={styles.moreItemsButton} onPress={goToItinerary}>
-                    <Text style={styles.moreItems}>+{itinerary.length - 4} more activities →</Text>
+                    <Text style={styles.moreItems}>+{itinerary.length - 2} more activities →</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -444,9 +450,9 @@ export default function HomeScreen({ onBackToHome }) {
                     </TouchableOpacity>
                   );
                 })}
-                {expenses.length > 4 && (
+                {expenses.length > 2 && (
                   <TouchableOpacity style={styles.moreItemsButton} onPress={goToExpenses}>
-                    <Text style={styles.moreItems}>+{expenses.length - 4} more expenses →</Text>
+                    <Text style={styles.moreItems}>+{expenses.length - 2} more expenses →</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -465,20 +471,47 @@ export default function HomeScreen({ onBackToHome }) {
             </View>
             <View style={styles.participantsCard}>
               <View style={styles.participantsList}>
-                <View style={styles.participantItem}>
-                  <View style={[styles.participantAvatar, { backgroundColor: colors.primary }]}>
-                    <Text style={styles.participantInitial}>You</Text>
-                  </View>
-                  <Text style={styles.participantName}>You (Organizer)</Text>
-                </View>
-                {travelers.map((p, index) => (
-                  <View key={index} style={styles.participantItem}>
-                    <View style={styles.participantAvatar}>
-                      <Text style={styles.participantInitial}>{p.name?.charAt(0) || '?'}</Text>
+                {tripInfo.tripType === 'family' ? (
+                  // Grouped View for Family
+                  (() => {
+                    const groups = {};
+                    const allTravelers = [
+                      { name: 'You', familyGroup: 'Family 1', isOrganizer: true },
+                      ...travelers
+                    ];
+
+                    allTravelers.forEach(t => {
+                      const gName = t.familyGroup || 'Family 1';
+                      if (!groups[gName]) groups[gName] = [];
+                      groups[gName].push(t.name);
+                    });
+
+                    return Object.entries(groups).map(([groupName, members], gIndex) => (
+                      <View key={groupName} style={[styles.familyGroupItem, gIndex > 0 && styles.familyGroupDivider]}>
+                        <Text style={styles.familyGroupName}>{groupName}</Text>
+                        <Text style={styles.familyGroupMembers}>{members.join(', ')}</Text>
+                      </View>
+                    ));
+                  })()
+                ) : (
+                  // Original View for Friends/Others
+                  <>
+                    <View style={styles.participantItem}>
+                      <View style={[styles.participantAvatar, { backgroundColor: colors.primary }]}>
+                        <Text style={styles.participantInitial}>You</Text>
+                      </View>
+                      <Text style={styles.participantName}>You (Organizer)</Text>
                     </View>
-                    <Text style={styles.participantName}>{p.name}</Text>
-                  </View>
-                ))}
+                    {travelers.map((p, index) => (
+                      <View key={index} style={styles.participantItem}>
+                        <View style={styles.participantAvatar}>
+                          <Text style={styles.participantInitial}>{p.name?.charAt(0) || '?'}</Text>
+                        </View>
+                        <Text style={styles.participantName}>{p.name}</Text>
+                      </View>
+                    ))}
+                  </>
+                )}
               </View>
             </View>
           </Animated.View>
@@ -924,7 +957,29 @@ const createStyles = (colors) => StyleSheet.create({
   // Participants
   participantsSection: { paddingHorizontal: 20, marginBottom: 20 },
   participantsCard: { backgroundColor: colors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
-  participantsList: { gap: 12 },
+  participantsList: {
+    padding: 8,
+  },
+  familyGroupItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  familyGroupName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  familyGroupMembers: {
+    fontSize: 14,
+    color: colors.textMuted,
+    lineHeight: 20,
+  },
+  familyGroupDivider: {
+    borderTopWidth: 1,
+    borderTopColor: colors.primaryBorder,
+    marginTop: 8,
+  },
   participantItem: { flexDirection: 'row', alignItems: 'center' },
   participantAvatar: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.cardLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   participantInitial: { color: colors.text, fontSize: 14, fontWeight: '600' },

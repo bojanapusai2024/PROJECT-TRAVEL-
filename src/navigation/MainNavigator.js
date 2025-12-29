@@ -189,7 +189,7 @@ export default function MainNavigator() {
   }
 
   if (currentScreen === 'Profile') {
-    return <ProfileScreen onBack={handleBackToHome} />;
+    return <ProfileScreen onBack={handleBackToHome} onOpenTrip={handleMyTrip} />;
   }
 
   if (currentScreen === 'TripDashboard') {
