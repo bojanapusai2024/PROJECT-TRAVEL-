@@ -5,12 +5,12 @@ import * as DB from '../services/databaseService';
 import { auth } from '../config/firebase';
 
 const DEFAULT_CATEGORIES = [
-  { key: 'accommodation', label: 'Stay', emoji: '🏨', color: '#8B5CF6', tip: '30-40%' },
-  { key: 'transport', label: 'Transport', emoji: '🚗', color: '#3B82F6', tip: '15-25%' },
-  { key: 'food', label: 'Food', emoji: '🍽️', color: '#F59E0B', tip: '20-30%' },
-  { key: 'activities', label: 'Activities', emoji: '🎭', color: '#10B981', tip: '10-15%' },
-  { key: 'shopping', label: 'Shopping', emoji: '🛍️', color: '#EC4899', tip: '5-10%' },
-  { key: 'other', label: 'Other', emoji: '📦', color: '#6B7280', tip: '5-10%' },
+  { key: 'accommodation', label: 'Stay', icon: 'stay', color: '#8B5CF6', tip: '30-40%' },
+  { key: 'transport', label: 'Transport', icon: 'transport', color: '#3B82F6', tip: '15-25%' },
+  { key: 'food', label: 'Food', icon: 'food', color: '#F59E0B', tip: '20-30%' },
+  { key: 'activities', label: 'Activities', icon: 'activities', color: '#10B981', tip: '10-15%' },
+  { key: 'shopping', label: 'Shopping', icon: 'shopping', color: '#EC4899', tip: '5-10%' },
+  { key: 'other', label: 'Other', icon: 'other', color: '#6B7280', tip: '5-10%' },
 ];
 
 const currencies = [

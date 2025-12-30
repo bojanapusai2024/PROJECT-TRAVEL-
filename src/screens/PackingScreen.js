@@ -1,23 +1,24 @@
 import React, { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
-  Modal, StyleSheet, Dimensions, Alert
+  Modal, StyleSheet, Dimensions, Alert, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTravelContext } from '../context/TravelContext';
 import { useTheme } from '../context/ThemeContext';
+import Icon from '../components/Icon';
 
 const { width } = Dimensions.get('window');
 
 const PACKING_CATEGORIES = [
-  { key: 'essentials', label: 'Essentials', emoji: '🎒', color: '#EF4444' },
-  { key: 'clothing', label: 'Clothing', emoji: '👕', color: '#3B82F6' },
-  { key: 'toiletries', label: 'Toiletries', emoji: '🧴', color: '#10B981' },
-  { key: 'electronics', label: 'Electronics', emoji: '📱', color: '#8B5CF6' },
-  { key: 'documents', label: 'Documents', emoji: '📄', color: '#F59E0B' },
-  { key: 'accessories', label: 'Accessories', emoji: '🕶️', color: '#EC4899' },
-  { key: 'health', label: 'Health', emoji: '💊', color: '#06B6D4' },
-  { key: 'other', label: 'Other', emoji: '📦', color: '#6B7280' },
+  { key: 'essentials', label: 'Essentials', icon: 'packing', color: '#EF4444' },
+  { key: 'clothing', label: 'Clothing', icon: 'shopping', color: '#3B82F6' },
+  { key: 'toiletries', label: 'Toiletries', icon: 'health', color: '#10B981' },
+  { key: 'electronics', label: 'Electronics', icon: 'mobile', color: '#8B5CF6' },
+  { key: 'documents', label: 'Documents', icon: 'ticket', color: '#F59E0B' },
+  { key: 'accessories', label: 'Accessories', icon: 'camera', color: '#EC4899' },
+  { key: 'health', label: 'Health', icon: 'health', color: '#06B6D4' },
+  { key: 'other', label: 'Other', icon: 'other', color: '#6B7280' },
 ];
 
 const QUICK_ADD_ITEMS = {
@@ -99,7 +100,10 @@ export default function PackingScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>🎒 Packing List</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="packing" size={24} color={colors.text} style={{ marginRight: 8 }} />
+            <Text style={styles.headerTitle}>Packing List</Text>
+          </View>
           <Text style={styles.headerSubtitle}>
             {tripInfo.destination ? `For ${tripInfo.destination}` : 'Pack smart, travel light'}
           </Text>
@@ -148,7 +152,7 @@ export default function PackingScreen() {
                 ]}
                 onPress={() => setFilterCategory(filterCategory === cat.key ? 'all' : cat.key)}
               >
-                <Text style={styles.categoryPillEmoji}>{cat.emoji}</Text>
+                <Icon name={cat.icon} size={20} color={filterCategory === cat.key ? '#FFF' : cat.color} style={{ marginRight: 8 }} />
                 <View style={styles.categoryPillInfo}>
                   <Text style={[styles.categoryPillLabel, filterCategory === cat.key && { color: '#FFF' }]}>{cat.label}</Text>
                   <Text style={[styles.categoryPillCount, filterCategory === cat.key && { color: 'rgba(255,255,255,0.8)' }]}>
@@ -171,7 +175,7 @@ export default function PackingScreen() {
             {PACKING_CATEGORIES.slice(0, 4).map((cat) => (
               <View key={cat.key} style={styles.quickAddCategory}>
                 <View style={styles.quickAddHeader}>
-                  <Text style={styles.quickAddEmoji}>{cat.emoji}</Text>
+                  <View style={{ marginRight: 8 }}><Icon name={cat.icon} size={18} color={cat.color} /></View>
                   <Text style={styles.quickAddLabel}>{cat.label}</Text>
                 </View>
                 <View style={styles.quickAddItems}>
@@ -200,7 +204,7 @@ export default function PackingScreen() {
 
             {filteredItems.length === 0 ? (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>🔍</Text>
+                <Icon name="search" size={48} color={colors.textMuted} style={{ marginBottom: 12 }} />
                 <Text style={styles.emptyTitle}>No items found</Text>
                 <Text style={styles.emptyText}>Try adjusting your filters</Text>
               </View>
@@ -212,7 +216,7 @@ export default function PackingScreen() {
                 return (
                   <View key={cat.key} style={styles.categoryGroup}>
                     <View style={[styles.categoryHeader, { borderLeftColor: cat.color }]}>
-                      <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+                      <View style={{ marginRight: 8 }}><Icon name={cat.icon} size={18} color={cat.color} /></View>
                       <Text style={styles.categoryTitle}>{cat.label}</Text>
                       <View style={[styles.categoryBadge, { backgroundColor: cat.color + '20' }]}>
                         <Text style={[styles.categoryBadgeText, { color: cat.color }]}>
@@ -301,7 +305,7 @@ export default function PackingScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Add Item</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalClose}>
-                <Text style={styles.modalCloseText}>✕</Text>
+                <Icon name="close" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -329,7 +333,7 @@ export default function PackingScreen() {
                       ]}
                       onPress={() => setNewItem({ ...newItem, category: cat.key })}
                     >
-                      <Text style={styles.categoryOptionEmoji}>{cat.emoji}</Text>
+                      <Icon name={cat.icon} size={16} color={newItem.category === cat.key ? '#FFF' : cat.color} style={{ marginRight: 6 }} />
                       <Text style={[styles.categoryOptionText, newItem.category === cat.key && { color: '#FFF' }]}>
                         {cat.label}
                       </Text>
@@ -345,7 +349,7 @@ export default function PackingScreen() {
                     style={styles.quantityBtn}
                     onPress={() => setNewItem({ ...newItem, quantity: Math.max(1, parseInt(newItem.quantity) - 1).toString() })}
                   >
-                    <Text style={styles.quantityBtnText}>−</Text>
+                    <Text style={[styles.quantityBtnText, { fontSize: 24, paddingBottom: 4 }]}>-</Text>
                   </TouchableOpacity>
                   <TextInput
                     style={styles.quantityInput}
@@ -357,7 +361,7 @@ export default function PackingScreen() {
                     style={styles.quantityBtn}
                     onPress={() => setNewItem({ ...newItem, quantity: (parseInt(newItem.quantity) + 1).toString() })}
                   >
-                    <Text style={styles.quantityBtnText}>+</Text>
+                    <Icon name="add" size={20} color={colors.primary} />
                   </TouchableOpacity>
                 </View>
               </View>

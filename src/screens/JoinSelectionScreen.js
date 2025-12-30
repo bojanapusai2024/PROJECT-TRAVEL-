@@ -8,10 +8,12 @@ import {
     TextInput,
     Alert,
     SafeAreaView,
-    StatusBar
+    StatusBar,
+    Image
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useTravelContext } from '../context/TravelContext';
+import Icon from '../components/Icon';
 
 export default function JoinSelectionScreen({ trip, onBack, onJoinComplete }) {
     const { colors, isDark } = useTheme();
@@ -51,7 +53,7 @@ export default function JoinSelectionScreen({ trip, onBack, onJoinComplete }) {
 
             <View style={styles.header}>
                 <Pressable onPress={onBack} style={styles.backButton}>
-                    <Text style={[styles.backButtonText, { color: colors.primary }]}>← Back</Text>
+                    <Icon name="arrow_left" size={24} color={colors.text} />
                 </Pressable>
                 <Text style={[styles.headerTitle, { color: colors.text }]}>Identity Selection</Text>
                 <View style={{ width: 60 }} />
@@ -60,7 +62,7 @@ export default function JoinSelectionScreen({ trip, onBack, onJoinComplete }) {
             <ScrollView contentContainerStyle={styles.content}>
                 <View style={styles.iconContainer}>
                     <View style={[styles.iconBg, { backgroundColor: colors.primaryMuted }]}>
-                        <Text style={styles.icon}>👤</Text>
+                        <Icon name="profile" size={32} color={colors.primary} />
                     </View>
                 </View>
 
@@ -83,7 +85,7 @@ export default function JoinSelectionScreen({ trip, onBack, onJoinComplete }) {
                         }}
                     >
                         <View style={styles.cardContent}>
-                            <Text style={styles.cardEmoji}>✨</Text>
+                            <Icon name="add" size={24} color={colors.primary} style={{ marginRight: 12 }} />
                             <Text style={[styles.cardName, { color: colors.text }]}>Join as new traveler</Text>
                         </View>
                         {joiningAsNew && <View style={[styles.radioActive, { backgroundColor: colors.primary }]} />}
@@ -131,7 +133,7 @@ export default function JoinSelectionScreen({ trip, onBack, onJoinComplete }) {
                                 disabled={isClaimed}
                             >
                                 <View style={styles.cardContent}>
-                                    <Text style={styles.cardEmoji}>👤</Text>
+                                    <Icon name="profile" size={24} color={colors.text} style={{ marginRight: 16 }} />
                                     <View>
                                         <Text style={[styles.cardName, { color: colors.text }]}>{p.name}</Text>
                                         {isClaimed && <Text style={[styles.statusText, { color: colors.textMuted }]}>Occupied</Text>}

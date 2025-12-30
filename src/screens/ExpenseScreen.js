@@ -1,18 +1,19 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, StyleSheet, Dimensions, Alert, Animated } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, StyleSheet, Dimensions, Alert, Animated, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTravelContext } from '../context/TravelContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { auth } from '../config/firebase';
 import DatePickerModal from '../components/DatePickerModal';
+import Icon from '../components/Icon';
 
 const { width } = Dimensions.get('window');
 
 // Fallback if context fails
 const DEFAULT_CATEGORIES = [
-  { key: 'food', label: 'Food', emoji: '🍽️', color: '#F59E0B' },
-  { key: 'transport', label: 'Transport', emoji: '🚗', color: '#3B82F6' },
+  { key: 'food', label: 'Food', icon: 'food', color: '#F59E0B' },
+  { key: 'transport', label: 'Transport', icon: 'transport', color: '#3B82F6' },
 ];
 
 export default function ExpenseScreen() {
@@ -336,7 +337,7 @@ export default function ExpenseScreen() {
                 return (
                   <View key={expense.id} style={styles.expenseCard}>
                     <View style={[styles.exIcon, { backgroundColor: cat.color + '20' }]}>
-                      <Text style={styles.exEmoji}>{cat.emoji}</Text>
+                      <Icon name={cat.icon || cat.key} size={20} color={cat.color} />
                     </View>
                     <View style={styles.exContent}>
                       <View style={styles.exHeaderRow}>
@@ -462,7 +463,7 @@ export default function ExpenseScreen() {
                       <TouchableOpacity key={cat.key} onPress={() => setNewExpense({ ...newExpense, category: cat.key })}
                         style={[styles.catChip, newExpense.category === cat.key && { backgroundColor: cat.color, borderColor: cat.color }]}
                       >
-                        <Text style={styles.catEmoji}>{cat.emoji}</Text>
+                        <Icon name={cat.icon || cat.key} size={16} color={newExpense.category === cat.key ? 'white' : cat.color} />
                         <Text style={[styles.catLabel, newExpense.category === cat.key && { color: 'white' }]}>{cat.label}</Text>
                       </TouchableOpacity>
                     ))}

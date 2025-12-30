@@ -18,14 +18,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, THEMES } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useTravelContext } from '../context/TravelContext';
+import Icon from '../components/Icon';
 
-const AVATARS = ['👤', '👨', '👩', '🧑', '👨‍💼', '👩‍💼', '🧳', '✈️', '🌍', '🏖️', '⛰️', '🗺️'];
+const AVATARS = ['profile', 'user', 'group', 'family', 'couple', 'business', 'packing', 'airplane', 'map', 'beach', 'nature', 'location'];
 const TRIP_TYPES = [
-  { key: 'solo', label: 'Solo Trip', emoji: '🧑', color: '#3B82F6' },
-  { key: 'friends', label: 'With Friends', emoji: '👥', color: '#10B981' },
-  { key: 'family', label: 'Family Trip', emoji: '👨‍👩‍👧‍👦', color: '#F59E0B' },
-  { key: 'couple', label: 'Couple Trip', emoji: '💑', color: '#EC4899' },
-  { key: 'business', label: 'Business Trip', emoji: '💼', color: '#8B5CF6' },
+  { key: 'solo', label: 'Solo Trip', icon: 'profile', color: '#3B82F6' },
+  { key: 'friends', label: 'With Friends', icon: 'group', color: '#10B981' },
+  { key: 'family', label: 'Family Trip', icon: 'family', color: '#F59E0B' },
+  { key: 'couple', label: 'Couple Trip', icon: 'couple', color: '#EC4899' },
+  { key: 'business', label: 'Business Trip', icon: 'business', color: '#8B5CF6' },
 ];
 
 const { width } = Dimensions.get('window');
@@ -95,9 +96,9 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [editForm, setEditForm] = useState({
     displayName: user?.displayName || '',
-    avatar: '👤',
+    avatar: 'profile',
   });
-  const [selectedAvatar, setSelectedAvatar] = useState('👤');
+  const [selectedAvatar, setSelectedAvatar] = useState('profile');
 
   const headerAnim = useRef(new Animated.Value(0)).current;
 
@@ -186,9 +187,9 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
     }
   };
 
-  const getTripTypeEmoji = (type) => {
+  const getTripTypeIcon = (type) => {
     const found = TRIP_TYPES.find(t => t.key === type);
-    return found ? found.emoji : '🧳';
+    return found ? found.icon : 'packing';
   };
 
   const handleTripPress = async (trip) => {
@@ -216,14 +217,14 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
               <Text style={styles.modalSubtitle}>{trips.length} adventures</Text>
             </View>
             <TouchableOpacity onPress={() => setVisible(false)}>
-              <Text style={styles.modalClose}>✕</Text>
+              <Icon name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.historyList} showsVerticalScrollIndicator={false}>
             {trips.length === 0 ? (
               <View style={styles.emptyHistory}>
-                <Text style={styles.emptyHistoryEmoji}>{emptyEmoji}</Text>
+                <Icon name="beach" size={40} color={colors.textMuted} style={{ marginBottom: 8 }} />
                 <Text style={styles.emptyHistoryText}>{emptyMessage}</Text>
               </View>
             ) : (
@@ -238,7 +239,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
                   >
                     <View style={styles.historyCardLeft}>
                       <View style={[styles.historyIconContainer, { backgroundColor: isDark ? colors.cardLight : '#F3F4F6' }]}>
-                        <Text style={styles.historyIcon}>{getTripTypeEmoji(trip.tripType)}</Text>
+                        <Icon name={getTripTypeIcon(trip.tripType)} size={24} color={colors.primary} />
                       </View>
                       <View style={styles.historyInfo}>
                         <Text style={styles.historyDestination}>{trip.destination || trip.name}</Text>
@@ -253,7 +254,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
                     <View style={styles.historyCardRight}>
                       <TouchableOpacity style={styles.syncButton}>
                         <View style={styles.syncIconContainer}>
-                          <Text style={styles.syncIcon}>📤</Text>
+                          <Icon name="message" size={16} color={colors.primary} />
                         </View>
                       </TouchableOpacity>
                       <Text style={styles.historyArrow}>→</Text>
@@ -286,7 +287,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
         ]}
       >
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Icon name="back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
         <TouchableOpacity
@@ -296,7 +297,10 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             setShowEditModal(true);
           }}
         >
-          <Text style={styles.editButtonText}>✏️ Edit</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="edit" size={16} color={colors.primary} style={{ marginRight: 4 }} />
+            <Text style={styles.editButtonText}>Edit</Text>
+          </View>
         </TouchableOpacity>
       </Animated.View>
 
@@ -316,10 +320,10 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
                 onPress={() => setShowAvatarPicker(true)}
               >
                 <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{selectedAvatar !== '👤' ? selectedAvatar : getInitials()}</Text>
+                  <Icon name={selectedAvatar} size={40} color={colors.primary} />
                 </View>
                 <View style={styles.avatarBadge}>
-                  <Text style={styles.avatarBadgeText}>✏️</Text>
+                  <Icon name="edit" size={12} color="#FFF" />
                 </View>
               </TouchableOpacity>
 
@@ -327,7 +331,8 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
                 <Text style={styles.userName}>{user?.displayName || 'Traveler'}</Text>
                 <Text style={styles.userEmail}>{user?.email}</Text>
                 <View style={styles.memberBadge}>
-                  <Text style={styles.memberBadgeText}>🎖️ Member since {getMemberSince()}</Text>
+                  <Icon name="like" size={12} color="#FFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.memberBadgeText}>Member since {getMemberSince()}</Text>
                 </View>
               </View>
             </View>
@@ -335,7 +340,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             {/* Verified Badge */}
             {user?.emailVerified && (
               <View style={styles.verifiedContainer}>
-                <Text style={styles.verifiedIcon}>✓</Text>
+                <Icon name="location" size={14} color="#10B981" style={{ marginRight: 4 }} />
                 <Text style={styles.verifiedText}>Email Verified</Text>
               </View>
             )}
@@ -349,7 +354,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#3B82F640' : '#3B82F620' }]}>
-                  <Text style={styles.settingIcon}>📜</Text>
+                  <Icon name="clock" size={20} color={colors.primary} />
                 </View>
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingLabel}>Trip History</Text>
@@ -369,7 +374,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#8B5CF640' : '#8B5CF620' }]}>
-                  <Text style={styles.settingIcon}>{THEMES[currentTheme]?.icon || '🎨'}</Text>
+                  <Icon name="settings" size={20} color="#8B5CF6" />
                 </View>
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingLabel}>Theme</Text>
@@ -386,7 +391,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#10B98140' : '#10B98120' }]}>
-                  <Text style={styles.settingIcon}>{currency.flag}</Text>
+                  <Icon name="money" size={20} color="#10B981" />
                 </View>
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingLabel}>Currency</Text>
@@ -401,7 +406,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#F59E0B40' : '#F59E0B20' }]}>
-                  <Text style={styles.settingIcon}>🔔</Text>
+                  <Icon name="notification" size={20} color="#F59E0B" />
                 </View>
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingLabel}>Notifications</Text>
@@ -425,7 +430,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#6B728040' : '#6B728020' }]}>
-                  <Text style={styles.settingIcon}>📋</Text>
+                  <Icon name="task" size={20} color="#6B7280" />
                 </View>
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingLabel}>Export Data</Text>
@@ -440,7 +445,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#6B728040' : '#6B728020' }]}>
-                  <Text style={styles.settingIcon}>🔒</Text>
+                  <Icon name="lock" size={20} color="#6B7280" />
                 </View>
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingLabel}>Privacy Policy</Text>
@@ -460,7 +465,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#06B6D440' : '#06B6D420' }]}>
-                  <Text style={styles.settingIcon}>💬</Text>
+                  <Icon name="message" size={20} color="#06B6D4" />
                 </View>
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingLabel}>Help & Support</Text>
@@ -475,7 +480,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#EC489940' : '#EC489920' }]}>
-                  <Text style={styles.settingIcon}>⭐</Text>
+                  <Icon name="heart" size={20} color="#EC4899" />
                 </View>
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingLabel}>Rate TripNest</Text>
@@ -495,7 +500,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             <View style={[styles.settingItem, styles.dangerItem]}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: '#EF444420' }]}>
-                  <Text style={styles.settingIcon}>🚪</Text>
+                  <Icon name="logout" size={20} color="#EF4444" />
                 </View>
                 <View style={styles.settingInfo}>
                   <Text style={[styles.settingLabel, { color: '#EF4444' }]}>Sign Out</Text>
@@ -510,7 +515,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             <View style={[styles.settingItem, styles.dangerItem]}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: '#EF444420' }]}>
-                  <Text style={styles.settingIcon}>🗑️</Text>
+                  <Icon name="delete" size={20} color="#EF4444" />
                 </View>
                 <View style={styles.settingInfo}>
                   <Text style={[styles.settingLabel, { color: '#EF4444' }]}>Delete Account</Text>
@@ -525,7 +530,10 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
         {/* App Version */}
         <AnimatedCard delay={450}>
           <View style={styles.footer}>
-            <Text style={styles.appLogo}>✈️ TripNest</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <Icon name="airplane" size={20} color={colors.textMuted} style={{ marginRight: 6 }} />
+              <Text style={styles.appLogo}>TripNest</Text>
+            </View>
             <Text style={styles.version}>Version 1.0.0</Text>
             <Text style={styles.copyright}>Made with ❤️ for travelers</Text>
           </View>
@@ -644,7 +652,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
                     setShowAvatarPicker(false);
                   }}
                 >
-                  <Text style={styles.avatarOptionText}>{avatar}</Text>
+                  <Icon name={avatar} size={32} color={colors.primary} />
                 </TouchableOpacity>
               ))}
             </View>

@@ -1,36 +1,37 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, TextInput, ScrollView,
-  StyleSheet, Animated, Pressable, KeyboardAvoidingView, Platform, Alert
+  StyleSheet, Animated, Pressable, KeyboardAvoidingView, Platform, Alert, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import DatePickerModal from '../components/DatePickerModal';
 import { useTravelContext } from '../context/TravelContext';
 import { useAuth } from '../context/AuthContext';
+import Icon from '../components/Icon';
 
 const TRIP_TYPES = [
-  { key: 'solo', label: 'Solo Trip', emoji: '🧑', description: 'Just me, exploring the world', color: '#3B82F6' },
-  { key: 'friends', label: 'With Friends', emoji: '👥', description: 'Adventure with my buddies', color: '#10B981' },
-  { key: 'family', label: 'Family Trip', emoji: '👨‍👩‍👧‍👦', description: 'Quality time with family', color: '#F59E0B' },
-  { key: 'couple', label: 'Couple Trip', emoji: '💑', description: 'Romantic getaway for two', color: '#EC4899' },
-  { key: 'business', label: 'Business Trip', emoji: '💼', description: 'Work travel with leisure', color: '#8B5CF6' },
+  { key: 'solo', label: 'Solo Trip', icon: 'profile', description: 'Just me, exploring the world', color: '#3B82F6' },
+  { key: 'friends', label: 'With Friends', icon: 'group', description: 'Adventure with my buddies', color: '#10B981' },
+  { key: 'family', label: 'Family Trip', icon: 'family', description: 'Quality time with family', color: '#F59E0B' },
+  { key: 'couple', label: 'Couple Trip', icon: 'couple', description: 'Romantic getaway for two', color: '#EC4899' },
+  { key: 'business', label: 'Business Trip', icon: 'business', description: 'Work travel with leisure', color: '#8B5CF6' },
 ];
 
 const POPULAR_DESTINATIONS = [
-  { name: 'Paris', country: 'France', emoji: '🗼' },
-  { name: 'Tokyo', country: 'Japan', emoji: '🗾' },
-  { name: 'Bali', country: 'Indonesia', emoji: '🏝️' },
-  { name: 'New York', country: 'USA', emoji: '🗽' },
-  { name: 'Dubai', country: 'UAE', emoji: '🏙️' },
-  { name: 'London', country: 'UK', emoji: '🎡' },
+  { name: 'Paris', country: 'France', icon: 'location' },
+  { name: 'Tokyo', country: 'Japan', icon: 'location' },
+  { name: 'Bali', country: 'Indonesia', icon: 'beach' },
+  { name: 'New York', country: 'USA', icon: 'building' },
+  { name: 'Dubai', country: 'UAE', icon: 'building' },
+  { name: 'London', country: 'UK', icon: 'location' },
 ];
 
 const BUDGET_PRESETS = [
-  { label: 'Budget', range: '$500 - $1,000', value: 750, emoji: '💵' },
-  { label: 'Moderate', range: '$1,000 - $3,000', value: 2000, emoji: '💳' },
-  { label: 'Luxury', range: '$3,000 - $5,000', value: 4000, emoji: '💎' },
-  { label: 'Premium', range: '$5,000+', value: 7500, emoji: '👑' },
+  { label: 'Budget', range: '$500 - $1,000', value: 750, icon: 'money' },
+  { label: 'Moderate', range: '$1,000 - $3,000', value: 2000, icon: 'card' },
+  { label: 'Luxury', range: '$3,000 - $5,000', value: 4000, icon: 'diamond' },
+  { label: 'Premium', range: '$5,000+', value: 7500, icon: 'crown' },
 ];
 
 export default function TripSetupScreen({ onComplete, onBack }) {
@@ -72,8 +73,8 @@ export default function TripSetupScreen({ onComplete, onBack }) {
   // Dynamic steps based on trip type
   const getSteps = () => {
     const baseSteps = [
-      { key: 'location', title: 'Trip Details', subtitle: 'Where and when are you going?', icon: '🌍' },
-      { key: 'tripType', title: 'Trip Type', subtitle: 'Who are you traveling with?', icon: '👥' },
+      { key: 'location', title: 'Trip Details', subtitle: 'Where and when are you going?', icon: 'location' },
+      { key: 'tripType', title: 'Trip Type', subtitle: 'Who are you traveling with?', icon: 'group' },
     ];
 
     // Add companions step based on trip type (skip for solo)
@@ -113,11 +114,11 @@ export default function TripSetupScreen({ onComplete, onBack }) {
 
   const getCompanionsIcon = () => {
     switch (tripData.tripType) {
-      case 'friends': return '🎉';
-      case 'family': return '👨‍👩‍👧‍👦';
-      case 'couple': return '💕';
-      case 'business': return '💼';
-      default: return '👥';
+      case 'friends': return 'party';
+      case 'family': return 'family';
+      case 'couple': return 'couple';
+      case 'business': return 'business';
+      default: return 'group';
     }
   };
 
@@ -387,7 +388,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
               <Text style={styles.inputLabel}>📍 Destination</Text>
               <View style={styles.inputContainer}>
                 <View style={styles.inputIconBg}>
-                  <Text style={styles.inputIcon}>🔍</Text>
+                  <Icon name="search" size={20} color={colors.textMuted} />
                 </View>
                 <TextInput
                   style={[styles.mainInput, { outlineStyle: 'none' }]}
@@ -398,7 +399,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                 />
                 {tripData.destination.length > 0 && (
                   <Pressable onPress={() => setTripData({ ...tripData, destination: '' })} style={styles.clearButton}>
-                    <Text style={styles.clearButtonText}>✕</Text>
+                    <Icon name="close" size={16} color={colors.textMuted} />
                   </Pressable>
                 )}
               </View>
@@ -414,7 +415,8 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                   style={({ pressed }) => [styles.dateCard, pressed && { opacity: 0.9 }]}
                   onPress={() => setShowStartDatePicker(true)}
                 >
-                  <Text style={styles.dateCardEmoji}>🛫</Text>
+
+                  <Icon name="flight_takeoff" size={24} color={colors.primary} style={{ marginBottom: 8 }} />
                   <View style={styles.dateCardContent}>
                     <Text style={styles.dateCardLabel}>Start</Text>
                     <Text style={[styles.dateCardValue, !tripData.startDate && styles.dateCardPlaceholder]}>
@@ -432,7 +434,8 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                   style={({ pressed }) => [styles.dateCard, pressed && { opacity: 0.9 }]}
                   onPress={() => setShowEndDatePicker(true)}
                 >
-                  <Text style={styles.dateCardEmoji}>🛬</Text>
+
+                  <Icon name="flight_land" size={24} color={colors.primary} style={{ marginBottom: 8 }} />
                   <View style={styles.dateCardContent}>
                     <Text style={styles.dateCardLabel}>End</Text>
                     <Text style={[styles.dateCardValue, !tripData.endDate && styles.dateCardPlaceholder]}>
@@ -445,7 +448,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
               {/* Duration Preview */}
               {tripData.startDate && tripData.endDate && (
                 <View style={styles.durationCard}>
-                  <Text style={styles.durationIcon}>📆</Text>
+                  <Icon name="calendar" size={16} color={colors.primary} style={{ marginRight: 6 }} />
                   <Text style={styles.durationText}>
                     {calculateDuration(tripData.startDate, tripData.endDate)} days trip
                   </Text>
@@ -472,7 +475,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                   onPress={() => selectTripType(type)}
                 >
                   <View style={[styles.tripTypeIconBg, { backgroundColor: type.color + '20' }]}>
-                    <Text style={styles.tripTypeEmoji}>{type.emoji}</Text>
+                    <Icon name={type.icon} size={28} color={type.color} />
                   </View>
                   <View style={styles.tripTypeInfo}>
                     <Text style={styles.tripTypeLabel}>{type.label}</Text>
@@ -525,7 +528,8 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                     ]}
                     onPress={() => selectBudgetPreset(preset)}
                   >
-                    <Text style={styles.presetEmoji}>{preset.emoji}</Text>
+
+                    <Icon name={preset.icon} size={28} color={tripData.budget === preset.value.toString() ? '#FFF' : colors.primary} style={{ marginBottom: 8 }} />
                     <Text style={[styles.presetLabel, tripData.budget === preset.value.toString() && styles.presetLabelActive]}>
                       {preset.label}
                     </Text>
@@ -542,7 +546,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
               <Text style={styles.summaryTitle}>📋 Trip Summary</Text>
 
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryEmoji}>📍</Text>
+                <Icon name="location" size={20} color={colors.primary} style={{ marginRight: 10 }} />
                 <View style={styles.summaryContent}>
                   <Text style={styles.summaryLabel}>Destination</Text>
                   <Text style={styles.summaryValue}>{tripData.destination}</Text>
@@ -550,7 +554,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
               </View>
 
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryEmoji}>📅</Text>
+                <Icon name="calendar" size={20} color={colors.primary} style={{ marginRight: 10 }} />
                 <View style={styles.summaryContent}>
                   <Text style={styles.summaryLabel}>Dates</Text>
                   <Text style={styles.summaryValue}>{tripData.startDate} → {tripData.endDate}</Text>
@@ -558,7 +562,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
               </View>
 
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryEmoji}>{TRIP_TYPES.find(t => t.key === tripData.tripType)?.emoji || '👤'}</Text>
+                <Icon name={TRIP_TYPES.find(t => t.key === tripData.tripType)?.icon || 'profile'} size={20} color={colors.primary} style={{ marginRight: 10 }} />
                 <View style={styles.summaryContent}>
                   <Text style={styles.summaryLabel}>Trip Type</Text>
                   <Text style={styles.summaryValue}>
@@ -571,7 +575,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
 
             {/* Tip */}
             <View style={styles.tipCard}>
-              <Text style={styles.tipEmoji}>💡</Text>
+              <Icon name="bulb" size={20} color="#F59E0B" style={{ marginRight: 10 }} />
               <Text style={styles.tipText}>
                 Budget can be adjusted anytime during your trip planning.
               </Text>
@@ -604,7 +608,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
             <View style={styles.addCompanionSection}>
               <View style={styles.inputContainer}>
                 <View style={styles.inputIconBg}>
-                  <Text style={styles.inputIcon}>👤</Text>
+                  <Icon name="profile" size={20} color={colors.textMuted} />
                 </View>
                 <TextInput
                   style={[styles.mainInput, { outlineStyle: 'none' }]}
@@ -631,7 +635,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
               </Text>
               {tripData.friends.length === 0 ? (
                 <View style={styles.emptyCompanions}>
-                  <Text style={styles.emptyEmoji}>👥</Text>
+                  <Icon name="group" size={40} color={colors.textMuted + '50'} style={{ marginBottom: 8 }} />
                   <Text style={styles.emptyText}>No friends added yet</Text>
                   <Text style={styles.emptyHint}>Add friends who are joining this trip</Text>
                 </View>
@@ -643,7 +647,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                     </View>
                     <Text style={styles.companionName}>{friend}</Text>
                     <Pressable style={styles.removeBtn} onPress={() => removeFriend(index)}>
-                      <Text style={styles.removeBtnText}>✕</Text>
+                      <Icon name="close" size={14} color={colors.textMuted} />
                     </Pressable>
                   </View>
                 ))
@@ -662,7 +666,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
           return (
             <View style={styles.stepContent}>
               <View style={styles.familyCountContainer}>
-                <Text style={styles.familyCountEmoji}>👨‍👩‍👧‍👦</Text>
+                <Icon name="family" size={60} color={colors.primary} style={{ marginBottom: 16 }} />
                 <Text style={styles.familyCountTitle}>How many families are joining?</Text>
                 <Text style={styles.familyCountSubtitle}>Including your own family</Text>
 
@@ -743,7 +747,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                             style={styles.removeMemberBtn}
                             onPress={() => removeFamilyMember(fIndex, mIndex)}
                           >
-                            <Text style={styles.removeMemberText}>✕</Text>
+                            <Icon name="close" size={14} color={colors.textMuted} />
                           </Pressable>
                         </View>
                       ))
@@ -760,14 +764,14 @@ export default function TripSetupScreen({ onComplete, onBack }) {
           <View style={styles.stepContent}>
             <View style={styles.coupleSection}>
               <View style={styles.coupleIllustration}>
-                <Text style={styles.coupleEmoji}>💑</Text>
+                <Icon name="couple" size={60} color={colors.primary} />
               </View>
               <Text style={styles.coupleTitle}>Traveling with your partner?</Text>
               <Text style={styles.coupleSubtitle}>Add their name to share this trip</Text>
 
               <View style={styles.inputContainer}>
                 <View style={styles.inputIconBg}>
-                  <Text style={styles.inputIcon}>💕</Text>
+                  <Icon name="heart" size={20} color={colors.primary} />
                 </View>
                 <TextInput
                   style={[styles.mainInput, { outlineStyle: 'none' }]}
@@ -788,7 +792,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
             <View style={styles.addCompanionSection}>
               <View style={styles.inputContainer}>
                 <View style={styles.inputIconBg}>
-                  <Text style={styles.inputIcon}>💼</Text>
+                  <Icon name="business" size={20} color={colors.textMuted} />
                 </View>
                 <TextInput
                   style={[styles.mainInput, { outlineStyle: 'none' }]}
@@ -815,7 +819,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
               </Text>
               {tripData.colleagues.length === 0 ? (
                 <View style={styles.emptyCompanions}>
-                  <Text style={styles.emptyEmoji}>👔</Text>
+                  <Icon name="business" size={40} color={colors.textMuted + '50'} style={{ marginBottom: 8 }} />
                   <Text style={styles.emptyText}>No colleagues added yet</Text>
                   <Text style={styles.emptyHint}>Add colleagues joining this business trip</Text>
                 </View>
@@ -827,7 +831,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                     </View>
                     <Text style={styles.companionName}>{colleague}</Text>
                     <Pressable style={styles.removeBtn} onPress={() => removeColleague(index)}>
-                      <Text style={styles.removeBtnText}>✕</Text>
+                      <Icon name="close" size={14} color={colors.textMuted} />
                     </Pressable>
                   </View>
                 ))
@@ -860,7 +864,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
         {/* Header */}
         <View style={styles.header}>
           <Pressable style={styles.backButton} onPress={handleBack}>
-            <Text style={styles.backButtonText}>←</Text>
+            <Icon name="arrow_left" size={24} color={colors.text} />
           </Pressable>
           <View style={styles.headerCenter}>
             <Text style={styles.stepIndicator}>Step {currentStep + 1} of {totalSteps}</Text>
@@ -879,7 +883,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
         {!(STEPS[currentStep].key === 'companions' && tripData.tripType === 'family') && (
           <Animated.View style={[styles.stepHeader, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
             <View style={styles.stepIconBg}>
-              <Text style={styles.stepIcon}>{STEPS[currentStep].icon}</Text>
+              <Icon name={STEPS[currentStep].icon} size={32} color={colors.primary} />
             </View>
             <Text style={styles.stepTitle}>{STEPS[currentStep].title}</Text>
             <Text style={styles.stepSubtitle}>{STEPS[currentStep].subtitle}</Text>

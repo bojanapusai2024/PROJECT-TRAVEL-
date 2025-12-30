@@ -1,21 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions,
-  Animated, TextInput, Modal, ScrollView, Pressable, Alert
+  Animated, TextInput, Modal, ScrollView, Pressable, Alert, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useTravelContext } from '../context/TravelContext';
 import { isValidTripCode } from '../utils/tripCodeGenerator';
+import Icon from '../components/Icon';
 
 const { width } = Dimensions.get('window');
 
 const TRIP_TYPES = [
-  { key: 'solo', label: 'Solo Trip', emoji: '🧑', description: 'Just me, exploring the world', color: '#3B82F6' },
-  { key: 'friends', label: 'With Friends', emoji: '👥', description: 'Adventure with my buddies', color: '#10B981' },
-  { key: 'family', label: 'Family Trip', emoji: '👨‍👩‍👧‍👦', description: 'Quality time with family', color: '#F59E0B' },
-  { key: 'couple', label: 'Couple Trip', emoji: '💑', description: 'Romantic getaway for two', color: '#EC4899' },
-  { key: 'business', label: 'Business Trip', emoji: '💼', description: 'Work travel with leisure', color: '#8B5CF6' },
+  { key: 'solo', label: 'Solo Trip', icon: 'profile', description: 'Just me, exploring the world', color: '#3B82F6' },
+  { key: 'friends', label: 'With Friends', icon: 'group', description: 'Adventure with my buddies', color: '#10B981' },
+  { key: 'family', label: 'Family Trip', icon: 'family', description: 'Quality time with family', color: '#F59E0B' },
+  { key: 'couple', label: 'Couple Trip', icon: 'couple', description: 'Romantic getaway for two', color: '#EC4899' },
+  { key: 'business', label: 'Business Trip', icon: 'business', description: 'Work travel with leisure', color: '#8B5CF6' },
 ];
 
 export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProfile, hasActiveTrip }) {
@@ -60,7 +61,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   // Get trip type info - make it accept a tripType parameter
   const getTripTypeInfo = (tripType) => {
     const type = TRIP_TYPES.find(t => t.key === tripType);
-    return type || { key: 'solo', label: 'Solo', emoji: '🧑', color: '#3B82F6' };
+    return type || { key: 'solo', label: 'Solo', icon: 'profile', color: '#3B82F6' };
   };
 
   // Calculate trip days - make it accept trip dates as parameters
@@ -320,7 +321,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           {/* Header Row */}
           <View style={styles.currentTripHeader}>
             <View style={styles.currentTripIconBg}>
-              <Text style={styles.currentTripIcon}>🧳</Text>
+              <Icon name="packing" size={28} color="#FFF" />
             </View>
             <View style={styles.currentTripInfo}>
               <View style={[styles.currentTripBadge, !(isActive || isOngoing) && { backgroundColor: '#3B82F630' }]}>
@@ -360,12 +361,12 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           {trip.startDate && trip.endDate && (
             <View style={styles.currentTripDates}>
               <View style={styles.dateChip}>
-                <Text style={styles.dateChipEmoji}>📅</Text>
+                <Icon name="calendar" size={14} color={colors.textMuted} style={{ marginRight: 6 }} />
                 <Text style={styles.dateChipText}>{trip.startDate}</Text>
               </View>
               <Text style={styles.dateArrow}>→</Text>
               <View style={styles.dateChip}>
-                <Text style={styles.dateChipEmoji}>📅</Text>
+                <Icon name="calendar" size={14} color={colors.textMuted} style={{ marginRight: 6 }} />
                 <Text style={styles.dateChipText}>{trip.endDate}</Text>
               </View>
             </View>
@@ -421,7 +422,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
       >
         <View style={styles.upcomingTripLeft}>
           <View style={[styles.upcomingTripIconBg, { backgroundColor: tripTypeData.color + '20' }]}>
-            <Text style={styles.upcomingTripEmoji}>{tripTypeData.emoji}</Text>
+            <Icon name={tripTypeData.icon} size={24} color={tripTypeData.color} />
           </View>
           <View style={styles.upcomingTripInfo}>
             <Text style={styles.upcomingTripName}>{trip.destination || trip.name || 'My Trip'}</Text>
@@ -444,7 +445,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
                 handleShareTripCode(trip.tripCode, trip.destination);
               }}
             >
-              <Text style={styles.miniShareBtnText}>📤</Text>
+              <Icon name="message" size={14} color={colors.primary} />
             </Pressable>
           )}
           <Text style={styles.upcomingTripArrow}>→</Text>
@@ -467,12 +468,12 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
       {/* Header with Profile */}
       <View style={styles.topBar}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logoEmoji}>✈️</Text>
+          <Icon name="airplane" size={28} color={colors.primary} style={{ marginRight: 8 }} />
           <Text style={styles.logoText}>TravelMate</Text>
         </View>
         <Pressable style={({ pressed }) => [styles.profileButton, pressed && { opacity: 0.7 }]} onPress={handleProfilePress}>
           <View style={styles.profileAvatar}>
-            <Text style={styles.profileEmoji}>👤</Text>
+            <Icon name="profile" size={24} color={colors.primary} />
           </View>
         </Pressable>
       </View>
@@ -499,12 +500,12 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             <Animated.View style={[styles.outerRing, { transform: [{ scale: pulseAnim }] }]} />
             <View style={styles.middleRing} />
             <View style={styles.travelerCircle}>
-              <Text style={styles.travelerEmoji}>🧗</Text>
+              <Icon name="nature" size={60} color={colors.primary} />
             </View>
-            <View style={[styles.floatingElement, styles.floatingElement1]}><Text style={styles.floatingEmoji}>🏔️</Text></View>
-            <View style={[styles.floatingElement, styles.floatingElement2]}><Text style={styles.floatingEmoji}>✈️</Text></View>
-            <View style={[styles.floatingElement, styles.floatingElement3]}><Text style={styles.floatingEmoji}>🌴</Text></View>
-            <View style={[styles.floatingElement, styles.floatingElement4]}><Text style={styles.floatingEmoji}>🎒</Text></View>
+            <View style={[styles.floatingElement, styles.floatingElement1]}><Icon name="nature" size={24} color="#10B981" /></View>
+            <View style={[styles.floatingElement, styles.floatingElement2]}><Icon name="airplane" size={24} color="#3B82F6" /></View>
+            <View style={[styles.floatingElement, styles.floatingElement3]}><Icon name="beach" size={24} color="#F59E0B" /></View>
+            <View style={[styles.floatingElement, styles.floatingElement4]}><Icon name="packing" size={24} color="#EC4899" /></View>
           </Animated.View>
         </Animated.View>
 
@@ -518,7 +519,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
                 onPress={onPlanTrip}
               >
                 <View style={styles.optionGlowSmall} />
-                <View style={styles.optionIconBgSmall}><Text style={styles.optionIconSmall}>🚀</Text></View>
+                <View style={styles.optionIconBgSmall}><Icon name="add" size={24} color="#FFF" /></View>
                 <Text style={styles.optionTitleSmall}>{hasActiveTrip ? 'Plan New Trip' : 'Plan a Trip'}</Text>
                 <Text style={styles.optionDescriptionSmall}>Create your journey</Text>
               </Pressable>
@@ -529,7 +530,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
                 style={({ pressed }) => [styles.optionCardSmall, pressed && styles.cardPressed]}
                 onPress={() => setShowJoinModal(true)}
               >
-                <View style={styles.optionIconBgSmall}><Text style={styles.optionIconSmall}>👥</Text></View>
+                <View style={styles.optionIconBgSmall}><Icon name="group" size={24} color="#FFF" /></View>
                 <Text style={styles.optionTitleSmall}>Join a Trip</Text>
                 <Text style={styles.optionDescriptionSmall}>Enter code to join</Text>
               </Pressable>
@@ -548,7 +549,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             >
               <View style={styles.upcomingTripsLeft}>
                 <View style={styles.upcomingTripsIconBg}>
-                  <Text style={styles.upcomingTripsIcon}>📋</Text>
+                  <Icon name="task" size={24} color={colors.primary} />
                 </View>
                 <View>
                   <Text style={styles.upcomingTripsTitle}>Upcoming Trips</Text>
@@ -584,7 +585,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             {/* Empty state message when expanded but no trips */}
             {showAllTrips && upcomingTrips.length === 0 && (
               <View style={styles.emptyUpcomingContainer}>
-                <Text style={styles.emptyUpcomingEmoji}>✈️</Text>
+                <Icon name="flight" size={40} color={colors.textMuted} style={{ marginBottom: 8 }} />
                 <Text style={styles.emptyUpcomingText}>No upcoming trips</Text>
                 <Text style={styles.emptyUpcomingHint}>Plan a new trip to see it here</Text>
               </View>
@@ -595,7 +596,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           {!featuredTrip && (
             <View style={styles.noTripsContainer}>
               <View style={styles.noTripsIconBg}>
-                <Text style={styles.noTripsIcon}>🌍</Text>
+                <Icon name="search" size={40} color={colors.textMuted} />
               </View>
               <Text style={styles.noTripsTitle}>No trips yet</Text>
               <Text style={styles.noTripsSubtitle}>Start planning your next adventure!</Text>
@@ -609,13 +610,13 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           <Text style={styles.featuresSubtitle}>All-in-one travel companion</Text>
           <View style={styles.featuresGrid}>
             {[
-              { icon: '💰', label: 'Budget', desc: 'Track spending' },
-              { icon: '💳', label: 'Expenses', desc: 'Log costs' },
-              { icon: '🎒', label: 'Packing', desc: 'Checklist' },
-              { icon: '🗺️', label: 'Itinerary', desc: 'Plan days' },
+              { key: 'budget', label: 'Budget', desc: 'Track spending' },
+              { key: 'expenses', label: 'Expenses', desc: 'Log costs' },
+              { key: 'packing', label: 'Packing', desc: 'Checklist' },
+              { key: 'itinerary', label: 'Itinerary', desc: 'Plan days' },
             ].map((f, i) => (
               <View key={i} style={styles.featureCard}>
-                <View style={styles.featureIconBg}><Text style={styles.featureIcon}>{f.icon}</Text></View>
+                <View style={styles.featureIconBg}><Icon name={f.key} size={24} color={colors.primary} /></View>
                 <Text style={styles.featureLabel}>{f.label}</Text>
                 <Text style={styles.featureDesc}>{f.desc}</Text>
               </View>
@@ -628,13 +629,13 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           <Text style={styles.whyTitle}>Why TravelMate?</Text>
           <View style={styles.whyList}>
             {[
-              { icon: '✨', text: 'Easy trip planning' },
-              { icon: '🔄', text: 'Real-time sync with friends' },
-              { icon: '📊', text: 'Smart budget tracking' },
-              { icon: '📱', text: 'Works offline too' },
+              { icon: 'like', text: 'Easy trip planning', color: '#EF4444' },
+              { icon: 'clock', text: 'Real-time sync with friends', color: '#3B82F6' },
+              { icon: 'chart', text: 'Smart budget tracking', color: '#10B981' },
+              { icon: 'airplane', text: 'Works offline too', color: '#F59E0B' },
             ].map((item, index) => (
               <View key={index} style={[styles.whyItem, index === 3 && { borderBottomWidth: 0 }]}>
-                <Text style={styles.whyItemIcon}>{item.icon}</Text>
+                <Icon name={item.icon} size={20} color={item.color} style={{ marginRight: 12 }} />
                 <Text style={styles.whyItemText}>{item.text}</Text>
               </View>
             ))}
@@ -643,7 +644,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerLogo}>✈️</Text>
+          <Icon name="airplane" size={20} color={colors.textMuted} style={{ marginBottom: 8 }} />
           <Text style={styles.footerText}>TravelMate</Text>
           <Text style={styles.footerVersion}>Version 1.0.0</Text>
         </View>
@@ -678,7 +679,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
                     onPress={() => handleTripTypeSelect(type.key)}
                   >
                     <View style={[styles.tripTypeIconBg, { backgroundColor: type.color + '20' }]}>
-                      <Text style={styles.tripTypeEmoji}>{type.emoji}</Text>
+                      <Icon name={type.icon} size={28} color={type.color} />
                     </View>
                     <View style={styles.tripTypeInfo}>
                       <Text style={styles.tripTypeLabel}>{type.label}</Text>
@@ -701,7 +702,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
           <View style={styles.modalContent}>
             <View style={styles.modalHandle} />
 
-            <View style={styles.modalIconBg}><Text style={styles.modalIcon}>🔗</Text></View>
+            <View style={styles.modalIconBg}><Icon name="search" size={32} color={colors.primary} /></View>
             <Text style={styles.modalTitle}>Join a Trip</Text>
             <Text style={styles.modalDescription}>Enter the trip code shared by your travel buddy</Text>
             <TextInput

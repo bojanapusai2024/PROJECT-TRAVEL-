@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, Image } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useTravelContext } from '../context/TravelContext';
 
@@ -14,14 +14,16 @@ import ProfileScreen from '../screens/ProfileScreen';
 import TripSetupScreen from '../screens/TripSetupScreen';
 import BudgetScreen from '../screens/BudgetScreen';
 import JoinSelectionScreen from '../screens/JoinSelectionScreen';
+import Icon from '../components/Icon';
 
 const Tab = createBottomTabNavigator();
 
 // Tab Bar Icon Component
-function TabIcon({ emoji, focused, color }) {
+function TabIcon({ name, focused, color }) {
   return (
     <View style={styles.tabIconContainer}>
-      <Text style={[styles.tabEmoji, { opacity: focused ? 1 : 0.6 }]}>{emoji}</Text>
+      <Icon name={name} size={24} color={color} />
+      {focused && <View style={[styles.activeDot, { backgroundColor: color }]} />}
     </View>
   );
 }
@@ -54,7 +56,7 @@ function TabNavigator({ onBackToHome }) {
         name="Home"
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ focused, color }) => <TabIcon emoji="🏠" focused={focused} color={color} />,
+          tabBarIcon: ({ focused, color }) => <TabIcon name="home" focused={focused} color={color} />,
         }}
       >
         {(props) => <HomeScreen {...props} onBackToHome={onBackToHome} />}
@@ -64,7 +66,7 @@ function TabNavigator({ onBackToHome }) {
         component={MapScreen}
         options={{
           tabBarLabel: 'Itinerary',
-          tabBarIcon: ({ focused, color }) => <TabIcon emoji="🗺️" focused={focused} color={color} />,
+          tabBarIcon: ({ focused, color }) => <TabIcon name="itinerary" focused={focused} color={color} />,
         }}
       />
       <Tab.Screen
@@ -72,7 +74,7 @@ function TabNavigator({ onBackToHome }) {
         component={ExpenseScreen}
         options={{
           tabBarLabel: 'Expenses',
-          tabBarIcon: ({ focused, color }) => <TabIcon emoji="💳" focused={focused} color={color} />,
+          tabBarIcon: ({ focused, color }) => <TabIcon name="expenses" focused={focused} color={color} />,
         }}
       />
       <Tab.Screen
@@ -80,7 +82,7 @@ function TabNavigator({ onBackToHome }) {
         component={BudgetScreen}
         options={{
           tabBarLabel: 'Budget',
-          tabBarIcon: ({ focused, color }) => <TabIcon emoji="💰" focused={focused} color={color} />,
+          tabBarIcon: ({ focused, color }) => <TabIcon name="budget" focused={focused} color={color} />,
         }}
       />
       <Tab.Screen
@@ -88,7 +90,7 @@ function TabNavigator({ onBackToHome }) {
         component={PackingScreen}
         options={{
           tabBarLabel: 'Packing',
-          tabBarIcon: ({ focused, color }) => <TabIcon emoji="🎒" focused={focused} color={color} />,
+          tabBarIcon: ({ focused, color }) => <TabIcon name="packing" focused={focused} color={color} />,
         }}
       />
     </Tab.Navigator>
@@ -221,7 +223,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabEmoji: {
-    fontSize: 24,
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 2,
   },
 });

@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, StyleSheet, TouchableOpacity, Dimensions, Modal, Animated, Pressable } from 'react-native';
+import { View, Text, ScrollView, TextInput, StyleSheet, TouchableOpacity, Dimensions, Modal, Animated, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTravelContext } from '../context/TravelContext';
 import { useTheme } from '../context/ThemeContext';
+import Icon from '../components/Icon';
 
 const { width } = Dimensions.get('window');
 
-const EMOJI_OPTIONS = ['🏨', '🚗', '🍽️', '🎭', '🛍️', '📦', '✈️', '🚆', '🏖️', '⛷️', '🎫', '💊', '📱', '🎁', '🍺', '☕', '🎮', '📸', '💇', '🏥'];
+const ICON_OPTIONS = ['hotel', 'car', 'food', 'shopping', 'packing', 'airplane', 'train', 'beach', 'nature', 'ticket', 'hospital', 'mobile', 'task', 'like', 'heart', 'budget'];
 const COLOR_OPTIONS = ['#8B5CF6', '#3B82F6', '#F59E0B', '#10B981', '#EC4899', '#6B7280', '#EF4444', '#06B6D4', '#84CC16', '#F97316'];
 
 export default function BudgetScreen() {
@@ -29,7 +30,7 @@ export default function BudgetScreen() {
   const [categoryInputs, setCategoryInputs] = useState({});
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
-  const [newCategory, setNewCategory] = useState({ key: '', label: '', emoji: '📦', color: '#6B7280', tip: '5-10%' });
+  const [newCategory, setNewCategory] = useState({ key: '', label: '', icon: 'packing', color: '#6B7280', tip: '5-10%' });
 
   // Sync totalBudget with budget.total when it changes externally
   useEffect(() => {
@@ -87,7 +88,7 @@ export default function BudgetScreen() {
     // Initialize input for new category
     setCategoryInputs(prev => ({ ...prev, [key]: '0' }));
 
-    setNewCategory({ key: '', label: '', emoji: '📦', color: '#6B7280', tip: '5-10%' });
+    setNewCategory({ key: '', label: '', icon: 'packing', color: '#6B7280', tip: '5-10%' });
     setShowCategoryModal(false);
   };
 
@@ -109,7 +110,7 @@ export default function BudgetScreen() {
     }
 
     setEditingCategory(null);
-    setNewCategory({ key: '', label: '', emoji: '📦', color: '#6B7280', tip: '5-10%' });
+    setNewCategory({ key: '', label: '', icon: 'packing', color: '#6B7280', tip: '5-10%' });
     setShowCategoryModal(false);
   };
 
@@ -163,14 +164,17 @@ export default function BudgetScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>💰 Budget Planner</Text>
-          <Text style={styles.headerSubtitle}>
-            {tripInfo.destination || 'Your Trip'}
-          </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Icon name="budget" size={28} color={colors.text} style={{ marginRight: 8 }} />
+          <View>
+            <Text style={styles.headerTitle}>Budget Planner</Text>
+            <Text style={styles.headerSubtitle}>
+              {tripInfo.destination || 'Your Trip'}
+            </Text>
+          </View>
         </View>
         <TouchableOpacity style={styles.quickActionBtn} onPress={quickAllocate}>
-          <Text style={styles.quickActionEmoji}>⚡</Text>
+          <Icon name="task" size={16} color={colors.primary} style={{ marginRight: 4 }} />
           <Text style={styles.quickActionText}>Auto-Fill</Text>
         </TouchableOpacity>
       </View>
@@ -248,8 +252,8 @@ export default function BudgetScreen() {
             />
           ))}
 
-          <TouchableOpacity style={styles.newCatBtn} onPress={() => { setEditingCategory(null); setNewCategory({ key: '', label: '', emoji: '📦', color: '#6B7280', tip: '5-10%' }); setShowCategoryModal(true); }}>
-            <Text style={styles.newCatIcon}>+</Text>
+          <TouchableOpacity style={styles.newCatBtn} onPress={() => { setEditingCategory(null); setNewCategory({ key: '', label: '', icon: 'packing', color: '#6B7280', tip: '5-10%' }); setShowCategoryModal(true); }}>
+            <Icon name="add" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.newCatText}>Add New Category</Text>
           </TouchableOpacity>
         </View>
@@ -265,7 +269,7 @@ export default function BudgetScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{editingCategory ? 'Edit Category' : 'New Category'}</Text>
               <TouchableOpacity onPress={() => setShowCategoryModal(false)} style={styles.closeBtn}>
-                <Text style={styles.closeText}>✕</Text>
+                <Icon name="close" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -283,9 +287,9 @@ export default function BudgetScreen() {
               {/* Emojis */}
               <Text style={styles.inputLabel}>Icon</Text>
               <View style={styles.emojiGrid}>
-                {EMOJI_OPTIONS.map(e => (
-                  <TouchableOpacity key={e} onPress={() => setNewCategory({ ...newCategory, emoji: e })} style={[styles.emojiItem, newCategory.emoji === e && styles.emojiSelected]}>
-                    <Text style={styles.emojiText}>{e}</Text>
+                {ICON_OPTIONS.map(iconKey => (
+                  <TouchableOpacity key={iconKey} onPress={() => setNewCategory({ ...newCategory, icon: iconKey })} style={[styles.emojiItem, newCategory.icon === iconKey && styles.emojiSelected]}>
+                    <Icon name={iconKey} size={24} color={newCategory.icon === iconKey ? colors.primary : colors.textMuted} />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -338,7 +342,7 @@ const CategoryCard = ({ cat, budget, expensesByCategory, currency, categoryInput
 
       <View pointerEvents="none" style={styles.catIconContainer}>
         <View style={[styles.catIconBg, { backgroundColor: cat.color + '20' }]}>
-          <Text style={styles.catEmoji}>{cat.emoji}</Text>
+          <Icon name={cat.icon || cat.key} size={24} color={cat.color} />
         </View>
       </View>
 

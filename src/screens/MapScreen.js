@@ -1,35 +1,37 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
-  Modal, StyleSheet, Animated, Dimensions
+  Modal, StyleSheet, Animated, Dimensions, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTravelContext } from '../context/TravelContext';
 import { useTheme } from '../context/ThemeContext';
 import TimePickerModal from '../components/TimePickerModal';
+import Icon from '../components/Icon';
 
 const { width } = Dimensions.get('window');
 
 // Simplified and organized stop types
+// Simplified and organized stop types
 const STOP_TYPES = [
-  { key: 'flight', label: 'Flight', icon: '✈️', color: '#87CEEB', category: 'transport' },
-  { key: 'train', label: 'Train', icon: '🚆', color: '#4682B4', category: 'transport' },
-  { key: 'bus', label: 'Bus', icon: '🚌', color: '#32CD32', category: 'transport' },
-  { key: 'car', label: 'Car/Taxi', icon: '🚗', color: '#FFA500', category: 'transport' },
-  { key: 'hotel', label: 'Hotel', icon: '🏨', color: '#DDA0DD', category: 'accommodation' },
-  { key: 'checkin', label: 'Check-in', icon: '🔑', color: '#9370DB', category: 'accommodation' },
-  { key: 'checkout', label: 'Check-out', icon: '🚪', color: '#8A2BE2', category: 'accommodation' },
-  { key: 'breakfast', label: 'Breakfast', icon: '🥐', color: '#FFA07A', category: 'meal' },
-  { key: 'lunch', label: 'Lunch', icon: '🥗', color: '#98FB98', category: 'meal' },
-  { key: 'dinner', label: 'Dinner', icon: '🍝', color: '#FF6347', category: 'meal' },
-  { key: 'cafe', label: 'Cafe/Snack', icon: '☕', color: '#D2691E', category: 'meal' },
-  { key: 'attraction', label: 'Attraction', icon: '🏛️', color: '#00FF7F', category: 'activity' },
-  { key: 'tour', label: 'Tour', icon: '🎫', color: '#FF6B6B', category: 'activity' },
-  { key: 'shopping', label: 'Shopping', icon: '🛍️', color: '#FF69B4', category: 'activity' },
-  { key: 'nature', label: 'Nature', icon: '🌳', color: '#228B22', category: 'activity' },
-  { key: 'beach', label: 'Beach', icon: '🏖️', color: '#00CED1', category: 'activity' },
-  { key: 'museum', label: 'Museum', icon: '🖼️', color: '#8B4513', category: 'activity' },
-  { key: 'nightlife', label: 'Nightlife', icon: '🎉', color: '#9932CC', category: 'activity' },
+  { key: 'flight', label: 'Flight', icon: 'flight', color: '#87CEEB', category: 'transport' },
+  { key: 'train', label: 'Train', icon: 'train', color: '#4682B4', category: 'transport' },
+  { key: 'bus', label: 'Bus', icon: 'bus', color: '#32CD32', category: 'transport' },
+  { key: 'car', label: 'Car/Taxi', icon: 'car', color: '#FFA500', category: 'transport' },
+  { key: 'hotel', label: 'Hotel', icon: 'hotel', color: '#DDA0DD', category: 'accommodation' },
+  { key: 'checkin', label: 'Check-in', icon: 'checkin', color: '#9370DB', category: 'accommodation' },
+  { key: 'checkout', label: 'Check-out', icon: 'checkout', color: '#8A2BE2', category: 'accommodation' },
+  { key: 'breakfast', label: 'Breakfast', icon: 'breakfast', color: '#FFA07A', category: 'meal' },
+  { key: 'lunch', label: 'Lunch', icon: 'lunch', color: '#98FB98', category: 'meal' },
+  { key: 'dinner', label: 'Dinner', icon: 'dinner', color: '#FF6347', category: 'meal' },
+  { key: 'cafe', label: 'Cafe/Snack', icon: 'cafe', color: '#D2691E', category: 'meal' },
+  { key: 'attraction', label: 'Attraction', icon: 'attraction', color: '#00FF7F', category: 'activity' },
+  { key: 'tour', label: 'Tour', icon: 'tour', color: '#FF6B6B', category: 'activity' },
+  { key: 'shopping', label: 'Shopping', icon: 'shopping', color: '#FF69B4', category: 'activity' },
+  { key: 'nature', label: 'Nature', icon: 'nature', color: '#228B22', category: 'activity' },
+  { key: 'beach', label: 'Beach', icon: 'beach', color: '#00CED1', category: 'activity' },
+  { key: 'museum', label: 'Museum', icon: 'museum', color: '#8B4513', category: 'activity' },
+  { key: 'nightlife', label: 'Nightlife', icon: 'nightlife', color: '#9932CC', category: 'activity' },
 ];
 
 // Helper to convert time to 24hr format for sorting
@@ -167,7 +169,7 @@ export default function MapScreen() {
       <View style={styles.summaryCard}>
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryIcon}>📅</Text>
+            <View style={{ marginRight: 8 }}><Icon name="calendar" size={20} color={colors.textMuted} /></View>
             <View>
               <Text style={styles.summaryLabel}>Duration</Text>
               <Text style={styles.summaryValue}>{tripDays.length} Days</Text>
@@ -175,7 +177,7 @@ export default function MapScreen() {
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryIcon}>👥</Text>
+            <View style={{ marginRight: 8 }}><Icon name="group" size={20} color={colors.textMuted} /></View>
             <View>
               <Text style={styles.summaryLabel}>Travelers</Text>
               <Text style={styles.summaryValue}>{participantCount} {participantCount === 1 ? 'Person' : 'People'}</Text>
@@ -183,7 +185,7 @@ export default function MapScreen() {
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryIcon}>📍</Text>
+            <View style={{ marginRight: 8 }}><Icon name="location" size={20} color={colors.textMuted} /></View>
             <View>
               <Text style={styles.summaryLabel}>Activities</Text>
               <Text style={styles.summaryValue}>{totalStops} Planned</Text>
@@ -213,7 +215,7 @@ export default function MapScreen() {
           <View style={styles.emptyHero}>
             <Animated.View style={[styles.emptyHeroContent, { transform: [{ translateY: floatTranslate }] }]}>
               <View style={styles.emptyHeroGlobe}>
-                <Text style={styles.emptyHeroEmoji}>🗺️</Text>
+                <Icon name="map" size={50} color={colors.primary} />
                 <Animated.View style={[styles.emptyHeroRing, { transform: [{ scale: pulseAnim }] }]} />
               </View>
             </Animated.View>
@@ -302,7 +304,7 @@ export default function MapScreen() {
 
                                 <View style={styles.stopCardHeader}>
                                   <View style={[styles.stopIconContainer, { backgroundColor: type.color + '25' }]}>
-                                    <Text style={styles.stopIconEmoji}>{type.icon}</Text>
+                                    <Icon name={type.icon} size={20} color={type.color} />
                                   </View>
                                   <View style={styles.stopCardInfo}>
                                     <Text style={styles.stopCardName}>{stop.name}</Text>
@@ -382,7 +384,7 @@ export default function MapScreen() {
                 {['all', 'transport', 'accommodation', 'meal', 'activity'].map(cat => (
                   <TouchableOpacity key={cat} style={[styles.categoryChip, selectedCategory === cat && styles.categoryChipActive]} onPress={() => setSelectedCategory(cat)}>
                     <Text style={[styles.categoryChipText, selectedCategory === cat && styles.categoryChipTextActive]}>
-                      {cat === 'all' ? '🌟 All' : cat === 'transport' ? '🚗 Transport' : cat === 'accommodation' ? '🏨 Stay' : cat === 'meal' ? '🍽️ Meals' : '🎯 Activities'}
+                      {cat === 'all' ? 'All' : cat === 'transport' ? 'Transport' : cat === 'accommodation' ? 'Stay' : cat === 'meal' ? 'Meals' : 'Activities'}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -394,7 +396,7 @@ export default function MapScreen() {
                 <View style={styles.typeGrid}>
                   {filteredTypes.map(type => (
                     <TouchableOpacity key={type.key} style={[styles.typeChip, newStop.type === type.key && { backgroundColor: type.color, borderColor: type.color }]} onPress={() => setNewStop({ ...newStop, type: type.key })}>
-                      <Text style={styles.typeChipIcon}>{type.icon}</Text>
+                      <Icon name={type.icon} size={16} color={newStop.type === type.key ? colors.bg : type.color} style={{ marginRight: 4 }} />
                       <Text style={[styles.typeChipText, newStop.type === type.key && { color: colors.bg }]}>{type.label}</Text>
                     </TouchableOpacity>
                   ))}

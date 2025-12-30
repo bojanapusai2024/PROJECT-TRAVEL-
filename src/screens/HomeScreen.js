@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Animated, Pressable, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Animated, Pressable, Modal, Alert, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTravelContext } from '../context/TravelContext';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import DatePickerModal from '../components/DatePickerModal';
 import { auth } from '../config/firebase';
+import Icon from '../components/Icon';
 
 export default function HomeScreen({ onBackToHome }) {
   const {
@@ -88,12 +89,12 @@ export default function HomeScreen({ onBackToHome }) {
 
   const getCategoryInfo = (key) => {
     const categories = {
-      accommodation: { emoji: '🏨', color: '#8B5CF6' },
-      transport: { emoji: '🚗', color: '#3B82F6' },
-      food: { emoji: '🍽️', color: '#F59E0B' },
-      activities: { emoji: '🎭', color: '#10B981' },
-      shopping: { emoji: '🛍️', color: '#EC4899' },
-      other: { emoji: '📦', color: '#6B7280' },
+      accommodation: { icon: 'stay', color: '#8B5CF6' },
+      transport: { icon: 'transport', color: '#3B82F6' },
+      food: { icon: 'food', color: '#F59E0B' },
+      activities: { icon: 'activities', color: '#10B981' },
+      shopping: { icon: 'shopping', color: '#EC4899' },
+      other: { icon: 'other', color: '#6B7280' },
     };
     return categories[key] || categories.other;
   };
@@ -239,7 +240,7 @@ export default function HomeScreen({ onBackToHome }) {
                 style={styles.settingsButton}
                 onPress={() => setShowSettingsModal(true)}
               >
-                <Text style={styles.settingsButtonText}>⚙️</Text>
+                <Icon name="settings" size={24} color={colors.text} />
               </Pressable>
               <Pressable style={styles.backButton} onPress={onBackToHome}>
                 <Text style={styles.backButtonText}>✕</Text>
@@ -250,9 +251,12 @@ export default function HomeScreen({ onBackToHome }) {
           {/* Trip Status Badge */}
           {daysUntil !== null && (
             <View style={styles.statusBadge}>
-              <Text style={styles.statusEmoji}>
-                {daysUntil < 0 ? '✈️' : daysUntil === 0 ? '🎉' : '📅'}
-              </Text>
+              <Icon
+                name={daysUntil < 0 ? 'flight' : daysUntil === 0 ? 'party' : 'calendar'}
+                size={16}
+                color={colors.primary}
+                style={{ marginRight: 6 }}
+              />
               <Text style={styles.statusText}>
                 {daysUntil < 0 ? 'Trip in progress!' : daysUntil === 0 ? 'Trip starts today!' : `${daysUntil} days to go`}
               </Text>
@@ -265,12 +269,15 @@ export default function HomeScreen({ onBackToHome }) {
           <View style={styles.heroGlow} />
           <View style={styles.heroHeader}>
             <View style={styles.heroIconBg}>
-              <Text style={styles.heroIcon}>🌍</Text>
+              <Icon name="location" size={24} color="white" />
             </View>
             <View style={styles.heroInfo}>
               <Text style={styles.heroDestination}>{tripInfo.destination || 'Destination'}</Text>
               {tripInfo.startDate && tripInfo.endDate && (
-                <Text style={styles.heroDates}>📅 {tripInfo.startDate} → {tripInfo.endDate}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                  <Icon name="calendar" size={12} color="rgba(255,255,255,0.7)" style={{ marginRight: 4 }} />
+                  <Text style={styles.heroDates}>{tripInfo.startDate} → {tripInfo.endDate}</Text>
+                </View>
               )}
             </View>
           </View>
@@ -302,7 +309,7 @@ export default function HomeScreen({ onBackToHome }) {
               onPress={() => { setEditStartDate(tripInfo.startDate); setEditEndDate(tripInfo.endDate); setShowDatesModal(true); }}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF620' }]}>
-                <Text style={styles.quickActionEmoji}>📅</Text>
+                <Icon name="calendar" size={24} color="#8B5CF6" />
               </View>
               <Text style={styles.quickActionLabel}>Edit Dates</Text>
             </Pressable>
@@ -312,7 +319,7 @@ export default function HomeScreen({ onBackToHome }) {
               onPress={() => setShowBudgetModal(true)}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: '#10B98120' }]}>
-                <Text style={styles.quickActionEmoji}>💰</Text>
+                <Icon name="budget" size={24} color="#10B981" />
               </View>
               <Text style={styles.quickActionLabel}>Edit Budget</Text>
             </Pressable>
@@ -322,7 +329,7 @@ export default function HomeScreen({ onBackToHome }) {
               onPress={() => setShowTravelersModal(true)}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: '#3B82F620' }]}>
-                <Text style={styles.quickActionEmoji}>👥</Text>
+                <Icon name="group" size={24} color="#3B82F6" />
               </View>
               <Text style={styles.quickActionLabel}>Travelers</Text>
             </Pressable>
@@ -332,7 +339,7 @@ export default function HomeScreen({ onBackToHome }) {
               onPress={() => setShowEndTripModal(true)}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: '#F59E0B20' }]}>
-                <Text style={styles.quickActionEmoji}>🏁</Text>
+                <Icon name="checkin" size={24} color="#F59E0B" />
               </View>
               <Text style={styles.quickActionLabel}>End Trip</Text>
             </Pressable>
@@ -344,7 +351,7 @@ export default function HomeScreen({ onBackToHome }) {
           <Animated.View style={[styles.statCard, styles.statCardBudget, { opacity: fadeAnim }]}>
             <View style={styles.statCardHeader}>
               <View style={styles.statCardIconBg}>
-                <Text style={styles.statCardIcon}>💰</Text>
+                <Icon name="budget" size={20} color={colors.primary} />
               </View>
               <Text style={styles.statCardTitle}>Budget</Text>
             </View>
@@ -370,7 +377,7 @@ export default function HomeScreen({ onBackToHome }) {
           <Animated.View style={[styles.statCard, styles.statCardPacking, { opacity: fadeAnim }]}>
             <View style={styles.statCardHeader}>
               <View style={styles.statCardIconBg}>
-                <Text style={styles.statCardIcon}>🎒</Text>
+                <Icon name="packing" size={20} color={colors.secondary} />
               </View>
               <Text style={styles.statCardTitle}>Packing</Text>
             </View>
@@ -396,7 +403,7 @@ export default function HomeScreen({ onBackToHome }) {
           <View style={styles.overviewCard}>
             {itinerary.length === 0 ? (
               <TouchableOpacity style={styles.emptyOverview} onPress={goToItinerary}>
-                <Text style={styles.emptyOverviewEmoji}>🗺️</Text>
+                <Icon name="map" size={40} color={colors.textMuted + '50'} style={{ marginBottom: 10 }} />
                 <Text style={styles.emptyOverviewText}>No activities planned yet</Text>
                 <Text style={styles.emptyOverviewHint}>Tap to add activities</Text>
               </TouchableOpacity>
@@ -438,7 +445,7 @@ export default function HomeScreen({ onBackToHome }) {
           <View style={styles.overviewCard}>
             {expenses.length === 0 ? (
               <TouchableOpacity style={styles.emptyOverview} onPress={goToExpenses}>
-                <Text style={styles.emptyOverviewEmoji}>💸</Text>
+                <Icon name="money" size={40} color={colors.textMuted + '50'} style={{ marginBottom: 10 }} />
                 <Text style={styles.emptyOverviewText}>No expenses logged yet</Text>
                 <Text style={styles.emptyOverviewHint}>Tap to start tracking</Text>
               </TouchableOpacity>
@@ -453,7 +460,7 @@ export default function HomeScreen({ onBackToHome }) {
                       onPress={goToExpenses}
                     >
                       <View style={[styles.expenseIconBg, { backgroundColor: categoryInfo.color + '20' }]}>
-                        <Text style={styles.expenseIcon}>{categoryInfo.emoji}</Text>
+                        <Icon name={categoryInfo.icon} size={20} color={categoryInfo.color} />
                       </View>
                       <View style={styles.expenseInfo}>
                         <Text style={styles.expenseName} numberOfLines={1}>{expense.title}</Text>
