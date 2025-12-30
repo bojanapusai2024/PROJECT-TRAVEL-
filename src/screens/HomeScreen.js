@@ -33,9 +33,8 @@ export default function HomeScreen({ onBackToHome }) {
   const [travelers, setTravelers] = useState([]);
 
   useEffect(() => {
-    // Only show buddies (not 'You') in the manageable list to avoid confusion
-    const all = getAllTravelers();
-    setTravelers(all.filter(t => t.id !== localParticipantId));
+    // Show all travelers including self
+    setTravelers(getAllTravelers());
   }, [tripInfo.participants, localParticipantId]);
   const [editStartDate, setEditStartDate] = useState(tripInfo.startDate || '');
   const [editEndDate, setEditEndDate] = useState(tripInfo.endDate || '');
@@ -339,7 +338,7 @@ export default function HomeScreen({ onBackToHome }) {
               onPress={() => setShowEndTripModal(true)}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: '#F59E0B20' }]}>
-                <Icon name="checkin" size={24} color="#F59E0B" />
+                <Icon name="close" size={24} color="#F59E0B" />
               </View>
               <Text style={styles.quickActionLabel}>End Trip</Text>
             </Pressable>

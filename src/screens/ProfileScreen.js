@@ -20,7 +20,10 @@ import { useAuth } from '../context/AuthContext';
 import { useTravelContext } from '../context/TravelContext';
 import Icon from '../components/Icon';
 
-const AVATARS = ['profile', 'user', 'group', 'family', 'couple', 'business', 'packing', 'airplane', 'map', 'beach', 'nature', 'location'];
+const AVATARS = [
+  'profile_avatar', 'man1', 'woman1', 'man2', 'woman2', 'man3', 'woman3',
+  'boy', 'girl', 'user_circle'
+];
 const TRIP_TYPES = [
   { key: 'solo', label: 'Solo Trip', icon: 'profile', color: '#3B82F6' },
   { key: 'friends', label: 'With Friends', icon: 'group', color: '#10B981' },
@@ -98,7 +101,14 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
     displayName: user?.displayName || '',
     avatar: 'profile',
   });
-  const [selectedAvatar, setSelectedAvatar] = useState('profile');
+  const [selectedAvatar, setSelectedAvatar] = useState(user?.photoURL || 'profile_avatar');
+
+  // Update selected avatar when user profile loads/changes
+  useEffect(() => {
+    if (user?.photoURL) {
+      setSelectedAvatar(user.photoURL);
+    }
+  }, [user?.photoURL]);
 
   const headerAnim = useRef(new Animated.Value(0)).current;
 
@@ -127,6 +137,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
     if (editForm.displayName.trim()) {
       const result = await updateUserProfile({
         displayName: editForm.displayName.trim(),
+        photoURL: selectedAvatar,
       });
       if (result.success) {
         setShowEditModal(false);

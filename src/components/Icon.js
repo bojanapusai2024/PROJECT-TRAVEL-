@@ -1,99 +1,109 @@
 import React from 'react';
 import { Image, View, StyleSheet } from 'react-native';
-import { SvgXml } from 'react-native-svg';
 
-// Icon paths mapping
+// Icon paths mapping - VERIFIED PNG FILENAMES
 const ICON_PATHS = {
-    // Expense/Budget Categories
-    stay: require('../../assets/icons/iconsax/iconsax-building-4-c10zeey8-.svg'),
-    accommodation: require('../../assets/icons/iconsax/iconsax-building-4-c10zeey8-.svg'),
-    transport: require('../../assets/icons/iconsax/iconsax-car-iq47uanx-.svg'),
-    food: require('../../assets/icons/iconsax/iconsax-menu-board-tm67mo6m-.svg'),
-    activities: require('../../assets/icons/iconsax/iconsax-zipline-h8ttx8zv-.svg'),
-    shopping: require('../../assets/icons/iconsax/iconsax-shopping-bag-2r7tl913-.svg'),
-    other: require('../../assets/icons/iconsax/iconsax-note-text-78btokjb-.svg'),
+    // Navigation/General
+    home: require('../../assets/icons/mycollection/png/001-travel.png'),
+    budget: require('../../assets/icons/mycollection/png/062-budget.png'),
+    expenses: require('../../assets/icons/mycollection/png/060-expenses.png'),
+    packing: require('../../assets/icons/mycollection/png/206-packing.png'),
+    itinerary: require('../../assets/icons/mycollection/png/102-calendar.png'),
+    profile: require('../../assets/icons/mycollection/png/056-profile-avatar.png'),
+    settings: require('../../assets/icons/mycollection/png/068-scales.png'),
 
-    // Packing Categories
-    essentials: require('../../assets/icons/iconsax/iconsax-bag-cross-r9mlbzsk-.svg'),
-    clothing: require('../../assets/icons/iconsax/iconsax-shop-oci6wzbn-.svg'),
-    toiletries: require('../../assets/icons/iconsax/iconsax-apple-6d3q53g0-.svg'),
-    electronics: require('../../assets/icons/iconsax/iconsax-mouse-eegu09vr-.svg'),
-    documents: require('../../assets/icons/iconsax/iconsax-note-text-78btokjb-.svg'),
-    accessories: require('../../assets/icons/iconsax/iconsax-heart-mg0g8za4-.svg'),
-    health: require('../../assets/icons/iconsax/iconsax-hospital-zz0p1vkv-.svg'),
-
-    // Itinerary Types
-    flight: require('../../assets/icons/iconsax/iconsax-airplane-ga5xbfem-.svg'),
-    train: require('../../assets/icons/iconsax/iconsax-routing-8l0zinwy-.svg'),
-    bus: require('../../assets/icons/iconsax/iconsax-bus-n8ss4fo5-.svg'),
-    car: require('../../assets/icons/iconsax/iconsax-car-iq47uanx-.svg'),
-    taxi: require('../../assets/icons/iconsax/iconsax-driving-395x3t2l-.svg'),
-    hotel: require('../../assets/icons/iconsax/iconsax-building-4-c10zeey8-.svg'),
-    checkin: require('../../assets/icons/iconsax/iconsax-directbox-receive-ise382zo-.svg'),
-    checkout: require('../../assets/icons/iconsax/iconsax-directbox-send-gip83s9i-.svg'),
-    breakfast: require('../../assets/icons/iconsax/iconsax-menu-board-tm67mo6m-.svg'),
-    lunch: require('../../assets/icons/iconsax/iconsax-menu-board-tm67mo6m-.svg'),
-    dinner: require('../../assets/icons/iconsax/iconsax-menu-board-tm67mo6m-.svg'),
-    cafe: require('../../assets/icons/iconsax/iconsax-menu-board-tm67mo6m-.svg'),
-    attraction: require('../../assets/icons/iconsax/iconsax-courthouse-iemaewt5-.svg'),
-    tour: require('../../assets/icons/iconsax/iconsax-map-1-oumecant-.svg'),
-    nature: require('../../assets/icons/iconsax/iconsax-ai-landscape-rlrczekj-.svg'),
-    beach: require('../../assets/icons/iconsax/iconsax-ai-water-cycle-60aapi1v-.svg'),
-    museum: require('../../assets/icons/iconsax/iconsax-bank-p30evtna-.svg'),
-    nightlife: require('../../assets/icons/iconsax/iconsax-notification-bing-hfke46y6-.svg'),
+    // Actions
+    add: require('../../assets/icons/mycollection/png/105-add-event.png'),
+    close: require('../../assets/icons/mycollection/png/119-exit.png'), // Explicit X/Exit
+    delete: require('../../assets/icons/mycollection/png/106-deleted.png'),
+    link: require('../../assets/icons/mycollection/png/049-link.png'), // Better link icon
+    edit: require('../../assets/icons/mycollection/png/104-edit.png'),
+    back: require('../../assets/icons/mycollection/png/217-arrow-left.png'),
+    search: require('../../assets/icons/mycollection/png/155-binoculars.png'),
+    lock: require('../../assets/icons/mycollection/png/115-password.png'),
+    logout: require('../../assets/icons/mycollection/png/118-logout.png'),
+    notification: require('../../assets/icons/mycollection/png/144-reception-bell.png'),
+    calendar: require('../../assets/icons/mycollection/png/102-calendar.png'),
+    clock: require('../../assets/icons/mycollection/png/148-hourglass.png'),
+    location: require('../../assets/icons/mycollection/png/164-location-pin.png'),
+    map: require('../../assets/icons/mycollection/png/121-map.png'),
+    task: require('../../assets/icons/mycollection/png/107-schedule.png'),
+    check: require('../../assets/icons/mycollection/png/051-check.png'),
+    like: require('../../assets/icons/mycollection/png/020-stars.png'),
+    heart: require('../../assets/icons/mycollection/png/004-honeymoon.png'),
+    message: require('../../assets/icons/mycollection/png/077-navigation.png'),
 
     // Trip Types
-    solo: require('../../assets/icons/iconsax/iconsax-profile-qo56w39y-.svg'),
-    friends: require('../../assets/icons/iconsax/iconsax-people-ruekv0vr-.svg'),
-    family: require('../../assets/icons/iconsax/iconsax-ai-users-grnibjtm-.svg'),
-    couple: require('../../assets/icons/iconsax/iconsax-ai-loveletter-69jmzorj-.svg'),
-    business: require('../../assets/icons/iconsax/iconsax-buildings-2coqte5m-.svg'),
+    solo: require('../../assets/icons/mycollection/png/185-traveller.png'), // User explicitly requested change from gear
+    friends: require('../../assets/icons/mycollection/png/032-group.png'), // Friend group
+    family: require('../../assets/icons/mycollection/png/191-family.png'),
+    couple: require('../../assets/icons/mycollection/png/110-valentines-day.png'),
+    business: require('../../assets/icons/mycollection/png/029-bussiness-man.png'), // More specific business icon
 
-    // Navigation/General
-    home: require('../../assets/icons/iconsax/iconsax-house-wt04akfh-.svg'),
-    budget: require('../../assets/icons/iconsax/iconsax-coin-1-aimiall0-.svg'),
-    expenses: require('../../assets/icons/iconsax/iconsax-receipt-text-5pe6cymb-.svg'),
-    packing: require('../../assets/icons/iconsax/iconsax-bag-cross-r9mlbzsk-.svg'),
-    itinerary: require('../../assets/icons/iconsax/iconsax-calendar-yua0vy04-.svg'),
-    profile: require('../../assets/icons/iconsax/iconsax-profile-circle-hequbc0e-.svg'),
-    settings: require('../../assets/icons/iconsax/iconsax-setting-2-r2lvagyp-.svg'),
-    add: require('../../assets/icons/iconsax/iconsax-add-circle-k493lzbr-.svg'),
-    close: require('../../assets/icons/iconsax/iconsax-add-circle-k493lzbr-.svg'), // Rotated in component
-    delete: require('../../assets/icons/iconsax/iconsax-profile-delete-qwx8i4qa-.svg'),
-    link: require('../../assets/icons/iconsax/iconsax-link-4-u46r0iue-.svg'),
-    edit: require('../../assets/icons/iconsax/iconsax-edit-2-oscklgij-.svg'),
-    calendar: require('../../assets/icons/iconsax/iconsax-calendar-yua0vy04-.svg'),
-    location: require('../../assets/icons/iconsax/iconsax-location-tick-518ccx0b-.svg'),
-    notification: require('../../assets/icons/iconsax/iconsax-notification-sw87na4x-.svg'),
-    logout: require('../../assets/icons/iconsax/iconsax-logout-02-15y79pes-.svg'),
-    lock: require('../../assets/icons/iconsax/iconsax-lock-osvquws1-.svg'),
-    user: require('../../assets/icons/iconsax/iconsax-profile-qo56w39y-.svg'),
-    group: require('../../assets/icons/iconsax/iconsax-profile-2user-bthuew2f-.svg'),
-    map: require('../../assets/icons/iconsax/iconsax-map-dol3q51w-.svg'),
-    search: require('../../assets/icons/iconsax/iconsax-global-search-ohzct99f-.svg'),
-    clock: require('../../assets/icons/iconsax/iconsax-clock-hsugesjz-.svg'),
-    money: require('../../assets/icons/iconsax/iconsax-money-recive-1w03lhjp-.svg'),
-    discount: require('../../assets/icons/iconsax/iconsax-discount-shape-yvfhuaft-.svg'),
-    chart: require('../../assets/icons/iconsax/iconsax-chart-u5hqhhtx-.svg'),
-    task: require('../../assets/icons/iconsax/iconsax-task-07f7qat2-.svg'),
-    like: require('../../assets/icons/iconsax/iconsax-like-1-33bwid71-.svg'),
-    heart: require('../../assets/icons/iconsax/iconsax-heart-mg0g8za4-.svg'),
-    airplane: require('../../assets/icons/iconsax/iconsax-airplane-ga5xbfem-.svg'),
-    ship: require('../../assets/icons/iconsax/iconsax-ship-jhv8fxlt-.svg'),
-    truck: require('../../assets/icons/iconsax/iconsax-truck-fast-5lpvosuw-.svg'),
-    wallet: require('../../assets/icons/iconsax/iconsax-empty-wallet-time-mzcz1prb-.svg'),
-    message: require('../../assets/icons/iconsax/iconsax-messages-2-7m77wl5f-.svg'),
-    back: require('../../assets/icons/iconsax/iconsax-arrow-back-k813no41-.svg'),
+    // Itinerary/Transport
+    flight: require('../../assets/icons/mycollection/png/188-airplane.png'),
+    airplane: require('../../assets/icons/mycollection/png/188-airplane.png'),
+    train: require('../../assets/icons/mycollection/png/180-train.png'),
+    bus: require('../../assets/icons/mycollection/png/173-bus.png'),
+    car: require('../../assets/icons/mycollection/png/009-road-trip.png'),
+    taxi: require('../../assets/icons/mycollection/png/168-motorcycle.png'),
+    ship: require('../../assets/icons/mycollection/png/120-ship.png'),
+    truck: require('../../assets/icons/mycollection/png/158-jeep.png'),
+    bike: require('../../assets/icons/mycollection/png/172-bicycle-1.png'),
+
+    // Categories
+    hotel: require('../../assets/icons/mycollection/png/030-hotel.png'),
+    food: require('../../assets/icons/mycollection/png/202-food.png'),
+    activities: require('../../assets/icons/mycollection/png/150-climbing.png'), // Mountain climbing requested
+    shopping: require('../../assets/icons/mycollection/png/002-travel-bag.png'),
+    health: require('../../assets/icons/mycollection/png/125-healthy-food.png'),
+    hospital: require('../../assets/icons/mycollection/png/125-healthy-food.png'),
+    mobile: require('../../assets/icons/mycollection/png/208-webcam.png'),
+    ticket: require('../../assets/icons/mycollection/png/214-plane-ticket.png'),
+    passport: require('../../assets/icons/mycollection/png/034-passport.png'),
+    camera: require('../../assets/icons/mycollection/png/036-camera.png'),
+    nature: require('../../assets/icons/mycollection/png/021-hiking.png'),
+    beach: require('../../assets/icons/mycollection/png/179-beach-chair.png'),
+    museum: require('../../assets/icons/mycollection/png/186-temple.png'),
+    nightlife: require('../../assets/icons/mycollection/png/020-stars.png'),
+    coffee: require('../../assets/icons/mycollection/png/135-hot-drink.png'),
+    music: require('../../assets/icons/mycollection/png/028-creativity.png'),
+    bulb: require('../../assets/icons/mycollection/png/028-creativity.png'),
+    stay: require('../../assets/icons/mycollection/png/030-hotel.png'),
+    checkin: require('../../assets/icons/mycollection/png/137-check-in.png'), // Specific Check-in
+    checkout: require('../../assets/icons/mycollection/png/140-check-out.png'), // Specific Check-out
+    breakfast: require('../../assets/icons/mycollection/png/135-hot-drink.png'), // Coffee/Breakfast
+    lunch: require('../../assets/icons/mycollection/png/133-hot-dog.png'), // Specific meal
+    dinner: require('../../assets/icons/mycollection/png/127-pizza.png'), // Pizza/Dinner
+    cafe: require('../../assets/icons/mycollection/png/135-hot-drink.png'),
+    attraction: require('../../assets/icons/mycollection/png/014-tourism.png'),
+    accommodation: require('../../assets/icons/mycollection/png/030-hotel.png'),
+    transport: require('../../assets/icons/mycollection/png/009-road-trip.png'),
+
+    // Avatars
+    man1: require('../../assets/icons/mycollection/png/037-man.png'),
+    woman1: require('../../assets/icons/mycollection/png/038-woman.png'),
+    man2: require('../../assets/icons/mycollection/png/041-man-1.png'),
+    woman2: require('../../assets/icons/mycollection/png/042-woman-1.png'),
+    man3: require('../../assets/icons/mycollection/png/043-man-2.png'),
+    woman3: require('../../assets/icons/mycollection/png/044-woman-2.png'),
+    boy: require('../../assets/icons/mycollection/png/048-boy.png'),
+    girl: require('../../assets/icons/mycollection/png/049-girl.png'),
+    profile_avatar: require('../../assets/icons/mycollection/png/056-profile-avatar.png'),
+    user_circle: require('../../assets/icons/mycollection/png/057-user.png'),
+
+    // Fallbacks
+    other: require('../../assets/icons/mycollection/png/014-tourism.png'),
+    user: require('../../assets/icons/mycollection/png/057-user.png'),
+    group: require('../../assets/icons/mycollection/png/048-boy.png'),
+    money: require('../../assets/icons/mycollection/png/061-dollar.png'),
 };
 
 /**
- * Icon Component - Renders SVG icons using Image (for web/cross-platform)
- * @param {string} name - Icon name from ICON_PATHS
- * @param {number} size - Icon size (default: 24)
- * @param {string} color - Tint color for the icon (optional)
- * @param {object} style - Additional styles
+ * Icon Component - Renders PNG icons
  */
 const Icon = ({ name, size = 24, color, style }) => {
+    // Default to 'other' if key not found
     const iconSource = ICON_PATHS[name] || ICON_PATHS.other;
 
     return (
@@ -101,8 +111,9 @@ const Icon = ({ name, size = 24, color, style }) => {
             source={iconSource}
             style={[
                 { width: size, height: size },
-                color && { tintColor: color },
-                name === 'close' && { transform: [{ rotate: '45deg' }] },
+                // Disable tint for new PNGs to show full color
+                // color && { tintColor: color }, 
+                // name === 'close' && { transform: [{ rotate: '45deg' }] }, // Disable rotation
                 style
             ]}
             resizeMode="contain"
@@ -112,5 +123,4 @@ const Icon = ({ name, size = 24, color, style }) => {
 
 export default Icon;
 
-// Export the icon names for reference
 export const IconNames = Object.keys(ICON_PATHS);

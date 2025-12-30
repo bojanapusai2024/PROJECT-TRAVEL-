@@ -11,8 +11,8 @@ import { useAuth } from '../context/AuthContext';
 import Icon from '../components/Icon';
 
 const TRIP_TYPES = [
-  { key: 'solo', label: 'Solo Trip', icon: 'profile', description: 'Just me, exploring the world', color: '#3B82F6' },
-  { key: 'friends', label: 'With Friends', icon: 'group', description: 'Adventure with my buddies', color: '#10B981' },
+  { key: 'solo', label: 'Solo Trip', icon: 'solo', description: 'Just me, exploring the world', color: '#3B82F6' },
+  { key: 'friends', label: 'With Friends', icon: 'friends', description: 'Adventure with my buddies', color: '#10B981' },
   { key: 'family', label: 'Family Trip', icon: 'family', description: 'Quality time with family', color: '#F59E0B' },
   { key: 'couple', label: 'Couple Trip', icon: 'couple', description: 'Romantic getaway for two', color: '#EC4899' },
   { key: 'business', label: 'Business Trip', icon: 'business', description: 'Work travel with leisure', color: '#8B5CF6' },
