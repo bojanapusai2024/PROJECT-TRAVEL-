@@ -149,6 +149,33 @@ export const TravelProvider = ({ children }) => {
     setTripOwnerId(null);
   };
 
+  // Exposed function to purely reset state for a new trip
+  const startNewTrip = async () => {
+    // 1. Clear all local state
+    setTripInfoState({
+      destination: '', startDate: '', endDate: '', name: '',
+      participants: [], tripCode: '', tripType: '', isCompleted: false,
+    });
+    setBudgetState({ total: 0, categories: {} });
+    setExpenses([]);
+    setPackingItems([]);
+    setItinerary([]);
+    setTripOwnerId(user?.uid);
+
+    // 2. Clear from persistent storage
+    if (isAuthenticated) {
+      try {
+        await DB.clearCurrentTripData();
+        // Force refresh lists to ensure UI is in sync
+        const [trips, history] = await Promise.all([DB.getTrips(), DB.getTripHistory()]);
+        setAllTrips(trips);
+        setTripHistory(history.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)));
+      } catch (err) {
+        console.warn('Failed to clear DB active trip or refresh:', err);
+      }
+    }
+  };
+
   const getUniqueTripCode = async () => {
     let code = '';
     let exists = true;
@@ -396,17 +423,12 @@ export const TravelProvider = ({ children }) => {
       try {
         setIsLoading(true);
 
-        // 1. If it's a "current" trip (no real ID or id is 'current'), save it to trips list first
-        // so its expenses/itinerary are moved to a permanent path users/uid/trips/ID/...
-        let finalTrip = { ...tripInfo };
-        if (!tripInfo.id || tripInfo.id === 'current') {
-          const savedTrip = await saveCurrentTripToList();
-          finalTrip = { ...savedTrip };
-        }
+        // 1. Ensure the trip is fully saved with its latest data
+        const savedTrip = await saveCurrentTripToList();
 
         // 2. Mark as completed
         const completedTrip = {
-          ...finalTrip,
+          ...savedTrip,
           isCompleted: true,
           completedAt: Date.now(),
           completedDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
@@ -416,19 +438,24 @@ export const TravelProvider = ({ children }) => {
           currency: currency.code,
         };
 
-        // 3. Update in main trips list (mark as completed)
+        // 3. Save to database in both locations
         if (isAuthenticated) {
           await DB.saveTrip(completedTrip);
-          // Also save a record in tripHistory for the specialized history list
           await DB.saveToHistory(completedTrip);
+
+          // Force refresh all internal lists
+          const [updatedTrips, updatedHistory] = await Promise.all([
+            DB.getTrips(),
+            DB.getTripHistory()
+          ]);
+          setAllTrips(updatedTrips);
+          setTripHistory(updatedHistory.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)));
+        } else {
+          setTripHistory(prev => [completedTrip, ...prev]);
+          setAllTrips(prev => prev.map(t => t.id === completedTrip.id ? completedTrip : t));
         }
 
-        setTripHistory(prev => [completedTrip, ...prev]);
-
-        // 4. Update allTrips local state so it reflects the isCompleted status
-        setAllTrips(prev => prev.map(t => t.id === completedTrip.id ? completedTrip : t));
-
-        // 5. Clear active trip state
+        // 4. Clear active trip state - Hard reset
         await clearTrip();
 
         return { success: true };
@@ -518,28 +545,66 @@ export const TravelProvider = ({ children }) => {
   };
 
   // Save current trip to all trips list
+  // Save current trip to all trips list - Now the primary entry point for saving a trip
   const saveCurrentTripToList = async (passedTrip) => {
     const dataToSave = passedTrip || tripInfo;
     if (!dataToSave.destination) return;
 
+    // 1. Generate final data once
+    const tripId = dataToSave.id || `trip-${Date.now()}`;
+    const tripCode = dataToSave.tripCode || await getUniqueTripCode();
+
     const newTrip = {
       ...dataToSave,
-      id: dataToSave.id || Date.now().toString(),
-      totalExpenses: getTotalExpenses(),
-      ownerId: user?.uid,
-      tripCode: dataToSave.tripCode || await getUniqueTripCode(),
+      id: tripId,
+      tripCode: tripCode,
+      totalExpenses: dataToSave.totalExpenses || getTotalExpenses() || 0,
+      ownerId: dataToSave.ownerId || user?.uid,
       createdAt: dataToSave.createdAt || Date.now(),
+      updatedAt: Date.now(),
     };
 
-    setTripOwnerId(user?.uid);
+    // 2. Atomic state updates
+    setTripOwnerId(newTrip.ownerId);
+    setTripInfoState(newTrip);
+
+    if (dataToSave.budget) {
+      setBudgetState(dataToSave.budget);
+    }
+
     setAllTrips(prev => {
       const filtered = prev.filter(t => t.id !== newTrip.id);
       return [newTrip, ...filtered];
     });
 
+    // 3. Persistent storage
     if (isAuthenticated) {
       try {
+        // Save to currentTrip/info for resume on reload
+        await DB.saveCurrentTripInfo(newTrip);
+
+        // Save budget if it was part of the update
+        if (dataToSave.budget) {
+          await DB.saveBudget(dataToSave.budget, newTrip.id, newTrip.ownerId);
+        }
+
+        // Save to the main trips list
         await DB.saveTrip(newTrip);
+
+        // Final sync of history and all trips
+        const [updatedTrips, updatedHistory] = await Promise.all([
+          DB.getTrips(),
+          DB.getTripHistory()
+        ]);
+
+        console.log(`[Context] Saved trip. Now refreshing. DB trips count: ${updatedTrips.length}`);
+
+        if (updatedTrips.length > 0) {
+          setAllTrips(updatedTrips);
+        } else {
+          console.warn('[Context] DB.getTrips() returned empty after save. Keeping local state.');
+        }
+        setTripHistory(updatedHistory.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)));
       } catch (error) {
         console.error('Error saving trip to list:', error);
       }
@@ -797,6 +862,7 @@ export const TravelProvider = ({ children }) => {
       addExpense,
       updateExpense,
       deleteExpense,
+      startNewTrip, // Exported for UI to call
       getTotalExpenses, getExpensesByCategory,
       packingItems,
       addPackingItem,
@@ -817,6 +883,7 @@ export const TravelProvider = ({ children }) => {
       deleteTripFromHistory, deleteTrip, resetLocalState, findTripByCode,
       joinTripByCode, joinAsNewTraveler, switchToTrip, tripOwnerId, getUniqueTripCode,
       saveCurrentTripToList,
+      allTrips, setAllTrips,
       isLoading,
     }}>
       {children}

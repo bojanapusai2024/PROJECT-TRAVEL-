@@ -141,32 +141,25 @@ export default function MainNavigator() {
     setCurrentScreen('Welcome');
   };
 
-  const handleTripSetupComplete = (tripData) => {
-    console.log('Trip setup complete:', tripData);
+  const handleTripSetupComplete = async (tripData) => {
+    console.log('Trip setup complete - saving:', tripData.destination);
 
-    // Save trip data to context
-    setTripInfo({
-      destination: tripData.destination,
-      startDate: tripData.startDate,
-      endDate: tripData.endDate,
-      name: tripData.name || `${tripData.destination} Trip`,
-      participants: tripData.participants || [],
-      tripCode: tripData.tripCode,
-      tripType: tripData.tripType,
-    });
-
-    // Set budget
-    setBudget(prev => ({ ...prev, total: parseFloat(tripData.budget) || 0 }));
-
-    // Save to allTrips list
-    setTimeout(() => {
+    try {
+      // 1. One single call to save everything
+      // This will generate ID/code AND set the trip as "active" in the context
       if (saveCurrentTripToList) {
-        saveCurrentTripToList(tripData);
+        await saveCurrentTripToList({
+          ...tripData,
+          budget: { total: parseFloat(tripData.budget) || 0, categories: {} }
+        });
       }
-    }, 100);
 
-    // Navigate to dashboard
-    setCurrentScreen('TripDashboard');
+      // 2. Navigate to dashboard
+      setCurrentScreen('TripDashboard');
+    } catch (error) {
+      console.error('Error in handleTripSetupComplete:', error);
+      Alert.alert('Error', 'Failed to save trip. Please try again.');
+    }
   };
 
   const handleTripSetupBack = () => {

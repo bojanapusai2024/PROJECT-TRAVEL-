@@ -25,8 +25,8 @@ const AVATARS = [
   'boy', 'girl', 'user_circle'
 ];
 const TRIP_TYPES = [
-  { key: 'solo', label: 'Solo Trip', icon: 'profile', color: '#3B82F6' },
-  { key: 'friends', label: 'With Friends', icon: 'group', color: '#10B981' },
+  { key: 'solo', label: 'Solo Trip', icon: 'solo', color: '#3B82F6' },
+  { key: 'friends', label: 'With Friends', icon: 'friends', color: '#10B981' },
   { key: 'family', label: 'Family Trip', icon: 'family', color: '#F59E0B' },
   { key: 'couple', label: 'Couple Trip', icon: 'couple', color: '#EC4899' },
   { key: 'business', label: 'Business Trip', icon: 'business', color: '#8B5CF6' },
@@ -250,7 +250,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
                   >
                     <View style={styles.historyCardLeft}>
                       <View style={[styles.historyIconContainer, { backgroundColor: isDark ? colors.cardLight : '#F3F4F6' }]}>
-                        <Icon name={getTripTypeIcon(trip.tripType)} size={24} color={colors.primary} />
+                        <Icon name={trip.tripType === 'profile' ? 'solo' : (trip.tripType === 'group' ? 'friends' : (trip.tripType || 'solo'))} size={24} color={colors.primary} />
                       </View>
                       <View style={styles.historyInfo}>
                         <Text style={styles.historyDestination}>{trip.destination || trip.name}</Text>

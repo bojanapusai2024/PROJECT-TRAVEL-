@@ -10,11 +10,12 @@ const ICON_PATHS = {
     packing: require('../../assets/icons/mycollection/png/206-packing.png'),
     itinerary: require('../../assets/icons/mycollection/png/102-calendar.png'),
     profile: require('../../assets/icons/mycollection/png/056-profile-avatar.png'),
-    settings: require('../../assets/icons/mycollection/png/068-scales.png'),
+    settings: require('../../assets/icons/mycollection/png/042-gear.png'),
 
     // Actions
     add: require('../../assets/icons/mycollection/png/105-add-event.png'),
-    close: require('../../assets/icons/mycollection/png/119-exit.png'), // Explicit X/Exit
+    close: require('../../assets/icons/mycollection/png/047-cross.png'), // Explicit X/Exit
+    check: require('../../assets/icons/mycollection/png/051-check.png'),
     delete: require('../../assets/icons/mycollection/png/106-deleted.png'),
     link: require('../../assets/icons/mycollection/png/049-link.png'), // Better link icon
     edit: require('../../assets/icons/mycollection/png/104-edit.png'),
@@ -22,7 +23,7 @@ const ICON_PATHS = {
     search: require('../../assets/icons/mycollection/png/155-binoculars.png'),
     lock: require('../../assets/icons/mycollection/png/115-password.png'),
     logout: require('../../assets/icons/mycollection/png/118-logout.png'),
-    notification: require('../../assets/icons/mycollection/png/144-reception-bell.png'),
+    notification: require('../../assets/icons/mycollection/png/041-notification-alert.png'),
     calendar: require('../../assets/icons/mycollection/png/102-calendar.png'),
     clock: require('../../assets/icons/mycollection/png/148-hourglass.png'),
     location: require('../../assets/icons/mycollection/png/164-location-pin.png'),
@@ -30,13 +31,13 @@ const ICON_PATHS = {
     task: require('../../assets/icons/mycollection/png/107-schedule.png'),
     check: require('../../assets/icons/mycollection/png/051-check.png'),
     like: require('../../assets/icons/mycollection/png/020-stars.png'),
-    heart: require('../../assets/icons/mycollection/png/004-honeymoon.png'),
-    message: require('../../assets/icons/mycollection/png/077-navigation.png'),
+    heart: require('../../assets/icons/mycollection/png/020-stars.png'),
+    message: require('../../assets/icons/mycollection/png/036-email.png'),
 
     // Trip Types
     solo: require('../../assets/icons/mycollection/png/185-traveller.png'), // User explicitly requested change from gear
     friends: require('../../assets/icons/mycollection/png/032-group.png'), // Friend group
-    family: require('../../assets/icons/mycollection/png/191-family.png'),
+    family: require('../../assets/icons/mycollection/png/007-family.png'),
     couple: require('../../assets/icons/mycollection/png/110-valentines-day.png'),
     business: require('../../assets/icons/mycollection/png/029-bussiness-man.png'), // More specific business icon
 

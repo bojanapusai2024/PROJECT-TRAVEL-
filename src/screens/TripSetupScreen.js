@@ -385,7 +385,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
           <View style={styles.stepContent}>
             {/* Destination Input */}
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>📍 Destination</Text>
+              <Text style={styles.inputLabel}>Destination</Text>
               <View style={styles.inputContainer}>
                 <View style={styles.inputIconBg}>
                   <Icon name="search" size={20} color={colors.textMuted} />
@@ -407,7 +407,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
 
             {/* Date Selection */}
             <View style={styles.datesSection}>
-              <Text style={styles.inputLabel}>📅 Travel Dates</Text>
+              <Text style={styles.inputLabel}>Travel Dates</Text>
 
               <View style={styles.datesRow}>
                 {/* Start Date */}
@@ -486,7 +486,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                     tripData.tripType === type.key && { backgroundColor: type.color }
                   ]}>
                     {tripData.tripType === type.key && (
-                      <Text style={styles.tripTypeCheckText}>✓</Text>
+                      <Icon name="check" size={14} color="#FFF" />
                     )}
                   </View>
                 </Pressable>
@@ -543,7 +543,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
 
             {/* Trip Summary */}
             <View style={styles.summaryCard}>
-              <Text style={styles.summaryTitle}>📋 Trip Summary</Text>
+              <Text style={styles.summaryTitle}>Trip Summary</Text>
 
               <View style={styles.summaryRow}>
                 <Icon name="location" size={20} color={colors.primary} style={{ marginRight: 10 }} />

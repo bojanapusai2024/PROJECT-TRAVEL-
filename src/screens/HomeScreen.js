@@ -242,7 +242,7 @@ export default function HomeScreen({ onBackToHome }) {
                 <Icon name="settings" size={24} color={colors.text} />
               </Pressable>
               <Pressable style={styles.backButton} onPress={onBackToHome}>
-                <Text style={styles.backButtonText}>✕</Text>
+                <Icon name="close" size={24} color={colors.text} />
               </Pressable>
             </View>
           </View>
@@ -301,7 +301,10 @@ export default function HomeScreen({ onBackToHome }) {
 
         {/* Quick Actions */}
         <Animated.View style={[styles.quickActionsSection, { opacity: fadeAnim }]}>
-          <Text style={styles.sectionTitle}>⚡ Quick Actions</Text>
+          <View style={styles.sectionHeader}>
+            <Icon name="quick" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+          </View>
           <View style={styles.quickActionsGrid}>
             <Pressable
               style={({ pressed }) => [styles.quickActionCard, pressed && { opacity: 0.8 }]}
@@ -392,7 +395,10 @@ export default function HomeScreen({ onBackToHome }) {
         {/* Activity Overview */}
         <Animated.View style={[styles.overviewSection, { opacity: fadeAnim }]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>📍 Activity Overview</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name="location" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.sectionTitle}>Activity Overview</Text>
+            </View>
             {itinerary.length > 0 && (
               <TouchableOpacity onPress={goToItinerary}>
                 <Text style={styles.viewMoreText}>View All →</Text>
@@ -434,7 +440,10 @@ export default function HomeScreen({ onBackToHome }) {
         {/* Expense Logs */}
         <Animated.View style={[styles.overviewSection, { opacity: fadeAnim }]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>💳 Recent Expenses</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name="card" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.sectionTitle}>Recent Expenses</Text>
+            </View>
             {expenses.length > 0 && (
               <TouchableOpacity onPress={goToExpenses}>
                 <Text style={styles.viewMoreText}>View All →</Text>
@@ -483,7 +492,10 @@ export default function HomeScreen({ onBackToHome }) {
         {travelers.length > 0 && (
           <Animated.View style={[styles.participantsSection, { opacity: fadeAnim }]}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>👥 Travel Buddies</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Icon name="group" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+                <Text style={styles.sectionTitle}>Travel Buddies</Text>
+              </View>
               <TouchableOpacity onPress={() => setShowTravelersModal(true)}>
                 <Text style={styles.viewMoreText}>Edit →</Text>
               </TouchableOpacity>
@@ -499,18 +511,27 @@ export default function HomeScreen({ onBackToHome }) {
                     allParticipants.forEach(t => {
                       const gName = t.familyGroup || 'Family 1';
                       if (!groups[gName]) groups[gName] = [];
-                      groups[gName].push(t.name);
+                      groups[gName].push(t);
                     });
 
                     return Object.entries(groups).map(([groupName, members], gIndex) => (
                       <View key={groupName} style={[styles.familyGroupItem, gIndex > 0 && styles.familyGroupDivider]}>
                         <Text style={styles.familyGroupName}>{groupName}</Text>
-                        <Text style={styles.familyGroupMembers}>{members.join(', ')}</Text>
+                        <View style={styles.familyMembersList}>
+                          {members.map((p, idx) => (
+                            <View key={idx} style={styles.participantItem}>
+                              <View style={[styles.participantAvatar, p.isMe && { backgroundColor: colors.primary }]}>
+                                <Text style={styles.participantInitial}>{p.name === 'You' ? 'You' : (p.name?.charAt(0) || '?')}</Text>
+                              </View>
+                              <Text style={styles.participantName}>{p.name}{p.type === 'owner' ? ' (Organizer)' : ''}</Text>
+                            </View>
+                          ))}
+                        </View>
                       </View>
                     ));
                   })()
                 ) : (
-                  // Original View for Friends/Others
+                  // Original View for Friends/Others - NOW LIST FORMAT
                   getAllTravelers().map((p, index) => (
                     <View key={index} style={styles.participantItem}>
                       <View style={[styles.participantAvatar, p.isMe && { backgroundColor: colors.primary }]}>
@@ -534,9 +555,12 @@ export default function HomeScreen({ onBackToHome }) {
           <View style={styles.modalContent}>
             <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>⚙️ Trip Settings</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Icon name="settings" size={24} color={colors.text} style={{ marginRight: 8 }} />
+                <Text style={styles.modalTitle}>Trip Settings</Text>
+              </View>
               <Pressable onPress={() => setShowSettingsModal(false)} style={styles.modalCloseBtn}>
-                <Text style={styles.modalCloseBtnText}>×</Text>
+                <Icon name="close" size={20} color={colors.textMuted} />
               </Pressable>
             </View>
 
@@ -551,7 +575,7 @@ export default function HomeScreen({ onBackToHome }) {
                 }}
               >
                 <View style={[styles.settingsIconBg, { backgroundColor: '#8B5CF620' }]}>
-                  <Text style={styles.settingsIcon}>📅</Text>
+                  <Icon name="calendar" size={20} color="#8B5CF6" />
                 </View>
                 <View style={styles.settingsInfo}>
                   <Text style={styles.settingsLabel}>Edit Travel Dates</Text>
@@ -565,7 +589,7 @@ export default function HomeScreen({ onBackToHome }) {
                 onPress={() => { setShowSettingsModal(false); setShowBudgetModal(true); }}
               >
                 <View style={[styles.settingsIconBg, { backgroundColor: '#10B98120' }]}>
-                  <Text style={styles.settingsIcon}>💰</Text>
+                  <Icon name="budget" size={20} color="#10B981" />
                 </View>
                 <View style={styles.settingsInfo}>
                   <Text style={styles.settingsLabel}>Edit Budget</Text>
@@ -579,7 +603,7 @@ export default function HomeScreen({ onBackToHome }) {
                 onPress={() => { setShowSettingsModal(false); setShowTravelersModal(true); }}
               >
                 <View style={[styles.settingsIconBg, { backgroundColor: '#3B82F620' }]}>
-                  <Text style={styles.settingsIcon}>👥</Text>
+                  <Icon name="group" size={20} color="#3B82F6" />
                 </View>
                 <View style={styles.settingsInfo}>
                   <Text style={styles.settingsLabel}>Manage Travelers</Text>
@@ -593,7 +617,7 @@ export default function HomeScreen({ onBackToHome }) {
                 onPress={() => { setShowSettingsModal(false); setShowEndTripModal(true); }}
               >
                 <View style={[styles.settingsIconBg, { backgroundColor: '#F59E0B20' }]}>
-                  <Text style={styles.settingsIcon}>🏁</Text>
+                  <Icon name="close" size={20} color="#F59E0B" />
                 </View>
                 <View style={styles.settingsInfo}>
                   <Text style={styles.settingsLabel}>End Trip</Text>
@@ -607,7 +631,7 @@ export default function HomeScreen({ onBackToHome }) {
                 onPress={() => { setShowSettingsModal(false); setShowDeleteModal(true); }}
               >
                 <View style={[styles.settingsIconBg, { backgroundColor: '#EF444420' }]}>
-                  <Text style={styles.settingsIcon}>🗑️</Text>
+                  <Icon name="delete" size={20} color="#EF4444" />
                 </View>
                 <View style={styles.settingsInfo}>
                   <Text style={[styles.settingsLabel, { color: '#EF4444' }]}>Delete Trip</Text>
@@ -628,7 +652,7 @@ export default function HomeScreen({ onBackToHome }) {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>📅 Edit Travel Dates</Text>
               <Pressable onPress={() => setShowDatesModal(false)} style={styles.modalCloseBtn}>
-                <Text style={styles.modalCloseBtnText}>×</Text>
+                <Icon name="close" size={20} color={colors.textMuted} />
               </Pressable>
             </View>
 
@@ -690,7 +714,7 @@ export default function HomeScreen({ onBackToHome }) {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>💰 Edit Budget</Text>
               <Pressable onPress={() => setShowBudgetModal(false)} style={styles.modalCloseBtn}>
-                <Text style={styles.modalCloseBtnText}>×</Text>
+                <Icon name="close" size={20} color={colors.textMuted} />
               </Pressable>
             </View>
 
@@ -728,7 +752,7 @@ export default function HomeScreen({ onBackToHome }) {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>👥 Manage Travelers</Text>
               <Pressable onPress={() => setShowTravelersModal(false)} style={styles.modalCloseBtn}>
-                <Text style={styles.modalCloseBtnText}>×</Text>
+                <Icon name="close" size={20} color={colors.textMuted} />
               </Pressable>
             </View>
 
@@ -959,6 +983,8 @@ const createStyles = (colors) => StyleSheet.create({
   participantsCard: { backgroundColor: colors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
   participantsList: {
     padding: 8,
+    padding: 8,
+    gap: 12,
   },
   familyGroupItem: {
     paddingVertical: 12,
@@ -980,7 +1006,7 @@ const createStyles = (colors) => StyleSheet.create({
     borderTopColor: colors.primaryBorder,
     marginTop: 8,
   },
-  participantItem: { flexDirection: 'row', alignItems: 'center' },
+  participantItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardLight, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: colors.primaryBorder },
   participantAvatar: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.cardLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   participantInitial: { color: colors.text, fontSize: 14, fontWeight: '600' },
   participantName: { color: colors.text, fontSize: 15 },

@@ -30,6 +30,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     allTrips = [],
     tripHistory = [],
     saveCurrentTripToList,
+    startNewTrip, // Import the new reset function
     switchToTrip,
   } = useTravelContext();
 
@@ -42,7 +43,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
   const [showTripTypeModal, setShowTripTypeModal] = useState(false);
   const [tripCode, setTripCode] = useState('');
-  const [showAllTrips, setShowAllTrips] = useState(false); // Default to collapsed
+  const [showAllTrips, setShowAllTrips] = useState(true); // Default to expanded so users see their trips immediately
 
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim1 = useState(new Animated.Value(0.8))[0];
@@ -60,8 +61,10 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
   // Get trip type info - make it accept a tripType parameter
   const getTripTypeInfo = (tripType) => {
-    const type = TRIP_TYPES.find(t => t.key === tripType);
-    return type || { key: 'solo', label: 'Solo', icon: 'profile', color: '#3B82F6' };
+    // Standardize trip keys for icons
+    const sanitizedType = tripType === 'profile' ? 'solo' : (tripType === 'group' ? 'friends' : tripType);
+    const type = TRIP_TYPES.find(t => t.key === sanitizedType);
+    return type || { key: 'solo', label: 'Solo', icon: 'solo', color: '#3B82F6' };
   };
 
   // Calculate trip days - make it accept trip dates as parameters
@@ -85,13 +88,24 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   const parseDate = (dateString) => {
     if (!dateString) return null;
     try {
+      // 1. Try "DD MMM YYYY" format (e.g., "24 Dec 2025")
       const parts = dateString.split(' ');
-      if (parts.length < 3) return null;
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthIndex = months.indexOf(parts[1]);
-      if (monthIndex === -1) return null;
-      const date = new Date(parseInt(parts[2]), monthIndex, parseInt(parts[0]));
-      return isNaN(date.getTime()) ? null : date;
+      if (parts.length === 3) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthIndex = months.findIndex(m => m.toLowerCase() === parts[1].toLowerCase());
+        if (monthIndex !== -1) {
+          const day = parseInt(parts[0]);
+          const year = parseInt(parts[2]);
+          const date = new Date(year, monthIndex, day);
+          if (!isNaN(date.getTime())) return date;
+        }
+      }
+
+      // 2. Try standard Date parsing (e.g., ISO or "Dec 24, 2025")
+      const stdDate = new Date(dateString);
+      if (!isNaN(stdDate.getTime())) return stdDate;
+
+      return null;
     } catch {
       return null;
     }
@@ -117,58 +131,47 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
   // 1. Determine the Featured Trip (Dashboard)
   const featuredTrip = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    if (!allTrips) return null;
 
-    // A. Priority 1: Current active trip from context
-    if (hasActiveTrip && tripInfo && tripInfo.destination) {
-      return {
-        ...tripInfo,
-        id: tripInfo.id || 'current',
-        totalExpenses: getTotalExpenses()
-      };
-    }
-
-    // B. Priority 2: Ongoing trip from allTrips
-    if (allTrips && allTrips.length > 0) {
-      const activeTrips = allTrips.filter(t => !t.isCompleted);
-      const sortedActive = [...activeTrips].sort((a, b) => {
-        const startA = parseDate(a.startDate);
-        const startB = parseDate(b.startDate);
-        if (!startA) return 1;
-        if (!startB) return -1;
-        return startA - startB;
-      });
-
-      const ongoing = sortedActive.find(t => {
-        const start = parseDate(t.startDate);
-        const end = parseDate(t.endDate);
-        return start && start <= today && (!end || end >= today);
-      });
-      if (ongoing) return ongoing;
-
-      // C. Priority 3: Soonest upcoming trip
-      if (sortedActive.length > 0) return sortedActive[0];
-    }
-
-    return null;
-  }, [hasActiveTrip, tripInfo, allTrips, getTotalExpenses]);
-
-  // 2. Upcoming Trips List (Excluding featured)
-  const upcomingTrips = useMemo(() => {
-    if (!allTrips) return [];
-
-    return allTrips
-      .filter(t => !t.isCompleted && t.id !== featuredTrip?.id)
+    const sortedActive = [...allTrips]
+      .filter(t => !t.isCompleted)
       .sort((a, b) => {
         const startA = parseDate(a.startDate);
         const startB = parseDate(b.startDate);
-        if (!startA && !startB) return 0;
-        if (!startA) return 1;
-        if (!startB) return -1;
-        return startA - startB;
+        if (startA && startB) return startA - startB;
+        return (b.createdAt || 0) - (a.createdAt || 0);
       });
-  }, [allTrips, featuredTrip]);
+
+    // A. Priority: If we have an active tripInfo from context
+    if (tripInfo && tripInfo.destination) {
+      // Find the same trip in our stable list to get latest data (expenses, etc)
+      const matchingTrip = sortedActive.find(t => t.id === tripInfo.id || (t.destination === tripInfo.destination && t.startDate === tripInfo.startDate));
+      return matchingTrip || { ...tripInfo, id: tripInfo.id || 'current', totalExpenses: getTotalExpenses() };
+    }
+
+    // B. Fallback: Soonest upcoming trip
+    if (sortedActive.length > 0) return sortedActive[0];
+
+    return null;
+  }, [allTrips, tripInfo, getTotalExpenses]);
+
+  // 2. Upcoming Trips List (Excluding featured)
+  // 2. Upcoming Trips List (Include ALL active trips for absolute clarity)
+  const upcomingTrips = useMemo(() => {
+    if (!allTrips) return [];
+
+    const list = allTrips
+      .filter(t => !t.isCompleted)
+      .sort((a, b) => {
+        const startA = parseDate(a.startDate);
+        const startB = parseDate(b.startDate);
+        if (startA && startB) return startA - startB;
+        return (b.createdAt || 0) - (a.createdAt || 0);
+      });
+
+    console.log(`[WelcomeScreen] Total: ${allTrips.length}, Active: ${list.length}`);
+    return list;
+  }, [allTrips]);
 
   const tripTypeInfo = getTripTypeInfo(tripInfo?.tripType || '');
 
@@ -207,6 +210,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   // Add missing handleTripTypeSelect function
   const handleTripTypeSelect = (tripType) => {
     setShowTripTypeModal(false);
+    startNewTrip(); // Ensure fresh state even if selected via modal
     onPlanTrip(tripType);
   };
 
@@ -516,7 +520,18 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             <Animated.View style={[styles.optionCardHalf, { transform: [{ scale: scaleAnim1 }] }]}>
               <Pressable
                 style={({ pressed }) => [styles.optionCardSmall, pressed && styles.cardPressed]}
-                onPress={onPlanTrip}
+                onPress={() => {
+                  if (!hasActiveTrip) {
+                    // If no active trip, we are definitely starting fresh
+                    startNewTrip();
+                  } else {
+                    // Check if we should prompt? For now, we assume "Plan New Trip" means FRESH.
+                    // If the user wants to EDIT the current trip, they would tap the "Continue" card.
+                    // So, "Plan New Trip" button should ALWAYS reset.
+                    startNewTrip();
+                  }
+                  onPlanTrip();
+                }}
               >
                 <View style={styles.optionGlowSmall} />
                 <View style={styles.optionIconBgSmall}><Icon name="add" size={24} color="#FFF" /></View>
@@ -554,7 +569,8 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
                 <View>
                   <Text style={styles.upcomingTripsTitle}>Upcoming Trips</Text>
                   <Text style={styles.upcomingTripsSubtitle}>
-                    {upcomingTrips.length > 0
+                    {/* Logic: Show total active trips count */}
+                    {upcomingTrips && upcomingTrips.length > 0
                       ? `${upcomingTrips.length} trip${upcomingTrips.length > 1 ? 's' : ''} planned`
                       : 'No upcoming trips yet'
                     }

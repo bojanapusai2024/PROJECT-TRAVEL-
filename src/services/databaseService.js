@@ -425,8 +425,20 @@ export const saveToHistory = async (tripData) => {
   const userId = getUserId();
   if (!userId) throw new Error('User not authenticated');
 
-  const historyId = push(ref(database, `users/${userId}/tripHistory`)).key;
-  await set(ref(database, `users/${userId}/tripHistory/${historyId}`), { ...tripData, id: historyId, completedAt: Date.now() });
+  // Use the trip's ID as the history key to ensure we can easily delete/find it later
+  const historyId = tripData.id || push(ref(database, `users/${userId}/tripHistory`)).key;
+  await set(ref(database, `users/${userId}/tripHistory/${historyId}`), {
+    ...tripData,
+    id: historyId,
+    completedAt: tripData.completedAt || Date.now()
+  });
+};
+
+export const deleteTripFromHistory = async (tripId) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+  if (!tripId) return;
+  await remove(ref(database, `users/${userId}/tripHistory/${tripId}`));
 };
 
 export const getTripHistory = async () => {
