@@ -43,7 +43,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
 
   const [showTripTypeModal, setShowTripTypeModal] = useState(false);
   const [tripCode, setTripCode] = useState('');
-  const [showAllTrips, setShowAllTrips] = useState(true); // Default to expanded so users see their trips immediately
+  const [showAllTrips, setShowAllTrips] = useState(false); // Default to closed as requested
   const [centerIconIndex, setCenterIconIndex] = useState(0);
   const rotationIcons = ['v012', 'v182', 'v183', 'v184', 'v187', 'v189', 'v190'];
 
@@ -553,7 +553,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
                 style={({ pressed }) => [styles.optionCardSmall, pressed && styles.cardPressed]}
                 onPress={() => setShowJoinModal(true)}
               >
-                <View style={styles.optionIconBgSmall}><Icon name="group" size={24} color="#FFF" /></View>
+                <View style={styles.optionIconBgSmall}><Icon name="helping_hand" size={24} color="#FFF" /></View>
                 <Text style={styles.optionTitleSmall}>Join a Trip</Text>
                 <Text style={styles.optionDescriptionSmall}>Enter code to join</Text>
               </Pressable>

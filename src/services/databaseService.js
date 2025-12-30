@@ -474,6 +474,12 @@ export const saveUserSettings = async (settings) => {
   await update(ref(database, `users/${userId}/settings`), { ...settings, updatedAt: Date.now() });
 };
 
+export const saveUserProfile = async (profileData) => {
+  const userId = getUserId();
+  if (!userId) throw new Error('User not authenticated');
+  await update(ref(database, `users/${userId}/profile`), { ...profileData, updatedAt: Date.now() });
+};
+
 export const getUserSettings = async () => {
   const userId = getUserId();
   if (!userId) return null;

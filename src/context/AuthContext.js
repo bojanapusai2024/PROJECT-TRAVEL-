@@ -114,6 +114,8 @@ export function AuthProvider({ children }) {
     try {
       if (auth.currentUser) {
         await updateProfile(auth.currentUser, updates);
+        // Also mirror in database for persistence and sync
+        await DB.saveUserProfile(updates);
         setUser(prev => prev ? { ...prev, ...updates } : null);
         return { success: true };
       }

@@ -92,6 +92,7 @@ const ICON_PATHS = {
     girl: require('../../assets/icons/mycollection/png/049-girl.png'),
     profile_avatar: require('../../assets/icons/mycollection/png/056-profile-avatar.png'),
     user_circle: require('../../assets/icons/mycollection/png/057-user.png'),
+    helping_hand: require('../../assets/icons/mycollection/png/043-helping-hand.png'),
 
     // Fallbacks
     other: require('../../assets/icons/mycollection/png/012-leaning-tower-of-pisa.png'),

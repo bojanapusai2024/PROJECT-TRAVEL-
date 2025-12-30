@@ -341,10 +341,6 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
               <View style={styles.profileInfo}>
                 <Text style={styles.userName}>{user?.displayName || 'Traveler'}</Text>
                 <Text style={styles.userEmail}>{user?.email}</Text>
-                <View style={styles.memberBadge}>
-                  <Icon name="like" size={12} color="#FFF" style={{ marginRight: 4 }} />
-                  <Text style={styles.memberBadgeText}>Member since {getMemberSince()}</Text>
-                </View>
               </View>
             </View>
 
@@ -437,20 +433,6 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account & Security</Text>
 
-          <AnimatedCard delay={300} onPress={() => { }}>
-            <View style={styles.settingItem}>
-              <View style={styles.settingLeft}>
-                <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#6B728040' : '#6B728020' }]}>
-                  <Icon name="task" size={20} color="#6B7280" />
-                </View>
-                <View style={styles.settingInfo}>
-                  <Text style={styles.settingLabel}>Export Data</Text>
-                  <Text style={styles.settingValue}>Download your trip data</Text>
-                </View>
-              </View>
-              <Text style={styles.settingArrow}>›</Text>
-            </View>
-          </AnimatedCard>
 
           <AnimatedCard delay={325} onPress={() => { }}>
             <View style={styles.settingItem}>
@@ -543,7 +525,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
           <View style={styles.footer}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
               <Icon name="airplane" size={20} color={colors.textMuted} style={{ marginRight: 6 }} />
-              <Text style={styles.appLogo}>TripNest</Text>
+              <Text style={styles.appLogo}>TravelMate</Text>
             </View>
             <Text style={styles.version}>Version 1.0.0</Text>
             <Text style={styles.copyright}>Made with ❤️ for travelers</Text>
@@ -658,9 +640,14 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
                     styles.avatarOption,
                     selectedAvatar === avatar && styles.avatarOptionActive
                   ]}
-                  onPress={() => {
+                  onPress={async () => {
                     setSelectedAvatar(avatar);
                     setShowAvatarPicker(false);
+                    // Also fire update immediately to persist
+                    await updateUserProfile({
+                      displayName: user?.displayName || '',
+                      photoURL: avatar
+                    });
                   }}
                 >
                   <Icon name={avatar} size={32} color={colors.primary} />
