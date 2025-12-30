@@ -44,6 +44,8 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
   const [showTripTypeModal, setShowTripTypeModal] = useState(false);
   const [tripCode, setTripCode] = useState('');
   const [showAllTrips, setShowAllTrips] = useState(true); // Default to expanded so users see their trips immediately
+  const [centerIconIndex, setCenterIconIndex] = useState(0);
+  const rotationIcons = ['v012', 'v182', 'v183', 'v184', 'v187', 'v189', 'v190'];
 
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim1 = useState(new Animated.Value(0.8))[0];
@@ -196,6 +198,12 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
         Animated.timing(pulseAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
       ])
     ).start();
+
+    // Rotate center icons every 6 seconds
+    const interval = setInterval(() => {
+      setCenterIconIndex((prev) => (prev + 1) % rotationIcons.length);
+    }, 6000);
+    return () => clearInterval(interval);
   }, []);
 
   const floatTranslate = floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -20] });
@@ -504,7 +512,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
             <Animated.View style={[styles.outerRing, { transform: [{ scale: pulseAnim }] }]} />
             <View style={styles.middleRing} />
             <View style={styles.travelerCircle}>
-              <Icon name="nature" size={60} color={colors.primary} />
+              <Icon name={rotationIcons[centerIconIndex]} size={60} color={colors.primary} />
             </View>
             <View style={[styles.floatingElement, styles.floatingElement1]}><Icon name="nature" size={24} color="#10B981" /></View>
             <View style={[styles.floatingElement, styles.floatingElement2]}><Icon name="airplane" size={24} color="#3B82F6" /></View>

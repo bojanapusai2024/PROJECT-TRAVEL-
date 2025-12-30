@@ -13,6 +13,18 @@ import {
 
 const getUserId = () => auth.currentUser?.uid;
 
+// helper to strip private data from shared/fetched trips
+const cleanTripData = (trip) => {
+  if (!trip) return null;
+  const cleaned = { ...trip };
+  // remove sub-node collections that should be private to the local user
+  delete cleaned.packingItems;
+  delete cleaned.expenses;
+  delete cleaned.itinerary;
+  delete cleaned.budget; // budget info is usually handled separately, but let's be safe
+  return cleaned;
+};
+
 // ============ TRIPS ============
 export const saveTrip = async (tripData) => {
   const userId = getUserId();
@@ -21,15 +33,22 @@ export const saveTrip = async (tripData) => {
   const tripId = tripData.id || push(ref(database, `users/${userId}/trips`)).key;
   const tripRef = ref(database, `users/${userId}/trips/${tripId}`);
 
-  await set(tripRef, { ...tripData, id: tripId, updatedAt: Date.now(), createdAt: tripData.createdAt || Date.now() });
+  // Use update instead of set to avoid wiping sub-collections (expenses, packingItems, etc.)
+  const cleanedData = cleanTripData(tripData);
+  await update(tripRef, {
+    ...cleanedData,
+    id: tripId,
+    updatedAt: Date.now(),
+    createdAt: tripData.createdAt || Date.now()
+  });
 
   // If trip has a code, map it globally and sync to shared node
   if (tripData.tripCode) {
     await saveTripCodeMapping(tripData.tripCode, userId, tripId);
-    await saveToSharedTrips(tripId, { ...tripData, id: tripId, ownerId: userId });
+    await saveToSharedTrips(tripId, { ...cleanedData, id: tripId, ownerId: userId });
   }
 
-  return { ...tripData, id: tripId };
+  return { ...cleanedData, id: tripId };
 };
 
 export const saveToSharedTrips = async (tripId, tripData) => {
@@ -55,7 +74,9 @@ export const getTrips = async () => {
   if (!userId) return [];
 
   const snapshot = await get(ref(database, `users/${userId}/trips`));
-  return snapshot.exists() ? Object.values(snapshot.val()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)) : [];
+  if (!snapshot.exists()) return [];
+  const trips = Object.values(snapshot.val());
+  return trips.map(t => cleanTripData(t)).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 };
 
 export const deleteTrip = async (tripId) => {
@@ -122,13 +143,10 @@ export const getTripByCode = async (code) => {
 
       const fallbackSnapshot = await get(ref(database, tripPath));
       if (!fallbackSnapshot.exists()) return null;
-      return { ...fallbackSnapshot.val(), ownerId: userId };
+      return { ...cleanTripData(fallbackSnapshot.val()), ownerId: userId };
     }
 
-    const tripVal = tripSnapshot.val();
-    if (!tripVal) return null;
-
-    return tripVal;
+    return cleanTripData(tripSnapshot.val());
   } catch (error) {
     console.error(`[DB] Permission/Network Error in getTripByCode:`, error);
     throw error;
@@ -236,12 +254,13 @@ export const addMeToTrip = async (trip, participantId = null) => {
 export const saveCurrentTripInfo = async (tripInfo) => {
   const userId = getUserId();
   if (!userId) throw new Error('User not authenticated');
-  await set(ref(database, `users/${userId}/currentTrip/info`), { ...tripInfo, updatedAt: Date.now() });
+  const cleaned = cleanTripData(tripInfo);
+  await set(ref(database, `users/${userId}/currentTrip/info`), { ...cleaned, updatedAt: Date.now() });
 
   // Also ensure the trip code mapping exists globally for joining
   if (tripInfo.tripCode && tripInfo.id) {
     await saveTripCodeMapping(tripInfo.tripCode, userId, tripInfo.id);
-    await saveToSharedTrips(tripInfo.id, { ...tripInfo, ownerId: userId });
+    await saveToSharedTrips(tripInfo.id, { ...cleaned, ownerId: userId });
   }
 };
 
@@ -249,7 +268,7 @@ export const getCurrentTripInfo = async () => {
   const userId = getUserId();
   if (!userId) return null;
   const snapshot = await get(ref(database, `users/${userId}/currentTrip/info`));
-  return snapshot.exists() ? snapshot.val() : null;
+  return snapshot.exists() ? cleanTripData(snapshot.val()) : null;
 };
 
 // ============ EXPENSES ============

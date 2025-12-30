@@ -217,8 +217,8 @@ export const TravelProvider = ({ children }) => {
       const savedExpenses = await DB.getExpenses(currentTrip?.id, currentTrip?.ownerId || user?.uid);
       setExpenses(savedExpenses);
 
-      // Load packing items
-      const savedPackingItems = await DB.getPackingItems(currentTrip?.id, currentTrip?.ownerId || user?.uid);
+      // Load packing items - ALWAYS local/private, not synced with owner
+      const savedPackingItems = await DB.getPackingItems(currentTrip?.id);
       setPackingItems(savedPackingItems);
 
       // Load itinerary
@@ -340,7 +340,8 @@ export const TravelProvider = ({ children }) => {
 
     if (isAuthenticated) {
       try {
-        await DB.savePackingItem(newItem, tripInfo.id, tripOwnerId);
+        // Save to my own path (not synced with trip owner)
+        await DB.savePackingItem(newItem, tripInfo.id);
       } catch (error) {
         console.error('Error saving packing item:', error);
       }
@@ -354,7 +355,8 @@ export const TravelProvider = ({ children }) => {
 
     if (isAuthenticated && item) {
       try {
-        await DB.updatePackingItem(id, { packed: !item.packed }, tripInfo.id, tripOwnerId);
+        // Update in my own path (not synced with trip owner)
+        await DB.updatePackingItem(id, { packed: !item.packed }, tripInfo.id);
       } catch (error) {
         console.error('Error updating packing item:', error);
       }
@@ -367,7 +369,8 @@ export const TravelProvider = ({ children }) => {
 
     if (isAuthenticated) {
       try {
-        await DB.deletePackingItemFromDB(id, tripInfo.id, tripOwnerId);
+        // Delete from my own path (not synced with trip owner)
+        await DB.deletePackingItemFromDB(id, tripInfo.id);
       } catch (error) {
         console.error('Error deleting packing item:', error);
       }
@@ -527,7 +530,7 @@ export const TravelProvider = ({ children }) => {
         const [savedBudget, savedExpenses, savedPacking, savedItinerary] = await Promise.all([
           DB.getBudget(trip.id, owner),
           DB.getExpenses(trip.id, owner),
-          DB.getPackingItems(trip.id, owner),
+          DB.getPackingItems(trip.id), // Fetch ONLY my own packing items
           DB.getItinerary(trip.id, owner)
         ]);
 

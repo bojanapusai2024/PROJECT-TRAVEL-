@@ -58,7 +58,7 @@ const ICON_PATHS = {
     activities: require('../../assets/icons/mycollection/png/150-climbing.png'), // Mountain climbing requested
     shopping: require('../../assets/icons/mycollection/png/002-travel-bag.png'),
     health: require('../../assets/icons/mycollection/png/125-healthy-food.png'),
-    hospital: require('../../assets/icons/mycollection/png/125-healthy-food.png'),
+    hospital: require('../../assets/icons/mycollection/png/142-hotel-2.png'),
     mobile: require('../../assets/icons/mycollection/png/208-webcam.png'),
     ticket: require('../../assets/icons/mycollection/png/214-plane-ticket.png'),
     passport: require('../../assets/icons/mycollection/png/034-passport.png'),
@@ -94,10 +94,19 @@ const ICON_PATHS = {
     user_circle: require('../../assets/icons/mycollection/png/057-user.png'),
 
     // Fallbacks
-    other: require('../../assets/icons/mycollection/png/014-tourism.png'),
+    other: require('../../assets/icons/mycollection/png/012-leaning-tower-of-pisa.png'),
     user: require('../../assets/icons/mycollection/png/057-user.png'),
     group: require('../../assets/icons/mycollection/png/048-boy.png'),
     money: require('../../assets/icons/mycollection/png/061-dollar.png'),
+
+    // Welcome Screen Animation Icons
+    v012: require('../../assets/icons/mycollection/png/012-leaning-tower-of-pisa.png'),
+    v182: require('../../assets/icons/mycollection/png/182-burj-arab.png'),
+    v183: require('../../assets/icons/mycollection/png/183-statue-of-liberty.png'),
+    v184: require('../../assets/icons/mycollection/png/184-paris.png'),
+    v187: require('../../assets/icons/mycollection/png/187-taj-mahal.png'),
+    v189: require('../../assets/icons/mycollection/png/189-washington.png'),
+    v190: require('../../assets/icons/mycollection/png/190-romanian-athenaeum.png'),
 };
 
 /**
