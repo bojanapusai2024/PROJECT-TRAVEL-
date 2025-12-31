@@ -9,6 +9,7 @@ const ICON_PATHS = {
     expenses: require('../../assets/icons/mycollection/png/060-expenses.png'),
     packing: require('../../assets/icons/mycollection/png/206-packing.png'),
     itinerary: require('../../assets/icons/mycollection/png/102-calendar.png'),
+    calendar: require('../../assets/icons/mycollection/png/102-calendar.png'),
     profile: require('../../assets/icons/mycollection/png/056-profile-avatar.png'),
     settings: require('../../assets/icons/mycollection/png/042-gear.png'),
 
@@ -26,7 +27,9 @@ const ICON_PATHS = {
     notification: require('../../assets/icons/mycollection/png/041-notification-alert.png'),
     calendar: require('../../assets/icons/mycollection/png/102-calendar.png'),
     clock: require('../../assets/icons/mycollection/png/148-hourglass.png'),
-    location: require('../../assets/icons/mycollection/png/164-location-pin.png'),
+    location: require('../../assets/icons/mycollection/png/081-location.png'),
+    flight_takeoff: require('../../assets/icons/mycollection/png/188-airplane.png'),
+    flight_land: require('../../assets/icons/mycollection/png/188-airplane.png'),
     map: require('../../assets/icons/mycollection/png/121-map.png'),
     task: require('../../assets/icons/mycollection/png/107-schedule.png'),
     check: require('../../assets/icons/mycollection/png/049-link.png'),

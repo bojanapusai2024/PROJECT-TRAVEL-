@@ -15,14 +15,15 @@
     ],
     "icon": "./assets/icons/mycollection/png/route.png",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.routemate.app"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0D0D0D",
         "foregroundImage": "./assets/icons/mycollection/png/route.png"
       },
-      "package": "com.yourcompany.travelcompanion"
+      "package": "com.routemate.app"
     },
     "web": {
       "bundler": "metro",

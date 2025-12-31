@@ -43,6 +43,12 @@ export default function TripSetupScreen({ onComplete, onBack }) {
   const [tempFamilyCount, setTempFamilyCount] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
 
+  const today = useMemo(() => {
+    const d = new Date();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  }, []);
+
 
   const [tripData, setTripData] = useState({
     destination: '',
@@ -73,7 +79,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
   // Dynamic steps based on trip type
   const getSteps = () => {
     const baseSteps = [
-      { key: 'location', title: 'Trip Details', subtitle: 'Where and when are you going?', icon: 'location' },
+      { key: 'location', title: 'Trip Details', subtitle: 'Where and when are you going?', icon: 'route' },
       { key: 'tripType', title: 'Trip Type', subtitle: 'Who are you traveling with?', icon: 'group' },
     ];
 
@@ -416,7 +422,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                   onPress={() => setShowStartDatePicker(true)}
                 >
 
-                  <Icon name="flight_takeoff" size={24} color={colors.primary} style={{ marginBottom: 8 }} />
+                  <Icon name="calendar" size={28} color={colors.primary} style={{ marginBottom: 16 }} />
                   <View style={styles.dateCardContent}>
                     <Text style={styles.dateCardLabel}>Start</Text>
                     <Text style={[styles.dateCardValue, !tripData.startDate && styles.dateCardPlaceholder]}>
@@ -435,7 +441,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
                   onPress={() => setShowEndDatePicker(true)}
                 >
 
-                  <Icon name="flight_land" size={24} color={colors.primary} style={{ marginBottom: 8 }} />
+                  <Icon name="calendar" size={28} color={colors.primary} style={{ marginBottom: 16 }} />
                   <View style={styles.dateCardContent}>
                     <Text style={styles.dateCardLabel}>End</Text>
                     <Text style={[styles.dateCardValue, !tripData.endDate && styles.dateCardPlaceholder]}>
@@ -864,7 +870,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
         {/* Header */}
         <View style={styles.header}>
           <Pressable style={styles.backButton} onPress={handleBack}>
-            <Icon name="arrow_left" size={24} color={colors.text} />
+            <Icon name="back" size={24} color={colors.text} />
           </Pressable>
           <View style={styles.headerCenter}>
             <Text style={styles.stepIndicator}>Step {currentStep + 1} of {totalSteps}</Text>
@@ -928,6 +934,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
           onSelect={(date) => setTripData({ ...tripData, startDate: date })}
           selectedDate={tripData.startDate}
           title="Select Start Date"
+          minDate={today}
           startDate={tripData.startDate}
           endDate={tripData.endDate}
         />
@@ -937,7 +944,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
           onSelect={(date) => setTripData({ ...tripData, endDate: date })}
           selectedDate={tripData.endDate}
           title="Select End Date"
-          minDate={tripData.startDate}
+          minDate={tripData.startDate || today}
           startDate={tripData.startDate}
           endDate={tripData.endDate}
         />
@@ -1156,6 +1163,7 @@ const createStyles = (colors) => StyleSheet.create({
     color: colors.textMuted,
     marginBottom: 2,
   },
+
   dateCardValue: {
     fontSize: 14,
     fontWeight: '600',

@@ -105,6 +105,31 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
   });
   const [selectedAvatar, setSelectedAvatar] = useState(user?.photoURL || 'profile_avatar');
 
+  const handleHelpSupport = () => {
+    const email = 'praneeth132006b@gmail.com';
+    const subject = 'RouteMate Support Request';
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(subject)}`;
+    const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}`;
+
+    if (Platform.OS === 'web') {
+      Linking.openURL(gmailUrl);
+    } else {
+      Linking.openURL(mailtoUrl);
+    }
+  };
+
+  const handleRateApp = () => {
+    // These IDs will be available once the app is published to the stores
+    const itunesItemId = 'YOUR_APPLE_ID';
+    const androidPackageName = 'com.routemate.app';
+
+    if (Platform.OS === 'ios') {
+      Linking.openURL(`itms-apps://itunes.apple.com/app/viewContentsUserReviews/id${itunesItemId}?action=write-review`);
+    } else {
+      Linking.openURL(`market://details?id=${androidPackageName}`);
+    }
+  };
+
   // Update selected avatar when user profile loads/changes
   useEffect(() => {
     if (user?.photoURL) {
@@ -411,24 +436,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             </View>
           </AnimatedCard>
 
-          <AnimatedCard delay={250}>
-            <View style={styles.settingItem}>
-              <View style={styles.settingLeft}>
-                <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#F59E0B40' : '#F59E0B20' }]}>
-                  <Icon name="notification" size={20} color="#F59E0B" />
-                </View>
-                <View style={styles.settingInfo}>
-                  <Text style={styles.settingLabel}>Notifications</Text>
-                  <Text style={styles.settingValue}>Trip reminders & updates</Text>
-                </View>
-              </View>
-              <Switch
-                value={true}
-                trackColor={{ false: colors.cardLight, true: colors.primary + '60' }}
-                thumbColor={colors.primary}
-              />
-            </View>
-          </AnimatedCard>
+
         </View>
 
         {/* Account & Security */}
@@ -471,7 +479,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
 
-          <AnimatedCard delay={350} onPress={() => { }}>
+          <AnimatedCard delay={350} onPress={handleHelpSupport}>
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#06B6D440' : '#06B6D420' }]}>
@@ -486,7 +494,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
             </View>
           </AnimatedCard>
 
-          <AnimatedCard delay={375} onPress={() => { }}>
+          <AnimatedCard delay={375} onPress={handleRateApp}>
             <View style={styles.settingItem}>
               <View style={styles.settingLeft}>
                 <View style={[styles.settingIconBg, { backgroundColor: isDark ? '#EC489940' : '#EC489920' }]}>

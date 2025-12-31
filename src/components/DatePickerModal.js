@@ -5,11 +5,33 @@ import { useTheme } from '../context/ThemeContext';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const parseDate = (dateString) => {
+  if (!dateString) return null;
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const parts = dateString.split(' ');
+  if (parts.length < 3) return new Date();
+  const day = parseInt(parts[0]);
+  const month = MONTHS.indexOf(parts[1]);
+  const year = parseInt(parts[2]);
+  return new Date(year, month, day);
+};
+
 export default function DatePickerModal({ visible, onClose, onSelect, selectedDate, title, minDate, startDate, endDate }) {
   const { colors } = useTheme();
-  const [currentDate, setCurrentDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
-  const [viewDate, setViewDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(selectedDate ? parseDate(selectedDate) : new Date());
+  const [viewDate, setViewDate] = useState(selectedDate ? parseDate(selectedDate) : new Date());
   const styles = useMemo(() => createStyles(colors), [colors]);
+
+  // Update internal state when props change
+  React.useEffect(() => {
+    if (visible && selectedDate) {
+      const parsed = parseDate(selectedDate);
+      setCurrentDate(parsed);
+      setViewDate(parsed);
+    } else if (visible) {
+      setViewDate(new Date());
+    }
+  }, [visible, selectedDate]);
 
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
@@ -54,14 +76,7 @@ export default function DatePickerModal({ visible, onClose, onSelect, selectedDa
     onClose();
   };
 
-  const parseDate = (dateString) => {
-    if (!dateString) return null;
-    const parts = dateString.split(' ');
-    const day = parseInt(parts[0]);
-    const month = MONTHS.indexOf(parts[1]);
-    const year = parseInt(parts[2]);
-    return new Date(year, month, day);
-  };
+
 
   const isSelected = (date) => date && currentDate && date.toDateString() === currentDate.toDateString();
   const isToday = (date) => date && date.toDateString() === new Date().toDateString();
@@ -106,8 +121,8 @@ export default function DatePickerModal({ visible, onClose, onSelect, selectedDa
               >
                 {item.day && <Text style={[
                   styles.dayText,
-                  isSelected(item.date) && styles.dayTextSelected,
                   isToday(item.date) && styles.dayTextToday,
+                  isSelected(item.date) && styles.dayTextSelected,
                   isDisabled(item.date) && styles.dayTextDisabled
                 ]}>{item.day}</Text>}
               </TouchableOpacity>
@@ -146,7 +161,7 @@ const createStyles = (colors) => StyleSheet.create({
   dayTextDisabled: { color: colors.textMuted },
   selectedDisplay: { marginTop: 20, alignItems: 'center', padding: 16, backgroundColor: colors.primaryMuted, borderRadius: 16, borderWidth: 1, borderColor: colors.primaryBorder },
   selectedLabel: { color: colors.textMuted, fontSize: 12, marginBottom: 4 },
-  selectedDate: { color: colors.primary, fontSize: 20, fontWeight: 'bold' },
+  selectedDate: { color: colors.text, fontSize: 24, fontWeight: 'bold' },
   confirmButton: { marginTop: 16, backgroundColor: colors.primary, borderRadius: 14, padding: 16, alignItems: 'center' },
   confirmText: { color: colors.bg, fontSize: 16, fontWeight: 'bold' },
 });
