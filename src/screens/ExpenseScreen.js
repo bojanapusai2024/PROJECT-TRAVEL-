@@ -411,7 +411,7 @@ export default function ExpenseScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{editingExpenseId ? 'Edit Expense' : 'Add Expense'}</Text>
               <TouchableOpacity onPress={() => { setModalVisible(false); setEditingExpenseId(null); }} style={styles.closeBtn}>
-                <Text style={styles.closeText}>✕</Text>
+                <Icon name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 

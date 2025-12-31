@@ -652,8 +652,12 @@ export const TravelProvider = ({ children }) => {
     console.log('[getAllTravelers] tripInfo.ownerId:', tripInfo.ownerId);
     console.log('[getAllTravelers] current user.uid:', user?.uid);
 
-    // Check if the owner is already in the participants list
-    const ownerInList = participantsList.find(p => p.id === 'owner' || p.type === 'owner');
+    // Check if the owner is already in the participants list (by type OR by userId)
+    const ownerInList = participantsList.find(p =>
+      p.id === 'owner' ||
+      p.type === 'owner' ||
+      (p.userId && tripInfo.ownerId && p.userId === tripInfo.ownerId)
+    );
 
     // If no owner in list, we need to add one
     if (!ownerInList) {

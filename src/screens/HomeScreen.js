@@ -301,7 +301,7 @@ export default function HomeScreen({ onBackToHome }) {
 
         {/* Quick Actions */}
         <Animated.View style={[styles.quickActionsSection, { opacity: fadeAnim }]}>
-          <View style={styles.sectionHeader}>
+          <View style={[styles.sectionHeader, { justifyContent: 'flex-start' }]}>
             <Icon name="quick" size={20} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.sectionTitle}>Quick Actions</Text>
           </View>
@@ -441,7 +441,7 @@ export default function HomeScreen({ onBackToHome }) {
         <Animated.View style={[styles.overviewSection, { opacity: fadeAnim }]}>
           <View style={styles.sectionHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="card" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+              <Icon name="expenses" size={20} color={colors.primary} style={{ marginRight: 8 }} />
               <Text style={styles.sectionTitle}>Recent Expenses</Text>
             </View>
             {expenses.length > 0 && (
@@ -789,7 +789,7 @@ export default function HomeScreen({ onBackToHome }) {
                   </View>
                   {!traveler.isMe && (
                     <Pressable style={styles.removeTravelerBtn} onPress={() => handleRemoveTraveler(traveler.id)}>
-                      <Text style={styles.removeTravelerBtnText}>✕</Text>
+                      <Icon name="close" size={14} color="#EF4444" />
                     </Pressable>
                   )}
                 </View>

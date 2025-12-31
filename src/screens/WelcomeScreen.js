@@ -686,7 +686,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
                 <Text style={styles.tripTypeSubtitle}>Select who's traveling with you</Text>
               </View>
               <Pressable onPress={() => setShowTripTypeModal(false)} style={styles.modalCloseBtn}>
-                <Text style={styles.modalCloseBtnText}>×</Text>
+                <Icon name="close" size={20} color={colors.textMuted} />
               </Pressable>
             </View>
 
@@ -927,7 +927,7 @@ const createStyles = (colors) => StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     paddingHorizontal: 4,
     gap: 8,
   },

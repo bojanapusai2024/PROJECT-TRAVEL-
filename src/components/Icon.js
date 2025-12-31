@@ -16,12 +16,14 @@ const ICON_PATHS = {
     // Actions
     add: require('../../assets/icons/mycollection/png/105-add-event.png'),
     close: require('../../assets/icons/mycollection/png/047-cross.png'), // Explicit X/Exit
+    x: require('../../assets/icons/mycollection/png/047-cross.png'), // Alias for close
     check: require('../../assets/icons/mycollection/png/051-check.png'),
     delete: require('../../assets/icons/mycollection/png/106-deleted.png'),
     link: require('../../assets/icons/mycollection/png/049-link.png'), // Better link icon
     edit: require('../../assets/icons/mycollection/png/104-edit.png'),
     back: require('../../assets/icons/mycollection/png/217-arrow-left.png'),
     search: require('../../assets/icons/mycollection/png/155-binoculars.png'),
+    quick: require('../../assets/icons/mycollection/png/route.png'),
     lock: require('../../assets/icons/mycollection/png/115-password.png'),
     logout: require('../../assets/icons/mycollection/png/118-logout.png'),
     notification: require('../../assets/icons/mycollection/png/041-notification-alert.png'),
@@ -99,6 +101,8 @@ const ICON_PATHS = {
     route: require('../../assets/icons/mycollection/png/route.png'),
     email: require('../../assets/icons/mycollection/png/email.png'),
     password: require('../../assets/icons/mycollection/png/password.png'),
+    bathtub: require('../../assets/icons/mycollection/png/bathtub.png'),
+    card: require('../../assets/icons/mycollection/png/035-credit-card.png'),
 
     // New Avatars
     boy_1: require('../../assets/icons/mycollection/png/010-boy-1.png'),

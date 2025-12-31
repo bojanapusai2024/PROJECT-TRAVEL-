@@ -13,7 +13,7 @@ const { width } = Dimensions.get('window');
 const PACKING_CATEGORIES = [
   { key: 'essentials', label: 'Essentials', icon: 'packing', color: '#EF4444' },
   { key: 'clothing', label: 'Clothing', icon: 'shopping', color: '#3B82F6' },
-  { key: 'toiletries', label: 'Toiletries', icon: 'health', color: '#10B981' },
+  { key: 'toiletries', label: 'Toiletries', icon: 'bathtub', color: '#10B981' },
   { key: 'electronics', label: 'Electronics', icon: 'mobile', color: '#8B5CF6' },
   { key: 'documents', label: 'Documents', icon: 'ticket', color: '#F59E0B' },
   { key: 'accessories', label: 'Accessories', icon: 'camera', color: '#EC4899' },

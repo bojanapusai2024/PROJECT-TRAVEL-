@@ -82,7 +82,7 @@ const generateDays = (startDate, endDate) => {
 };
 
 export default function MapScreen() {
-  const { itinerary, addItineraryItem, deleteItineraryItem, tripInfo } = useTravelContext();
+  const { itinerary, addItineraryItem, deleteItineraryItem, tripInfo, getAllTravelers } = useTravelContext();
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
   const [timePickerVisible, setTimePickerVisible] = useState(false);
@@ -149,7 +149,8 @@ export default function MapScreen() {
   };
 
   const totalStops = itinerary.length;
-  const participantCount = (tripInfo.participants?.length || 0) + 1;
+  const travelers = getAllTravelers();
+  const participantCount = travelers.length;
 
   const filteredTypes = selectedCategory === 'all'
     ? STOP_TYPES
@@ -374,7 +375,7 @@ export default function MapScreen() {
                 )}
               </View>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalClose}>
-                <Text style={styles.modalCloseText}>×</Text>
+                <Icon name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
