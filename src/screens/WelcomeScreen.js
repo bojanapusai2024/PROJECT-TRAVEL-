@@ -12,8 +12,8 @@ import Icon from '../components/Icon';
 const { width } = Dimensions.get('window');
 
 const TRIP_TYPES = [
-  { key: 'solo', label: 'Solo Trip', icon: 'profile', description: 'Just me, exploring the world', color: '#3B82F6' },
-  { key: 'friends', label: 'With Friends', icon: 'group', description: 'Adventure with my buddies', color: '#10B981' },
+  { key: 'solo', label: 'Solo Trip', icon: 'solo', description: 'Just me, exploring the world', color: '#3B82F6' },
+  { key: 'friends', label: 'Friends Trip', icon: 'friends', description: 'Adventure with my buddies', color: '#10B981' },
   { key: 'family', label: 'Family Trip', icon: 'family', description: 'Quality time with family', color: '#F59E0B' },
   { key: 'couple', label: 'Couple Trip', icon: 'couple', description: 'Romantic getaway for two', color: '#EC4899' },
   { key: 'business', label: 'Business Trip', icon: 'business', description: 'Work travel with leisure', color: '#8B5CF6' },
@@ -66,7 +66,7 @@ export default function WelcomeScreen({ onPlanTrip, onJoinTrip, onMyTrip, onProf
     // Standardize trip keys for icons
     const sanitizedType = tripType === 'profile' ? 'solo' : (tripType === 'group' ? 'friends' : tripType);
     const type = TRIP_TYPES.find(t => t.key === sanitizedType);
-    return type || { key: 'solo', label: 'Solo', icon: 'solo', color: '#3B82F6' };
+    return type || { key: 'solo', label: 'Solo Trip', icon: 'solo', color: '#3B82F6' };
   };
 
   // Calculate trip days - make it accept trip dates as parameters

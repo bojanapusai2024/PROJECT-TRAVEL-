@@ -22,6 +22,7 @@ const ICON_PATHS = {
     link: require('../../assets/icons/mycollection/png/049-link.png'), // Better link icon
     edit: require('../../assets/icons/mycollection/png/104-edit.png'),
     back: require('../../assets/icons/mycollection/png/217-arrow-left.png'),
+    arrow_left: require('../../assets/icons/mycollection/png/217-arrow-left.png'),
     search: require('../../assets/icons/mycollection/png/155-binoculars.png'),
     quick: require('../../assets/icons/mycollection/png/route.png'),
     lock: require('../../assets/icons/mycollection/png/115-password.png'),
@@ -43,8 +44,8 @@ const ICON_PATHS = {
     solo: require('../../assets/icons/mycollection/png/185-traveller.png'), // User explicitly requested change from gear
     friends: require('../../assets/icons/mycollection/png/032-group.png'), // Friend group
     family: require('../../assets/icons/mycollection/png/007-family.png'),
-    couple: require('../../assets/icons/mycollection/png/110-valentines-day.png'),
-    business: require('../../assets/icons/mycollection/png/029-bussiness-man.png'), // More specific business icon
+    couple: require('../../assets/icons/mycollection/png/couple.png'),
+    business: require('../../assets/icons/mycollection/png/065-financial.png'), // More specific business icon
 
     // Itinerary/Transport
     flight: require('../../assets/icons/mycollection/png/188-airplane.png'),
@@ -95,7 +96,8 @@ const ICON_PATHS = {
     woman3: require('../../assets/icons/mycollection/png/044-woman-2.png'),
     boy: require('../../assets/icons/mycollection/png/048-boy.png'),
     girl: require('../../assets/icons/mycollection/png/049-girl.png'),
-    profile_avatar: require('../../assets/icons/mycollection/png/056-profile-avatar.png'),
+    profile_avatar: require('../../assets/icons/mycollection/png/185-traveller.png'),
+    v185: require('../../assets/icons/mycollection/png/185-traveller.png'),
     user_circle: require('../../assets/icons/mycollection/png/057-user.png'),
     helping_hand: require('../../assets/icons/mycollection/png/043-helping-hand.png'),
     route: require('../../assets/icons/mycollection/png/route.png'),
@@ -128,6 +130,7 @@ const ICON_PATHS = {
     v187: require('../../assets/icons/mycollection/png/187-taj-mahal.png'),
     v189: require('../../assets/icons/mycollection/png/189-washington.png'),
     v190: require('../../assets/icons/mycollection/png/190-romanian-athenaeum.png'),
+    tour_guide: require('../../assets/icons/mycollection/png/tour-guide.png'),
 };
 
 /**

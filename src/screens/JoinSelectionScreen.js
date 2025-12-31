@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -22,6 +22,17 @@ export default function JoinSelectionScreen({ trip, onBack, onJoinComplete }) {
     const [selectedParticipantId, setSelectedParticipantId] = useState(null);
     const [joiningAsNew, setJoiningAsNew] = useState(false);
     const [newTravelerName, setNewTravelerName] = useState('');
+    const [selectedFamilyGroup, setSelectedFamilyGroup] = useState(null);
+
+    // Get unique family groups from participants
+    const familyGroups = useMemo(() => {
+        if (!trip?.participants) return [];
+        const groups = new Set();
+        trip.participants.forEach(p => {
+            if (p.familyGroup) groups.add(p.familyGroup);
+        });
+        return Array.from(groups);
+    }, [trip]);
 
     const handleConfirmJoin = async () => {
         if (joiningAsNew) {
@@ -29,7 +40,25 @@ export default function JoinSelectionScreen({ trip, onBack, onJoinComplete }) {
                 Alert.alert('Required', 'Please enter your name');
                 return;
             }
-            const result = await joinAsNewTraveler(trip, newTravelerName);
+
+            if (trip.tripType === 'family' && !selectedFamilyGroup) {
+                Alert.alert('Selection Required', 'Please choose which family you belong to or join as a new family');
+                return;
+            }
+
+            let finalFamilyGroup = selectedFamilyGroup;
+            if (isFamilyTrip && selectedFamilyGroup === 'New Family') {
+                const existingFamilyNumbers = familyGroups
+                    .map(g => {
+                        const match = g.match(/Family (\d+)/);
+                        return match ? parseInt(match[1]) : 0;
+                    })
+                    .filter(n => n > 0);
+                const nextNumber = existingFamilyNumbers.length > 0 ? Math.max(...existingFamilyNumbers) + 1 : familyGroups.length + 1;
+                finalFamilyGroup = `Family ${nextNumber}`;
+            }
+
+            const result = await joinAsNewTraveler(trip, newTravelerName, finalFamilyGroup);
             if (result.success) {
                 onJoinComplete(result.trip);
             } else {
@@ -47,13 +76,15 @@ export default function JoinSelectionScreen({ trip, onBack, onJoinComplete }) {
         }
     };
 
+    const isFamilyTrip = trip?.tripType === 'family';
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
             <View style={styles.header}>
                 <Pressable onPress={onBack} style={styles.backButton}>
-                    <Icon name="arrow_left" size={24} color={colors.text} />
+                    <Icon name="back" size={24} color={colors.text} />
                 </Pressable>
                 <Text style={[styles.headerTitle, { color: colors.text }]}>Identity Selection</Text>
                 <View style={{ width: 60 }} />
@@ -92,14 +123,51 @@ export default function JoinSelectionScreen({ trip, onBack, onJoinComplete }) {
                     </Pressable>
 
                     {joiningAsNew && (
-                        <TextInput
-                            style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderColor: colors.primaryBorder }]}
-                            placeholder="Enter your name"
-                            placeholderTextColor={colors.textMuted}
-                            value={newTravelerName}
-                            onChangeText={setNewTravelerName}
-                            autoFocus
-                        />
+                        <View style={styles.newTravelerForm}>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderColor: colors.primaryBorder }]}
+                                placeholder="Enter your name"
+                                placeholderTextColor={colors.textMuted}
+                                value={newTravelerName}
+                                onChangeText={setNewTravelerName}
+                                autoFocus
+                            />
+
+                            {isFamilyTrip && (
+                                <View style={styles.familySelectionSection}>
+                                    <Text style={[styles.selectionLabel, { color: colors.text }]}>Which family do you belong to?</Text>
+                                    <View style={styles.familyOptionsGrid}>
+                                        {familyGroups.map(group => (
+                                            <Pressable
+                                                key={group}
+                                                style={[
+                                                    styles.familyOption,
+                                                    { backgroundColor: colors.card, borderColor: colors.primaryBorder },
+                                                    selectedFamilyGroup === group && { borderColor: colors.primary, backgroundColor: colors.primary + '20' }
+                                                ]}
+                                                onPress={() => setSelectedFamilyGroup(group)}
+                                            >
+                                                <Text style={[styles.familyOptionText, { color: selectedFamilyGroup === group ? colors.primary : colors.text }]}>
+                                                    {group}
+                                                </Text>
+                                            </Pressable>
+                                        ))}
+                                        <Pressable
+                                            style={[
+                                                styles.familyOption,
+                                                { backgroundColor: colors.card, borderColor: colors.primaryBorder },
+                                                selectedFamilyGroup === 'New Family' && { borderColor: colors.primary, backgroundColor: colors.primary + '20' }
+                                            ]}
+                                            onPress={() => setSelectedFamilyGroup('New Family')}
+                                        >
+                                            <Text style={[styles.familyOptionText, { color: selectedFamilyGroup === 'New Family' ? colors.primary : colors.text }]}>
+                                                + New Family
+                                            </Text>
+                                        </Pressable>
+                                    </View>
+                                </View>
+                            )}
+                        </View>
                     )}
 
                     <View style={styles.divider}>
@@ -136,7 +204,9 @@ export default function JoinSelectionScreen({ trip, onBack, onJoinComplete }) {
                                     <Icon name="profile" size={24} color={colors.text} style={{ marginRight: 16 }} />
                                     <View>
                                         <Text style={[styles.cardName, { color: colors.text }]}>{p.name}</Text>
-                                        {isClaimed && <Text style={[styles.statusText, { color: colors.textMuted }]}>Occupied</Text>}
+                                        <Text style={[styles.statusText, { color: colors.textMuted }]}>
+                                            {isClaimed ? 'Occupied' : (p.familyGroup || 'Traveler')}
+                                        </Text>
                                     </View>
                                 </View>
                                 {isSelected && <View style={[styles.radioActive, { backgroundColor: colors.primary }]} />}
@@ -201,7 +271,33 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         borderWidth: 1,
         fontSize: 16,
+    },
+    newTravelerForm: {
         marginBottom: 20
+    },
+    familySelectionSection: {
+        marginTop: 20,
+    },
+    selectionLabel: {
+        fontSize: 14,
+        fontWeight: '700',
+        marginBottom: 12,
+        opacity: 0.8
+    },
+    familyOptionsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    familyOption: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    familyOptionText: {
+        fontSize: 14,
+        fontWeight: '600',
     },
     divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 24 },
     dividerLine: { flex: 1, height: 1 },

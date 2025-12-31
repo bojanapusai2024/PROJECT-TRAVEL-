@@ -703,6 +703,7 @@ export const TravelProvider = ({ children }) => {
         ...p,
         name: displayName,
         isMe: p.userId === user?.uid,
+        photoURL: p.userId === user?.uid ? user?.photoURL : p.photoURL,
         familyGroup: isFamilyTrip ? (p.familyGroup || 'Family 1') : null
       };
     });
@@ -781,7 +782,7 @@ export const TravelProvider = ({ children }) => {
       }
 
       // Add ref to my trips with chosen identity
-      await DB.addMeToTrip(trip, participantId);
+      await DB.addMeToTrip(trip, participantId, user?.photoURL);
 
       // Fetch the updated trip data (to ensure we have the claimed identity locally)
       const updatedTrip = await DB.getTripByCode(code);
@@ -798,7 +799,7 @@ export const TravelProvider = ({ children }) => {
     }
   };
 
-  const joinAsNewTraveler = async (trip, name) => {
+  const joinAsNewTraveler = async (trip, name, familyGroup = null) => {
     try {
       setIsLoading(true);
       const userId = auth.currentUser?.uid;
@@ -807,14 +808,16 @@ export const TravelProvider = ({ children }) => {
         id: `p_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
         name: name || 'New Traveler',
         userId: userId,
-        type: 'friend' // Default
+        photoURL: user?.photoURL || 'profile_avatar',
+        type: trip.tripType === 'family' ? 'family' : 'friend', // Set type correctly
+        familyGroup: familyGroup // Include family group
       };
 
       // 1. Add to owner's trip
       await DB.addNewParticipantToTrip(trip.ownerId, trip.id, newParticipant);
 
       // 2. Add to my trips
-      await DB.addMeToTrip(trip, newParticipant.id);
+      await DB.addMeToTrip(trip, newParticipant.id, user?.photoURL);
 
       // 3. Fetch updated trip
       const updatedTrip = await DB.getTripByCode(trip.tripCode);

@@ -153,7 +153,7 @@ export const getTripByCode = async (code) => {
   }
 };
 
-export const claimParticipantIdentity = async (ownerId, tripId, participantId, userId) => {
+export const claimParticipantIdentity = async (ownerId, tripId, participantId, userId, photoURL = null) => {
   if (!ownerId || !tripId || !participantId || !userId) return;
 
   // 1. Update sharedTrips (Priority for joiners)
@@ -163,7 +163,7 @@ export const claimParticipantIdentity = async (ownerId, tripId, participantId, u
   if (sharedSnapshot.exists()) {
     const participants = sharedSnapshot.val();
     const updatedParticipants = participants.map(p =>
-      p.id === participantId ? { ...p, userId } : p
+      p.id === participantId ? { ...p, userId, photoURL } : p
     );
     await set(sharedParticipantsRef, updatedParticipants);
   }
@@ -177,7 +177,7 @@ export const claimParticipantIdentity = async (ownerId, tripId, participantId, u
     if (snapshot.exists()) {
       const participants = snapshot.val();
       const updatedParticipants = participants.map(p =>
-        p.id === participantId ? { ...p, userId } : p
+        p.id === participantId ? { ...p, userId, photoURL } : p
       );
       await set(participantsRef, updatedParticipants);
     }
@@ -189,8 +189,27 @@ export const claimParticipantIdentity = async (ownerId, tripId, participantId, u
 export const addNewParticipantToTrip = async (ownerId, tripId, participantData) => {
   if (!ownerId || !tripId || !participantData) return;
 
-  // 1. Update sharedTrips
-  const sharedParticipantsRef = ref(database, `sharedTrips/${tripId}/participants`);
+  // 1. Fetch current trip data to check tripType
+  const tripPath = tripId === 'current' ? `users/${ownerId}/currentTrip/info` : `users/${ownerId}/trips/${tripId}`;
+  const sharedPath = `sharedTrips/${tripId}`;
+
+  const tripSnapshot = await get(ref(database, sharedPath));
+  let updates = {};
+
+  if (tripSnapshot.exists()) {
+    const tripData = tripSnapshot.val();
+    // If it was a solo trip, automatically change it to friends trip
+    if (tripData.tripType === 'solo') {
+      updates.tripType = 'friends';
+      // If name is "Solo Trip" or default, update it
+      if (tripData.name === 'Solo Trip' || !tripData.name || tripData.name.toLowerCase().includes('solo')) {
+        updates.name = 'Friends Trip';
+      }
+    }
+  }
+
+  // 2. Update sharedTrips
+  const sharedParticipantsRef = ref(database, `${sharedPath}/participants`);
   const sharedSnapshot = await get(sharedParticipantsRef);
 
   // Safe array conversion
@@ -200,35 +219,48 @@ export const addNewParticipantToTrip = async (ownerId, tripId, participantData) 
     sharedParticipants = Array.isArray(val) ? val : Object.values(val);
   }
 
-  await set(sharedParticipantsRef, [...sharedParticipants, participantData]);
+  const updatedParticipants = [...sharedParticipants, participantData];
 
-  // 2. Update owner's private node
+  const sharedUpdates = {
+    ...updates,
+    participants: updatedParticipants,
+    updatedAt: Date.now()
+  };
+
+  await update(ref(database, sharedPath), sharedUpdates);
+
+  // 3. Update owner's private node
   try {
-    const tripPath = tripId === 'current' ? `users/${ownerId}/currentTrip/info` : `users/${ownerId}/trips/${tripId}`;
-    const participantsRef = ref(database, `${tripPath}/participants`);
-    const snapshot = await get(participantsRef);
+    const privateRef = ref(database, tripPath);
+    const privateSnapshot = await get(privateRef);
 
-    // Safe array conversion
-    let currentParticipants = [];
-    if (snapshot.exists()) {
-      const val = snapshot.val();
-      currentParticipants = Array.isArray(val) ? val : Object.values(val);
+    if (privateSnapshot.exists()) {
+      const privateData = privateSnapshot.val();
+      let currentParticipants = [];
+      if (privateData.participants) {
+        currentParticipants = Array.isArray(privateData.participants)
+          ? privateData.participants
+          : Object.values(privateData.participants);
+      }
+
+      await update(privateRef, {
+        ...updates,
+        participants: [...currentParticipants, participantData],
+        updatedAt: Date.now()
+      });
     }
-
-    const updatedParticipants = [...currentParticipants, participantData];
-    await set(participantsRef, updatedParticipants);
   } catch (e) {
     console.log('[DB] Note: Could not update owner private node for new participant (expected for joiners)');
   }
 };
 
-export const addMeToTrip = async (trip, participantId = null) => {
+export const addMeToTrip = async (trip, participantId = null, photoURL = null) => {
   const userId = getUserId();
   if (!userId) throw new Error('User not authenticated');
 
   // 1. If a participant identity was chosen, claim it in the owner's trip
   if (participantId && trip.ownerId) {
-    await claimParticipantIdentity(trip.ownerId, trip.id, participantId, userId);
+    await claimParticipantIdentity(trip.ownerId, trip.id, participantId, userId, photoURL);
   }
 
   // 2. Add trip reference to my user profile

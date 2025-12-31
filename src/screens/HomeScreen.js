@@ -521,9 +521,28 @@ export default function HomeScreen({ onBackToHome }) {
                           {members.map((p, idx) => (
                             <View key={idx} style={styles.participantItem}>
                               <View style={[styles.participantAvatar, p.isMe && { backgroundColor: colors.primary }]}>
-                                <Text style={styles.participantInitial}>{p.name === 'You' ? 'You' : (p.name?.charAt(0) || '?')}</Text>
+                                {p.userId ? (
+                                  <Icon
+                                    name={p.photoURL || 'profile_avatar'}
+                                    size={32}
+                                    style={{ borderRadius: 16 }}
+                                  />
+                                ) : (
+                                  <Icon
+                                    name="tour_guide"
+                                    size={32}
+                                    style={{ borderRadius: 16 }}
+                                  />
+                                )}
                               </View>
-                              <Text style={styles.participantName}>{p.name}{p.type === 'owner' ? ' (Organizer)' : ''}</Text>
+                              <View style={styles.participantInfo}>
+                                <Text style={styles.participantName}>{p.name}{p.type === 'owner' ? ' (Organizer)' : ''}</Text>
+                                {p.userId ? (
+                                  <Text style={styles.joinedStatus}>Joined</Text>
+                                ) : (
+                                  <Text style={styles.waitingStatus}>Pending</Text>
+                                )}
+                              </View>
                             </View>
                           ))}
                         </View>
@@ -535,9 +554,28 @@ export default function HomeScreen({ onBackToHome }) {
                   getAllTravelers().map((p, index) => (
                     <View key={index} style={styles.participantItem}>
                       <View style={[styles.participantAvatar, p.isMe && { backgroundColor: colors.primary }]}>
-                        <Text style={styles.participantInitial}>{p.name === 'You' ? 'You' : (p.name?.charAt(0) || '?')}</Text>
+                        {p.userId ? (
+                          <Icon
+                            name={p.photoURL || 'profile_avatar'}
+                            size={32}
+                            style={{ borderRadius: 16 }}
+                          />
+                        ) : (
+                          <Icon
+                            name="tour_guide"
+                            size={32}
+                            style={{ borderRadius: 16 }}
+                          />
+                        )}
                       </View>
-                      <Text style={styles.participantName}>{p.name}{p.type === 'owner' ? ' (Organizer)' : ''}</Text>
+                      <View style={styles.participantInfo}>
+                        <Text style={styles.participantName}>{p.name}{p.type === 'owner' ? ' (Organizer)' : ''}</Text>
+                        {p.userId ? (
+                          <Text style={styles.joinedStatus}>Joined</Text>
+                        ) : (
+                          <Text style={styles.waitingStatus}>Pending</Text>
+                        )}
+                      </View>
                     </View>
                   ))
                 )}
@@ -781,7 +819,19 @@ export default function HomeScreen({ onBackToHome }) {
               {getAllTravelers().map((traveler, index) => (
                 <View key={index} style={styles.travelerCard}>
                   <View style={[styles.travelerAvatar, traveler.isMe && { backgroundColor: colors.primary }]}>
-                    <Text style={styles.travelerAvatarText}>{traveler.name === 'You' ? 'You' : (traveler.name?.charAt(0)?.toUpperCase() || '👤')}</Text>
+                    {traveler.userId ? (
+                      <Icon
+                        name={traveler.photoURL || 'profile_avatar'}
+                        size={32}
+                        style={{ borderRadius: 16 }}
+                      />
+                    ) : (
+                      <Icon
+                        name="tour_guide"
+                        size={32}
+                        style={{ borderRadius: 16 }}
+                      />
+                    )}
                   </View>
                   <View style={styles.travelerInfo}>
                     <Text style={styles.travelerName}>{traveler.name}</Text>
@@ -1009,7 +1059,8 @@ const createStyles = (colors) => StyleSheet.create({
   participantItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardLight, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: colors.primaryBorder },
   participantAvatar: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.cardLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   participantInitial: { color: colors.text, fontSize: 14, fontWeight: '600' },
-  participantName: { color: colors.text, fontSize: 15 },
+  participantName: { color: colors.text, fontSize: 15, fontWeight: '600' },
+  participantInfo: { flex: 1 },
 
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
@@ -1106,4 +1157,6 @@ const createStyles = (colors) => StyleSheet.create({
   },
   durationPreviewEmoji: { fontSize: 18 },
   durationPreviewText: { color: colors.primary, fontSize: 14, fontWeight: '500' },
+  joinedStatus: { color: colors.primary, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  waitingStatus: { color: '#F59E0B', fontSize: 11, fontWeight: '600', marginTop: 2 },
 });
