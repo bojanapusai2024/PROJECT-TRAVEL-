@@ -197,7 +197,7 @@ export default function BudgetScreen() {
             <TextInput
               style={[styles.totalInput, { outlineStyle: 'none' }]}
               keyboardType="decimal-pad"
-              value={totalBudget}
+              value={totalBudget || ''}
               onChangeText={setTotalBudget}
               onBlur={handleSaveBudget}
               placeholder="0"
@@ -361,7 +361,7 @@ const CategoryCard = ({ cat, budget, expensesByCategory, currency, categoryInput
             </Text>
             <TextInput
               style={[styles.catInput, { width: Math.max(20, inputWidth + 5), outlineStyle: 'none' }]}
-              value={inputValue}
+              value={inputValue || ''}
               onChangeText={(t) => handleCategoryChange(cat.key, t)}
               onBlur={() => handleCategoryBlur(cat.key)}
               keyboardType="decimal-pad"
