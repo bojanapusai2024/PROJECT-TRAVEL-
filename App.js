@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { TravelProvider } from './src/context/TravelContext';
 import MainNavigator from './src/navigation/MainNavigator';
 import AuthScreen from './src/screens/AuthScreen';
+import AddToHomeScreenPrompt from './src/components/AddToHomeScreenPrompt';
+import { Platform } from 'react-native';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -63,12 +65,15 @@ function AppContent() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={colors.bg}
-      />
-      {isAuthenticated ? <MainNavigator /> : <AuthScreen />}
+    <View style={styles.responsiveWrapper}>
+      <View style={[styles.mainView, Platform.OS === 'web' && styles.container, { backgroundColor: colors.bg }]}>
+        <StatusBar
+          barStyle={isDark ? 'light-content' : 'dark-content'}
+          backgroundColor={colors.bg}
+        />
+        {isAuthenticated ? <MainNavigator /> : <AuthScreen />}
+        <AddToHomeScreenPrompt />
+      </View>
     </View>
   );
 }
@@ -109,4 +114,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 12,
   },
+  mainView: {
+    flex: 1,
+  },
+  responsiveWrapper: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  ...Platform.select({
+    web: {
+      responsiveWrapper: {
+        flex: 1,
+        backgroundColor: '#000',
+        alignItems: 'center',
+      },
+      container: {
+        width: '100%',
+        maxWidth: 500, // Mobile app appearance on desktop
+        height: '100%',
+        backgroundColor: '#0D0D0D',
+        alignSelf: 'center',
+        overflow: 'hidden',
+        boxShadow: '0 0 50px rgba(0,0,0,0.5)',
+      }
+    },
+    default: {
+      responsiveWrapper: {
+        flex: 1,
+      }
+    }
+  })
 });

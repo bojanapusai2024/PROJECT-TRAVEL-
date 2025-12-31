@@ -22,7 +22,7 @@ import { useTravelContext } from '../context/TravelContext';
 import Icon from '../components/Icon';
 
 const AVATARS = [
-  'profile_avatar', 'man1', 'woman1', 'man2', 'woman2', 'man3', 'woman3',
+  'man7', 'profile_avatar', 'man1', 'woman1', 'man2', 'woman2', 'man3', 'woman3',
   'boy', 'girl', 'boy_1', 'girl_1', 'boy_2', 'girl_2', 'man_1', 'woman_1',
   'man_2', 'woman_2', 'user_circle'
 ];
@@ -103,7 +103,7 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
     displayName: user?.displayName || '',
     avatar: 'profile',
   });
-  const [selectedAvatar, setSelectedAvatar] = useState(user?.photoURL || 'profile_avatar');
+  const [selectedAvatar, setSelectedAvatar] = useState(user?.photoURL || 'man7');
 
   const handleHelpSupport = () => {
     const email = 'praneeth132006b@gmail.com';
@@ -284,9 +284,18 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
                         <Text style={styles.historyDates}>
                           {trip.startDate} • {days} days
                         </Text>
-                        {trip.tripCode && (
-                          <Text style={styles.historyCode}>Code: <Text style={{ fontWeight: '700' }}>{trip.tripCode}</Text></Text>
-                        )}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                          {trip.totalSpent !== undefined && (
+                            <View style={[styles.historyStatBadge, { backgroundColor: colors.primaryMuted }]}>
+                              <Text style={[styles.historyStatText, { color: colors.primary }]}>
+                                {trip.currency || 'INR'} {trip.totalSpent.toLocaleString()}
+                              </Text>
+                            </View>
+                          )}
+                          {trip.tripCode && (
+                            <Text style={styles.historyCode}> • Code: <Text style={{ fontWeight: '700' }}>{trip.tripCode}</Text></Text>
+                          )}
+                        </View>
                       </View>
                     </View>
                     <View style={styles.historyCardRight}>
@@ -1016,9 +1025,19 @@ const createStyles = (colors, isDark) => StyleSheet.create({
   historyIcon: { fontSize: 32 },
   historyInfo: { flex: 1 },
   historyDestination: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 4 },
-  historyDates: { fontSize: 14, color: colors.textMuted, marginBottom: 4 },
-  historyCode: { fontSize: 13, color: colors.primary, fontWeight: '500' },
-  historyCardRight: { flexDirection: 'row', alignItems: 'center' },
+  historyDates: { fontSize: 13, color: colors.textMuted, marginBottom: 4 },
+  historyCode: { fontSize: 12, color: colors.textMuted, fontWeight: '500' },
+  historyStatBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginRight: 4,
+  },
+  historyStatText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  historyCardRight: { alignItems: 'flex-end', justifyContent: 'center' },
   historyArrow: { fontSize: 22, color: colors.textMuted, marginLeft: 12 },
   syncButton: {
     padding: 8,
