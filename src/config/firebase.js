@@ -56,9 +56,28 @@ try {
 // Initialize Realtime Database
 const database = getDatabase(app);
 
+// Initialize Analytics & Performance (Web Only)
+let analytics;
+let performance;
+
+if (Platform.OS === 'web') {
+  // Dynamic imports to avoid breaking native builds if packages aren't perfectly aligned
+  import('firebase/analytics').then(({ getAnalytics }) => {
+    analytics = getAnalytics(app);
+    console.log('Firebase Analytics initialized');
+  }).catch(e => console.log('Analytics not supported in this env'));
+
+  import('firebase/performance').then(({ getPerformance }) => {
+    performance = getPerformance(app);
+    console.log('Firebase Performance initialized');
+  }).catch(e => console.log('Performance not supported in this env'));
+}
+
 export {
   auth,
   database,
+  analytics,
+  performance,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
