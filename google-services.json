@@ -1,33 +1,34 @@
 {
   "project_info": {
-    "project_number": "938812065684",
-    "project_id": "tripnest-83101",
-    "storage_bucket": "tripnest-83101.firebasestorage.app"
+    "project_number": "739103871364",
+    "firebase_url": "https://routemate-6a885-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "routemate-6a885",
+    "storage_bucket": "routemate-6a885.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:938812065684:android:290452f07e6498e3217181",
+        "mobilesdk_app_id": "1:739103871364:android:78d7c7989aa94822244dd1",
         "android_client_info": {
-          "package_name": "com.praneeth.tripnest"
+          "package_name": "com.routemate.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "938812065684-ttq7hv00d1rfrs77li7bs54e7a8m406v.apps.googleusercontent.com",
+          "client_id": "739103871364-8dbqif6ogn8fiiqf4j5gb0h17fj7gdq0.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBFHsCfE0c7C8-EjWfurd9yplKvAJwEWew"
+          "current_key": "AIzaSyCe3UjVQXIQDD6zl39rfOcpGSNzOtVPMFk"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "938812065684-ttq7hv00d1rfrs77li7bs54e7a8m406v.apps.googleusercontent.com",
+              "client_id": "739103871364-8dbqif6ogn8fiiqf4j5gb0h17fj7gdq0.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

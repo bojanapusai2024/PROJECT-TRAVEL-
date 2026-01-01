@@ -23,7 +23,8 @@
         "backgroundColor": "#0D0D0D",
         "foregroundImage": "./assets/icons/mycollection/png/route.png"
       },
-      "package": "com.routemate.app"
+      "package": "com.routemate.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",

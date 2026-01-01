@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { 
-  getAuth, 
+import {
+  getAuth,
   initializeAuth,
   getReactNativePersistence,
   createUserWithEmailAndPassword,
@@ -10,30 +10,30 @@ import {
   updateProfile,
   onAuthStateChanged
 } from 'firebase/auth';
-import { 
-  getDatabase, 
-  ref, 
-  set, 
-  get, 
-  push, 
-  update, 
-  remove, 
+import {
+  getDatabase,
+  ref,
+  set,
+  get,
+  push,
+  update,
+  remove,
   onValue,
-  off 
+  off
 } from 'firebase/database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 // Your Firebase configuration - EXACT copy from Firebase Console
 const firebaseConfig = {
-  apiKey: "AIzaSyAE-TNpqnHeepa13Ouhs04JJd0oOT8nWxY",
-  authDomain: "tripnest-83101.firebaseapp.com",
-  databaseURL: "https://tripnest-83101-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "tripnest-83101",
-  storageBucket: "tripnest-83101.firebasestorage.app",
-  messagingSenderId: "938812065684",
-  appId: "1:938812065684:web:20883d2f408fab64217181",
-  measurementId: "G-CYKDRQ7L6S"
+  apiKey: "AIzaSyCe3UjVQXIQDD6zl39rfOcpGSNzOtVPMFk",
+  authDomain: "routemate-6a885.firebaseapp.com",
+  databaseURL: "https://routemate-6a885-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "routemate-6a885",
+  storageBucket: "routemate-6a885.firebasestorage.app",
+  messagingSenderId: "739103871364",
+  appId: "1:739103871364:web:7b8a634332576653244dd1",
+  measurementId: "G-CB7TZM1E38"
 };
 
 // Initialize Firebase (prevent duplicate initialization)
@@ -56,8 +56,8 @@ try {
 // Initialize Realtime Database
 const database = getDatabase(app);
 
-export { 
-  auth, 
+export {
+  auth,
   database,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
