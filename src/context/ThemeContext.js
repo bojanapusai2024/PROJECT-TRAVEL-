@@ -5,38 +5,42 @@ import * as DB from '../services/databaseService';
 
 const ThemeContext = createContext(null);
 
-// Custom Dark Theme - Charcoal & Light Green
+// Custom Dark Theme - Monochrome High Contrast
 const darkColors = {
-  bg: '#0A0A0A',                    // Pure dark black
-  card: '#1A1A1A',                  // Dark gray card
-  cardLight: '#2A2A2A',             // Lighter gray
-  primary: '#90EE90',               // Light green (LightGreen)
-  primaryMuted: 'rgba(144, 238, 144, 0.12)',
-  primaryBorder: 'rgba(144, 238, 144, 0.25)',
-  secondary: '#98FB98',             // Pale green accent
-  text: '#FAFAFA',                  // Pure white
-  textMuted: '#888888',             // Medium gray
-  textLight: '#555555',             // Dark gray
-  success: '#4ADE80',
-  warning: '#FBBF24',
-  error: '#F87171',
+  bg: '#000000',                    // --background: rgb(0 0 0)
+  card: '#171717',                  // --card: rgb(23 23 23)
+  cardLight: '#262626',             // --secondary: rgb(38 38 38) & --muted
+  primary: '#E5E5E5',               // --primary: rgb(229 229 229)
+  primaryMuted: 'rgba(229, 229, 229, 0.12)',
+  primaryBorder: 'rgba(255, 255, 255, 0.1)', // --border
+  secondary: '#262626',             // --secondary
+  text: '#FAFAFA',                  // --foreground: rgb(250 250 250)
+  textMuted: '#A1A1A1',             // --muted-foreground: rgb(161 161 161)
+  textLight: '#888888',
+  success: '#00BC7D',               // --chart-2
+  warning: '#FE9A00',               // --chart-5
+  error: '#FF6467',                 // --destructive
+  input: 'rgba(255, 255, 255, 0.15)', // --input
+  ring: '#737373',                  // --ring
 };
 
-// Sunrise Light Theme - Warm & Inviting
+// Modern Light Theme - Clean & Crisp
 const lightColors = {
-  bg: '#FFF8F0',                    // Warm cream white
-  card: '#FFFFFF',                  // Pure white cards
-  cardLight: '#FFF1E6',             // Soft peach tint
-  primary: '#FF6B35',               // Sunrise orange
-  primaryMuted: 'rgba(255, 107, 53, 0.12)',
-  primaryBorder: 'rgba(255, 107, 53, 0.25)',
-  secondary: '#004E89',             // Deep ocean blue
-  text: '#1A1A2E',                  // Dark navy text
-  textMuted: '#6B7280',             // Warm gray
-  textLight: '#9CA3AF',             // Light warm gray
-  success: '#10B981',
-  warning: '#F59E0B',
-  error: '#EF4444',
+  bg: '#FFFFFF',                    // --background
+  card: '#FFFFFF',                  // --card
+  cardLight: '#F5F5F5',             // --secondary & --muted
+  primary: '#171717',               // --primary: rgb(23 23 23)
+  primaryMuted: 'rgba(23, 23, 23, 0.12)',
+  primaryBorder: '#E5E5E5',         // --border
+  secondary: '#F5F5F5',             // --secondary
+  text: '#0A0A0A',                  // --foreground
+  textMuted: '#737373',             // --muted-foreground
+  textLight: '#999999',
+  success: '#009689',               // --chart-2
+  warning: '#FE9A00',               // --chart-5
+  error: '#E7000B',                 // --destructive
+  input: '#E5E5E5',                 // --input
+  ring: '#A1A1A1',                  // --ring
 };
 
 // Warm Dark Theme - Cozy & Premium
@@ -74,15 +78,15 @@ const warmDarkColors = {
 export const THEMES = {
   dark: {
     id: 'dark',
-    name: 'Dark Green',
-    description: 'Charcoal & Light Green',
+    name: 'Modern Dark',
+    description: 'High Contrast Monochrome',
     icon: '🌙',
     colors: darkColors,
   },
   light: {
     id: 'light',
-    name: 'Sunrise Light',
-    description: 'Warm & Inviting',
+    name: 'Modern Light',
+    description: 'Clean & Minimalist',
     icon: '☀️',
     colors: lightColors,
   },
