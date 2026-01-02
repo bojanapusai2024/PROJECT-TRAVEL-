@@ -5,7 +5,9 @@ import * as DB from '../services/databaseService';
 
 const ThemeContext = createContext(null);
 
-// Custom Dark Theme - Monochrome High Contrast
+// --- KEPT THEMES ---
+
+// Modern Dark Theme (Default)
 const darkColors = {
   bg: '#000000',                    // --background: rgb(0 0 0)
   card: '#171717',                  // --card: rgb(23 23 23)
@@ -24,54 +26,80 @@ const darkColors = {
   ring: '#737373',                  // --ring
 };
 
-// Modern Light Theme - Clean & Crisp
-const lightColors = {
-  bg: '#FFFFFF',                    // --background
-  card: '#FFFFFF',                  // --card
-  cardLight: '#F5F5F5',             // --secondary & --muted
-  primary: '#171717',               // --primary: rgb(23 23 23)
-  primaryMuted: 'rgba(23, 23, 23, 0.12)',
-  primaryBorder: '#E5E5E5',         // --border
-  secondary: '#F5F5F5',             // --secondary
-  text: '#0A0A0A',                  // --foreground
-  textMuted: '#737373',             // --muted-foreground
-  textLight: '#999999',
-  success: '#009689',               // --chart-2
-  warning: '#FE9A00',               // --chart-5
-  error: '#E7000B',                 // --destructive
-  input: '#E5E5E5',                 // --input
-  ring: '#A1A1A1',                  // --ring
+// Royal Light (Previously Theme 1 Light) - Kept
+const royalLightColors = {
+  bg: '#F7F7F7',                    // oklch(0.967 0.001 0)
+  card: '#FAFAFA',                  // oklch(0.976 0.001 0)
+  cardLight: '#F5F5F5',
+  primary: '#9333EA',               // oklch(0.653 0.186 274.621) -> Purple
+  primaryMuted: 'rgba(147, 51, 234, 0.12)',
+  primaryBorder: 'rgba(147, 51, 234, 0.25)',
+  secondary: '#F5F5F5',
+  text: '#111111',                  // oklch(0.067 0.001 0)
+  textMuted: '#404040',
+  textLight: '#737373',
+  success: '#059669',
+  warning: '#D97706',
+  error: '#DC2626',
+  input: '#E5E5E5',
+  ring: '#A1A1A1',
 };
 
-// Warm Dark Theme - Cozy & Premium
-const warmDarkColors = {
-  bg: '#111111',                    // Background
-  card: '#191919',                  // Card
-  cardLight: '#222222',             // Muted
-  primary: '#ffe0c2',               // Primary
-  primaryMuted: 'rgba(255, 224, 194, 0.12)',
-  primaryBorder: 'rgba(255, 224, 194, 0.25)',
-  secondary: '#393028',             // Secondary
-  text: '#eeeeee',                  // Foreground
-  textMuted: '#b4b4b4',             // Muted Foreground
-  textLight: '#888888',             // Lighter muted
+// Bold Light (Previously Theme 2 Light) - Kept
+const boldLightColors = {
+  bg: '#FFFFFF',
+  card: '#FFFFFF',
+  cardLight: '#F5F5F5',
+  primary: '#202020',               // oklch(0.205 0 0) -> Black/Dark Gray
+  primaryMuted: 'rgba(32, 32, 32, 0.12)',
+  primaryBorder: '#E5E5E5',
+  secondary: '#F5F5F5',
+  text: '#202020',
+  textMuted: '#737373',
+  textLight: '#A1A1A1',
+  success: '#059669',
+  warning: '#D97706',
+  error: '#DC2626',
+  input: '#E5E5E5',
+  ring: '#A1A1A1',
+};
+
+// Gold Dark (Previously Theme 2 Dark) - Kept
+const goldDarkColors = {
+  bg: '#000000',
+  card: '#000000',
+  cardLight: '#171717',
+  primary: '#FACC15',               // oklch(0.926 0.195 104.561) -> Yellow
+  primaryMuted: 'rgba(250, 204, 21, 0.12)',
+  primaryBorder: 'rgba(250, 204, 21, 0.25)',
+  secondary: '#171717',
+  text: '#D4D4D8',                  // oklch(0.832 0.015 43.985)
+  textMuted: '#A1A1A1',
+  textLight: '#737373',
   success: '#4ADE80',
-  warning: '#FBBF24',
-  error: '#e54d2e',                 // Destructive
-  accent: '#2a2a2a',                // Accent
-  accentForeground: '#eeeeee',      // Accent Foreground
-  border: '#201e18',                // Border
-  input: '#484848',                 // Input
-  ring: '#ffe0c2',                  // Ring
-  // Sidebar colors
-  sidebarBg: '#18181b',
-  sidebarForeground: '#f4f4f5',
-  sidebarPrimary: '#1d4ed8',
-  sidebarPrimaryForeground: '#ffffff',
-  sidebarAccent: '#27272a',
-  sidebarAccentForeground: '#f4f4f5',
-  sidebarBorder: '#27272a',
-  sidebarRing: '#d4d4d8',
+  warning: '#FACC15',
+  error: '#EF4444',
+  input: '#000000',
+  ring: '#FACC15',
+};
+
+// Violet Light Theme - Crisp White & Purple - Kept
+const violetLightColors = {
+  bg: '#FFFFFF',                    // --background
+  card: '#FFFFFF',                  // --card
+  cardLight: '#F3F4F6',             // --muted
+  primary: '#2E1065',               // --primary: oklch(0.205 0 0) -> Dark Purple/Black
+  primaryMuted: 'rgba(46, 16, 101, 0.08)',
+  primaryBorder: '#E5E7EB',         // --border
+  secondary: '#F3F4F6',             // --secondary
+  text: '#020617',                  // --foreground
+  textMuted: '#64748B',             // --muted-foreground
+  textLight: '#94A3B8',
+  success: '#059669',
+  warning: '#D97706',
+  error: '#DC2626',                 // --destructive
+  input: '#E5E7EB',                 // --input
+  ring: '#7C3AED',                  // --ring
 };
 
 // Theme definitions with metadata
@@ -83,19 +111,35 @@ export const THEMES = {
     icon: '🌙',
     colors: darkColors,
   },
-  light: {
-    id: 'light',
-    name: 'Modern Light',
-    description: 'Clean & Minimalist',
-    icon: '☀️',
-    colors: lightColors,
+
+  // --- KEPT THEMES ---
+  royalLight: {
+    id: 'royalLight',
+    name: 'Royal Light',
+    description: 'Purple & Clean',
+    icon: '👑',
+    colors: royalLightColors,
   },
-  warmDark: {
-    id: 'warmDark',
-    name: 'Warm Dark',
-    description: 'Cozy & Premium',
-    icon: '🔥',
-    colors: warmDarkColors,
+  boldLight: {
+    id: 'boldLight',
+    name: 'Bold Light',
+    description: 'High Contrast Black',
+    icon: '✒️',
+    colors: boldLightColors,
+  },
+  goldDark: {
+    id: 'goldDark',
+    name: 'Gold Dark',
+    description: 'Black & Yellow',
+    icon: '⚡',
+    colors: goldDarkColors,
+  },
+  violetLight: {
+    id: 'violetLight',
+    name: 'Violet Light',
+    description: 'Crisp White & Purple',
+    icon: '🔮',
+    colors: violetLightColors,
   },
 };
 

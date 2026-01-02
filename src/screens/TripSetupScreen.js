@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
-import DatePickerModal from '../components/DatePickerModal';
+import Calendar from '../components/Calendar';
 import { useTravelContext } from '../context/TravelContext';
 import { useAuth } from '../context/AuthContext';
 import Icon from '../components/Icon';
@@ -40,8 +40,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
   const { colors } = useTheme();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
-  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
-  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [tempFamilyCount, setTempFamilyCount] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -468,52 +467,43 @@ export default function TripSetupScreen({ onComplete, onBack }) {
             </View>
 
             {/* Date Selection */}
-            <View style={styles.datesSection}>
+            {/* Date Selection */}
+            <View style={{ marginTop: 24, marginBottom: 80 }}>
               <Text style={styles.inputLabel}>Travel Dates</Text>
 
-              <View style={styles.datesRow}>
-                {/* Start Date */}
-                <Pressable
-                  style={({ pressed }) => [styles.dateCard, pressed && { opacity: 0.9 }]}
-                  onPress={() => setShowStartDatePicker(true)}
-                >
-                  <Icon name="calendar" size={28} color={colors.primary} style={{ marginBottom: 16 }} />
-                  <View style={styles.dateCardContent}>
-                    <Text style={styles.dateCardLabel}>Start</Text>
-                    <Text style={[styles.dateCardValue, !tripData.startDate && styles.dateCardPlaceholder]}>
-                      {tripData.startDate || 'Select'}
-                    </Text>
-                  </View>
-                </Pressable>
-
-                <View style={styles.dateArrowContainer}>
-                  <Text style={styles.dateArrow}>→</Text>
-                </View>
-
-                {/* End Date */}
-                <Pressable
-                  style={({ pressed }) => [styles.dateCard, pressed && { opacity: 0.9 }]}
-                  onPress={() => setShowEndDatePicker(true)}
-                >
-                  <Icon name="calendar" size={28} color={colors.primary} style={{ marginBottom: 16 }} />
-                  <View style={styles.dateCardContent}>
-                    <Text style={styles.dateCardLabel}>End</Text>
-                    <Text style={[styles.dateCardValue, !tripData.endDate && styles.dateCardPlaceholder]}>
-                      {tripData.endDate || 'Select'}
-                    </Text>
-                  </View>
-                </Pressable>
-              </View>
-
-              {/* Duration Preview */}
-              {tripData.startDate && tripData.endDate && (
-                <View style={styles.durationCard}>
-                  <Icon name="calendar" size={16} color={colors.primary} style={{ marginRight: 6 }} />
-                  <Text style={styles.durationText}>
-                    {calculateDuration(tripData.startDate, tripData.endDate)} days trip
+              <Pressable
+                style={({ pressed }) => [
+                  styles.dateInputBtn,
+                  pressed && { opacity: 0.8 }
+                ]}
+                onPress={() => setShowCalendar(true)}
+              >
+                <Icon name="calendar" size={24} color={colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.dateInputHtml, !tripData.startDate && { color: colors.textMuted }]}>
+                    {tripData.startDate && tripData.endDate
+                      ? `${tripData.startDate.toLocaleDateString()}  →  ${tripData.endDate.toLocaleDateString()}`
+                      : 'Select Trip Duration'}
                   </Text>
+                  {tripData.startDate && tripData.endDate && (
+                    <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 4 }}>
+                      {Math.ceil((tripData.endDate - tripData.startDate) / (1000 * 60 * 60 * 24))} Days Trip
+                    </Text>
+                  )}
                 </View>
-              )}
+                <Icon name="arrow-right" size={20} color={colors.textMuted} />
+              </Pressable>
+
+              <Calendar
+                visible={showCalendar}
+                onClose={() => setShowCalendar(false)}
+                onSelect={(start, end) => {
+                  setTripData({ ...tripData, startDate: start, endDate: end });
+                }}
+                mode="range"
+                initialStartDate={tripData.startDate}
+                initialEndDate={tripData.endDate}
+              />
             </View>
           </View>
         );
@@ -982,26 +972,7 @@ export default function TripSetupScreen({ onComplete, onBack }) {
         </View>
 
         {/* Date Pickers */}
-        <DatePickerModal
-          visible={showStartDatePicker}
-          onClose={() => setShowStartDatePicker(false)}
-          onSelect={(date) => setTripData({ ...tripData, startDate: date })}
-          selectedDate={tripData.startDate}
-          title="Select Start Date"
-          minDate={today}
-          startDate={tripData.startDate}
-          endDate={tripData.endDate}
-        />
-        <DatePickerModal
-          visible={showEndDatePicker}
-          onClose={() => setShowEndDatePicker(false)}
-          onSelect={(date) => setTripData({ ...tripData, endDate: date })}
-          selectedDate={tripData.endDate}
-          title="Select End Date"
-          minDate={tripData.startDate || today}
-          startDate={tripData.startDate}
-          endDate={tripData.endDate}
-        />
+
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -1791,5 +1762,20 @@ const createStyles = (colors) => StyleSheet.create({
   nextButtonIcon: {
     fontSize: 18,
     color: colors.bg,
+  },
+  dateInputBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+    borderRadius: 16,
+    padding: 20,
+    gap: 16,
+  },
+  dateInputHtml: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.text,
   },
 });
