@@ -102,6 +102,65 @@ const violetLightColors = {
   ring: '#7C3AED',                  // --ring
 };
 
+// --- NEW ACCURATE THEMES (From Shadcn JSONs) ---
+
+// Theme 1: Cyberpunk (Neon Green)
+// Light
+const cyberLightColors = {
+  bg: '#f5f4f4',
+  card: '#f8f7f7',
+  cardLight: '#f5f5f5',
+  primary: '#7181ff',
+  primaryMuted: 'rgba(113, 129, 255, 0.12)',
+  primaryBorder: '#bab9b9',
+  secondary: '#f5f5f5',
+  text: '#010101',
+  textMuted: '#090909',
+  textLight: '#a1a1a1',
+  success: '#00BC7D',
+  warning: '#FE9A00',
+  error: '#e7000b',
+  input: '#e5e5e5',
+  ring: '#a1a1a1',
+};
+// Dark
+const cyberDarkColors = {
+  bg: '#000000',
+  card: '#101010',
+  cardLight: '#1a1a1a',
+  primary: '#a6ff25', // Neon Lime
+  primaryMuted: 'rgba(166, 255, 37, 0.15)',
+  primaryBorder: '#333333',
+  secondary: '#efeeee',
+  text: '#efeeee',
+  textMuted: '#b0b0b0',
+  textLight: '#78716c',
+  success: '#00BC7D',
+  warning: '#FE9A00',
+  error: '#c72c33',
+  input: '#282727',
+  ring: '#a6ff25',
+};
+
+// Theme 2: Cyberpunk Pink (Neon Green variant with Pink Primary)
+const cyberPinkDarkColors = {
+  bg: '#000000',
+  card: '#101010',
+  cardLight: '#1a1a1a',
+  primary: '#fa004f', // Neon Pink
+  primaryMuted: 'rgba(250, 0, 79, 0.15)',
+  primaryBorder: '#333333',
+  secondary: '#efeeee',
+  text: '#efeeee',
+  textMuted: '#b0b0b0',
+  textLight: '#fa004f', // Pink textLight
+  success: '#00BC7D',
+  warning: '#FE9A00',
+  error: '#c72c33',
+  input: '#282727',
+  ring: '#fa004f',
+};
+
 // Theme definitions with metadata
 export const THEMES = {
   dark: {
@@ -140,6 +199,31 @@ export const THEMES = {
     description: 'Crisp White & Purple',
     icon: '🔮',
     colors: violetLightColors,
+  },
+
+  // --- NEW ACCURATE THEMES ---
+  neonGreen: {
+    id: 'neonGreen',
+    name: 'Neon Green',
+    description: 'Black & Neon Lime',
+    icon: '🔋',
+    colors: cyberDarkColors,
+  },
+  neonLight: {
+    id: 'neonLight',
+    name: 'Neon Light',
+    description: 'Clean & Blue/Purple',
+    icon: '💡',
+    colors: cyberLightColors,
+  },
+
+  // Cyberpunk Pink (Requested Variant)
+  cyberPink: {
+    id: 'cyberPink',
+    name: 'Cyber Pink',
+    description: 'Black & Neon Pink',
+    icon: '🩷',
+    colors: cyberPinkDarkColors,
   },
 };
 
