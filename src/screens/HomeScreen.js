@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import DatePickerModal from '../components/DatePickerModal';
 import { auth } from '../config/firebase';
 import Icon from '../components/Icon';
+import HomeMap from '../components/HomeMap';
 
 export default function HomeScreen({ onBackToHome, onPersonalizedPlan }) {
   const {
@@ -263,63 +264,76 @@ export default function HomeScreen({ onBackToHome, onPersonalizedPlan }) {
           )}
         </Animated.View>
 
-        {/* Hero Card - UPDATED: Removed Share Code section */}
-        <Animated.View style={[styles.heroCard, { transform: [{ scale: scaleAnim }] }]}>
-          <View style={styles.heroGlow} />
-          <View style={styles.heroHeader}>
-            <View style={styles.heroIconBg}>
-              <Icon name="location" size={24} color="white" />
-            </View>
-            <View style={styles.heroInfo}>
-              <Text style={styles.heroDestination}>{tripInfo.destination || 'Destination'}</Text>
-              {tripInfo.startDate && tripInfo.endDate && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                  <Icon name="calendar" size={12} color="rgba(255,255,255,0.7)" style={{ marginRight: 4 }} />
-                  <Text style={styles.heroDates}>
-                    {typeof tripInfo.startDate === 'string' ? tripInfo.startDate : tripInfo.startDate?.toLocaleDateString()} → {typeof tripInfo.endDate === 'string' ? tripInfo.endDate : tripInfo.endDate?.toLocaleDateString()}
-                  </Text>
+        {/* Main Map & Info Section */}
+        <Animated.View style={[styles.mainSection, { transform: [{ scale: scaleAnim }] }]}>
+          {/* Top: Interactive Map */}
+          <HomeMap
+            destination={{
+              name: tripInfo.destination,
+              latitude: tripInfo.latitude,
+              longitude: tripInfo.longitude
+            }}
+            markers={itinerary}
+            style={styles.mapContainer}
+          />
+
+          {/* Nike-style Boxed Info Card */}
+          <View style={styles.boxedInfoCard}>
+            <View style={styles.cardHeader}>
+              <View>
+                <Text style={styles.cardTripName}>{tripInfo.destination || 'My Adventure'}</Text>
+                <View style={styles.tagRow}>
+                  <View style={styles.typeTag}>
+                    <Text style={styles.typeTagText}>{(tripInfo.tripType || 'Solo').toUpperCase()}</Text>
+                  </View>
+                  <View style={[styles.typeTag, { backgroundColor: '#3B82F620' }]}>
+                    <Text style={[styles.typeTagText, { color: '#3B82F6' }]}>{tripDays} DAYS</Text>
+                  </View>
                 </View>
-              )}
+              </View>
+              <Pressable
+                style={({ pressed }) => [styles.heartButton, pressed && { opacity: 0.7 }]}
+                onPress={() => setShowSettingsModal(true)}
+              >
+                <Icon name="settings" size={20} color={colors.text} />
+              </Pressable>
             </View>
-          </View>
 
-          <View style={styles.heroStats}>
-            <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatValue}>{tripDays}</Text>
-              <Text style={styles.heroStatLabel}>Days</Text>
-            </View>
-            <View style={styles.heroStatDivider} />
-            <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatValue}>{formatCurrency(getTotalExpenses())}</Text>
-              <Text style={styles.heroStatLabel}>Spent</Text>
-            </View>
-            <View style={styles.heroStatDivider} />
-            <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatValue}>{formatCurrency(remainingBudget)}</Text>
-              <Text style={styles.heroStatLabel}>Remaining</Text>
-            </View>
-          </View>
-        </Animated.View>
+            <Text style={styles.cardDescription} numberOfLines={3}>
+              A {tripInfo.tripType || 'solo'} adventure to {tripInfo.destination || 'your next destination'}.
+              Discover {itinerary.length} places and manage your {formatCurrency(budget.total)} budget with ease.
+            </Text>
 
-        {/* Personalized AI Hub */}
-        <Animated.View style={[styles.aiSection, { opacity: fadeAnim }]}>
-          <View style={styles.aiCard}>
-            <View style={styles.aiCardGlow} />
-            <View style={styles.aiIconContainer}>
-              <View style={styles.aiIconBg}>
-                <Icon name="sparkles" size={32} color="white" />
+            {/* Stats Grid */}
+            <View style={styles.statsGrid}>
+              <View style={styles.gridItem}>
+                <Text style={styles.gridLabel}>PLACES</Text>
+                <Text style={styles.gridValue}>{itinerary.length}</Text>
+              </View>
+              <View style={styles.gridItem}>
+                <Text style={styles.gridLabel}>TRAVELERS</Text>
+                <Text style={styles.gridValue}>{travelers.length}</Text>
+              </View>
+              <View style={styles.gridItem}>
+                <Text style={styles.gridLabel}>STOPS</Text>
+                <Text style={styles.gridValue}>{itinerary.length}</Text>
+              </View>
+              <View style={styles.gridItem}>
+                <Text style={styles.gridLabel}>DAYS</Text>
+                <Text style={styles.gridValue}>{tripDays}</Text>
               </View>
             </View>
-            <View style={styles.aiContent}>
-              <Text style={styles.aiTitle}>Personalized Planning</Text>
-              <Text style={styles.aiDescription}>
-                Add your trip details in a detailed manner to get a personalized itinerary, suggested budget and suggested packing list
-              </Text>
+
+            <View style={styles.cardFooter}>
+              <View>
+                <Text style={styles.priceLabel}>TOTAL BUDGET</Text>
+                <Text style={styles.priceValue}>{formatCurrency(budget.total)}</Text>
+              </View>
               <Pressable
-                style={({ pressed }) => [styles.aiButton, pressed && { opacity: 0.9 }]}
+                style={({ pressed }) => [styles.ctaButton, pressed && { opacity: 0.9 }]}
                 onPress={onPersonalizedPlan}
               >
-                <Text style={styles.aiButtonText}>Get Personalized Plan ✨</Text>
+                <Text style={styles.ctaButtonText}>Generate Plan ✨</Text>
               </Pressable>
             </View>
           </View>
@@ -775,115 +789,135 @@ const createStyles = (colors) => StyleSheet.create({
   statusEmoji: { fontSize: 16, marginRight: 8 },
   statusText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
 
-  // Hero Card
-  heroCard: {
-    marginHorizontal: 20,
-    backgroundColor: colors.card,
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 20,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: colors.primaryBorder,
-  },
-  heroGlow: { position: 'absolute', top: -50, right: -50, width: 150, height: 150, backgroundColor: colors.primary, opacity: 0.08, borderRadius: 75 },
-  heroHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  heroIconBg: { width: 56, height: 56, borderRadius: 18, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
-  heroIcon: { fontSize: 28 },
-  heroInfo: { marginLeft: 14, flex: 1 },
-  heroDestination: { color: colors.text, fontSize: 22, fontWeight: 'bold' },
-  heroDates: { color: colors.primary, fontSize: 13, marginTop: 4 },
-  heroStats: { flexDirection: 'row', backgroundColor: colors.cardLight, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
-  heroStatItem: { flex: 1, alignItems: 'center' },
-  heroStatValue: { color: colors.text, fontSize: 22, fontWeight: 'bold' },
-  heroStatLabel: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
-  heroStatDivider: { width: 1, backgroundColor: colors.primaryBorder },
-  tripCodeSection: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.primaryBorder },
-  tripCodeLabel: { color: colors.textMuted, fontSize: 11, marginBottom: 8 },
-  tripCodeBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primaryMuted, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: colors.primaryBorder },
-  tripCode: { flex: 1, color: colors.primary, fontSize: 20, fontWeight: 'bold', letterSpacing: 3 },
-  copyButton: { padding: 4 },
-  copyButtonText: { fontSize: 18 },
-
-  // AI Hub
-  aiSection: {
-    paddingHorizontal: 20,
+  // Main Section (Map + Boxed Info)
+  mainSection: {
+    marginHorizontal: 16,
     marginBottom: 24,
-  },
-  aiCard: {
-    backgroundColor: colors.card,
     borderRadius: 24,
-    padding: 24,
+    backgroundColor: colors.card,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.primaryBorder,
-    overflow: 'hidden',
-    position: 'relative',
-    elevation: 4,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 10 },
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 20,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  aiCardGlow: {
-    position: 'absolute',
-    top: -40,
-    right: -40,
-    width: 120,
-    height: 120,
-    backgroundColor: colors.primary,
-    opacity: 0.1,
-    borderRadius: 60,
+  mapContainer: {
+    height: 250,
   },
-  aiIconContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
+  boxedInfoCard: {
+    padding: 24,
+    backgroundColor: colors.card,
   },
-  aiIconBg: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  cardTripName: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: colors.text,
+    letterSpacing: -1,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  typeTag: {
+    backgroundColor: colors.primaryMuted,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  typeTagText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.primary,
+    letterSpacing: 0.5,
+  },
+  heartButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
   },
-  aiContent: {
-    alignItems: 'center',
-  },
-  aiTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  aiDescription: {
-    fontSize: 15,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
-    paddingHorizontal: 10,
-  },
-  aiButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 16,
-    width: '100%',
-    alignItems: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  aiButtonText: {
-    color: 'white',
+  cardDescription: {
     fontSize: 16,
-    fontWeight: 'bold',
+    color: colors.textMuted,
+    lineHeight: 24,
+    marginBottom: 24,
+    fontWeight: '500',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 28,
+  },
+  gridItem: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: colors.bg,
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+  },
+  gridLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 1.2,
+    marginBottom: 6,
+  },
+  gridValue: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: colors.text,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: colors.primaryBorder,
+  },
+  priceLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.textMuted,
+    letterSpacing: 1.5,
+  },
+  priceValue: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: colors.text,
+    marginTop: 2,
+  },
+  ctaButton: {
+    backgroundColor: colors.text,
+    paddingHorizontal: 28,
+    paddingVertical: 16,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaButtonText: {
+    color: colors.bg,
+    fontSize: 16,
+    fontWeight: '800',
   },
 
 
