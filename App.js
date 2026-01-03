@@ -5,8 +5,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { TravelProvider } from './src/context/TravelContext';
+import { AlertProvider } from './src/context/AlertContext';
 import MainNavigator from './src/navigation/MainNavigator';
 import AuthScreen from './src/screens/AuthScreen';
+import AlertSystem from './src/components/AlertSystem';
 import { Platform } from 'react-native';
 
 // Error Boundary Component
@@ -71,6 +73,7 @@ function AppContent() {
           backgroundColor={colors.bg}
         />
         {isAuthenticated ? <MainNavigator /> : <AuthScreen />}
+        <AlertSystem />
       </View>
     </View>
   );
@@ -84,7 +87,9 @@ export default function App() {
           <AuthProvider>
             <ThemeProvider>
               <TravelProvider>
-                <AppContent />
+                <AlertProvider>
+                  <AppContent />
+                </AlertProvider>
               </TravelProvider>
             </ThemeProvider>
           </AuthProvider>

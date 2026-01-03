@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, THEMES } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useTravelContext } from '../context/TravelContext';
+import { useAlert } from '../context/AlertContext';
 import Icon from '../components/Icon';
 
 const AVATARS = [
@@ -84,6 +85,7 @@ const AnimatedCard = ({ children, style, onPress, delay = 0 }) => {
 export default function ProfileScreen({ onBack, onOpenTrip }) {
   const { colors, isDark, toggleTheme, setTheme, currentTheme, availableThemes } = useTheme();
   const { user, signOut, updateUserProfile, resetPassword, deleteAccount } = useAuth();
+  const { showAlert } = useAlert();
   const {
     currency,
     setCurrency,
@@ -151,12 +153,14 @@ export default function ProfileScreen({ onBack, onOpenTrip }) {
 
   const handleSignOut = async () => {
     try {
+      // Show success alert first before state changes might hide it
+      showAlert('Signed out successfully!', 'success');
+
       // Sign out from Firebase
-      // Note: TravelContext will automatically clear local state and reload data on next login
       await signOut();
-      // If successful, RootNavigator will automatically redirect to login
     } catch (error) {
       console.error('Sign out error:', error);
+      showAlert('Failed to sign out. Please try again.', 'error');
     }
   };
 
