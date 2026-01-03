@@ -35,33 +35,45 @@ const AlertItem = ({ alert, onRemove }) => {
         }).start(() => onRemove(alert.id));
     };
 
-    const getTypeStyles = () => {
+    const getSoftStyles = () => {
         switch (alert.type) {
             case 'success':
                 return {
-                    bg: '#10B98120',
-                    border: '#10B98140',
-                    text: '#10B981',
-                    icon: 'location', // Or a checkmark if available
+                    bg: '#ECFDF5', // Soft Mint
+                    border: '#D1FAE5',
+                    text: '#065F46',
+                    icon: 'location',
+                    accent: '#10B981',
                 };
-            case 'error':
+            case 'warning':
                 return {
-                    bg: '#EF444420',
-                    border: '#EF444440',
-                    text: '#EF4444',
-                    icon: 'close',
+                    bg: '#FFFBEB', // Soft Amber
+                    border: '#FEF3C7',
+                    text: '#92400E',
+                    icon: 'settings',
+                    accent: '#F59E0B',
                 };
+            case 'destructive':
+                return {
+                    bg: '#FEF2F2', // Soft Rose
+                    border: '#FEE2E2',
+                    text: '#991B1B',
+                    icon: 'close',
+                    accent: '#EF4444',
+                };
+            case 'info':
             default:
                 return {
-                    bg: colors.cardLight,
-                    border: colors.primaryBorder,
-                    text: colors.text,
+                    bg: '#EFF6FF', // Soft Sky
+                    border: '#DBEAFE',
+                    text: '#1E40AF',
                     icon: 'message',
+                    accent: '#3B82F6',
                 };
         }
     };
 
-    const typeStyles = getTypeStyles();
+    const soft = getSoftStyles();
 
     return (
         <Animated.View
@@ -69,20 +81,21 @@ const AlertItem = ({ alert, onRemove }) => {
                 styles.alertContainer,
                 {
                     transform: [{ translateY: anim }],
-                    backgroundColor: typeStyles.bg,
-                    borderColor: typeStyles.border,
+                    backgroundColor: soft.bg,
+                    borderColor: soft.border,
                 },
             ]}
         >
+            <View style={[styles.accentBar, { backgroundColor: soft.accent }]} />
             <View style={styles.alertContent}>
-                <View style={[styles.iconContainer, { backgroundColor: typeStyles.text + '20' }]}>
-                    <Icon name={typeStyles.icon} size={16} color={typeStyles.text} />
+                <View style={[styles.iconContainer, { backgroundColor: soft.accent + '15' }]}>
+                    <Icon name={soft.icon} size={16} color={soft.accent} />
                 </View>
-                <Text style={[styles.alertText, { color: typeStyles.text }]}>{alert.message}</Text>
+                <Text style={[styles.alertText, { color: soft.text }]}>{alert.message}</Text>
             </View>
             <TouchableOpacity onPress={handleDismiss} style={styles.closeButton}>
                 <View style={styles.closeIconBg}>
-                    <Text style={{ color: typeStyles.text, fontSize: 12, fontWeight: 'bold' }}>✕</Text>
+                    <Text style={{ color: soft.text, fontSize: 10, opacity: 0.6 }}>✕</Text>
                 </View>
             </TouchableOpacity>
         </Animated.View>
@@ -115,57 +128,65 @@ const styles = StyleSheet.create({
         zIndex: 9999,
     },
     alertContainer: {
-        width: Math.min(width - 32, 400),
-        paddingVertical: 14,
+        width: Math.min(width - 48, 400),
+        paddingVertical: 12,
         paddingHorizontal: 16,
-        borderRadius: 16,
+        borderRadius: 12,
         borderWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: 8,
+        overflow: 'hidden',
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.1,
-                shadowRadius: 10,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 5,
             },
             android: {
-                elevation: 4,
+                elevation: 2,
             },
             web: {
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
             },
         }),
+    },
+    accentBar: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: 4,
     },
     alertContent: {
         flexDirection: 'row',
         alignItems: 'center',
         flex: 1,
+        paddingLeft: 4,
     },
     iconContainer: {
-        width: 32,
-        height: 32,
-        borderRadius: 8,
+        width: 28,
+        height: 28,
+        borderRadius: 6,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
+        marginRight: 10,
     },
     alertText: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '600',
         flex: 1,
     },
     closeButton: {
         padding: 4,
-        marginLeft: 8,
     },
     closeIconBg: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        backgroundColor: 'rgba(0,0,0,0.05)',
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: 'rgba(0,0,0,0.03)',
         alignItems: 'center',
         justifyContent: 'center',
     }

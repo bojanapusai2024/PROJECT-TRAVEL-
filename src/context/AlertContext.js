@@ -14,8 +14,12 @@ export const AlertProvider = ({ children }) => {
     const [alerts, setAlerts] = useState([]);
 
     const showAlert = useCallback((message, type = 'info') => {
+        // Validation for the 4 soft types
+        const validTypes = ['success', 'warning', 'destructive', 'info'];
+        const toastType = validTypes.includes(type) ? type : 'info';
+
         const id = Date.now().toString();
-        const newAlert = { id, message, type };
+        const newAlert = { id, message, type: toastType };
 
         setAlerts((prev) => [...prev, newAlert]);
 
