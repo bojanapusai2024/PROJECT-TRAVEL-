@@ -17,6 +17,7 @@ import TripSetupScreen from '../screens/TripSetupScreen';
 import BudgetScreen from '../screens/BudgetScreen';
 import JoinSelectionScreen from '../screens/JoinSelectionScreen';
 import AIChatScreen from '../screens/AIChatScreen';
+import AIPersonalizedPlanScreen from '../screens/AIPersonalizedPlanScreen';
 import Icon from '../components/Icon';
 
 const Tab = createBottomTabNavigator();
@@ -32,7 +33,7 @@ function TabIcon({ name, focused, color }) {
 }
 
 // Main Tab Navigator
-function TabNavigator({ onBackToHome }) {
+function TabNavigator({ onBackToHome, onSetScreen }) {
   const { colors } = useTheme();
 
   return (
@@ -62,7 +63,7 @@ function TabNavigator({ onBackToHome }) {
           tabBarIcon: ({ focused, color }) => <TabIcon name="home" focused={focused} color={color} />,
         }}
       >
-        {(props) => <HomeScreen {...props} onBackToHome={onBackToHome} />}
+        {(props) => <HomeScreen {...props} onBackToHome={onBackToHome} onPersonalizedPlan={() => onSetScreen('AIPersonalizedPlan')} />}
       </Tab.Screen>
       <Tab.Screen
         name="Itinerary"
@@ -246,7 +247,11 @@ export default function MainNavigator() {
   }
 
   if (currentScreen === 'TripDashboard') {
-    return <TabNavigator onBackToHome={handleBackToHome} />;
+    return <TabNavigator onBackToHome={handleBackToHome} onSetScreen={setCurrentScreen} />;
+  }
+
+  if (currentScreen === 'AIPersonalizedPlan') {
+    return <AIPersonalizedPlanScreen navigation={{ goBack: handleBackToHome, navigate: setCurrentScreen }} />;
   }
 
   if (currentScreen === 'JoinSelection') {

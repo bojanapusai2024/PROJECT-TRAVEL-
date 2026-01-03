@@ -8,7 +8,7 @@ import DatePickerModal from '../components/DatePickerModal';
 import { auth } from '../config/firebase';
 import Icon from '../components/Icon';
 
-export default function HomeScreen({ onBackToHome }) {
+export default function HomeScreen({ onBackToHome, onPersonalizedPlan }) {
   const {
     tripInfo, setTripInfo, budget, setBudget, getTotalExpenses, getRemainingBudget,
     packingItems, itinerary, expenses, clearTrip, endTrip, formatCurrency, currency, isLoading, deleteTrip,
@@ -301,194 +301,30 @@ export default function HomeScreen({ onBackToHome }) {
           </View>
         </Animated.View>
 
-        {/* Quick Actions */}
-        <Animated.View style={[styles.quickActionsSection, { opacity: fadeAnim }]}>
-          <View style={[styles.sectionHeader, { justifyContent: 'flex-start' }]}>
-            <Icon name="quick" size={20} color={colors.primary} style={{ marginRight: 8 }} />
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
-          </View>
-          <View style={styles.quickActionsGrid}>
-            <Pressable
-              style={({ pressed }) => [styles.quickActionCard, pressed && { opacity: 0.8 }]}
-              onPress={() => { setEditStartDate(tripInfo.startDate); setEditEndDate(tripInfo.endDate); setShowDatesModal(true); }}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF620' }]}>
-                <Icon name="calendar" size={24} color="#8B5CF6" />
+        {/* Personalized AI Hub */}
+        <Animated.View style={[styles.aiSection, { opacity: fadeAnim }]}>
+          <View style={styles.aiCard}>
+            <View style={styles.aiCardGlow} />
+            <View style={styles.aiIconContainer}>
+              <View style={styles.aiIconBg}>
+                <Icon name="sparkles" size={32} color="white" />
               </View>
-              <Text style={styles.quickActionLabel}>Edit Dates</Text>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [styles.quickActionCard, pressed && { opacity: 0.8 }]}
-              onPress={() => setShowBudgetModal(true)}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: '#10B98120' }]}>
-                <Icon name="budget" size={24} color="#10B981" />
-              </View>
-              <Text style={styles.quickActionLabel}>Edit Budget</Text>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [styles.quickActionCard, pressed && { opacity: 0.8 }]}
-              onPress={() => setShowTravelersModal(true)}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: '#3B82F620' }]}>
-                <Icon name="group" size={24} color="#3B82F6" />
-              </View>
-              <Text style={styles.quickActionLabel}>Travelers</Text>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [styles.quickActionCard, pressed && { opacity: 0.8 }]}
-              onPress={() => setShowEndTripModal(true)}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: '#F59E0B20' }]}>
-                <Icon name="close" size={24} color="#F59E0B" />
-              </View>
-              <Text style={styles.quickActionLabel}>End Trip</Text>
-            </Pressable>
+            </View>
+            <View style={styles.aiContent}>
+              <Text style={styles.aiTitle}>Personalized Planning</Text>
+              <Text style={styles.aiDescription}>
+                Add your trip details in a detailed manner to get a personalized itinerary, suggested budget and suggested packing list
+              </Text>
+              <Pressable
+                style={({ pressed }) => [styles.aiButton, pressed && { opacity: 0.9 }]}
+                onPress={onPersonalizedPlan}
+              >
+                <Text style={styles.aiButtonText}>Get Personalized Plan ✨</Text>
+              </Pressable>
+            </View>
           </View>
         </Animated.View>
 
-        {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          <Animated.View style={[styles.statCard, styles.statCardBudget, { opacity: fadeAnim }]}>
-            <View style={styles.statCardHeader}>
-              <View style={styles.statCardIconBg}>
-                <Icon name="budget" size={20} color={colors.primary} />
-              </View>
-              <Text style={styles.statCardTitle}>Budget</Text>
-            </View>
-            <Text style={styles.statCardValue}>{formatCurrency(budget.total)}</Text>
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${Math.min(spentPercentage, 100)}%`, backgroundColor: spentPercentage > 90 ? '#EF4444' : colors.primary }]} />
-              </View>
-              <Text style={styles.progressText}>{spentPercentage.toFixed(0)}% spent</Text>
-            </View>
-            <View style={styles.statCardFooter}>
-              <View style={styles.statMini}>
-                <Text style={styles.statMiniLabel}>Spent</Text>
-                <Text style={styles.statMiniValue}>{formatCurrency(getTotalExpenses())}</Text>
-              </View>
-              <View style={styles.statMini}>
-                <Text style={styles.statMiniLabel}>Left</Text>
-                <Text style={[styles.statMiniValue, { color: remainingBudget >= 0 ? colors.primary : '#EF4444' }]}>{formatCurrency(remainingBudget)}</Text>
-              </View>
-            </View>
-          </Animated.View>
-
-          <Animated.View style={[styles.statCard, styles.statCardPacking, { opacity: fadeAnim }]}>
-            <View style={styles.statCardHeader}>
-              <View style={styles.statCardIconBg}>
-                <Icon name="packing" size={20} color={colors.secondary} />
-              </View>
-              <Text style={styles.statCardTitle}>Packing</Text>
-            </View>
-            <View style={styles.packingCircle}>
-              <Text style={styles.packingPercent}>{packingProgress.toFixed(0)}%</Text>
-            </View>
-            <Text style={styles.packingStatus}>
-              {packingProgress === 100 ? '✅ All packed!' : `${totalItems - packedCount} items left`}
-            </Text>
-          </Animated.View>
-        </View>
-
-        {/* Activity Overview */}
-        <Animated.View style={[styles.overviewSection, { opacity: fadeAnim }]}>
-          <View style={styles.sectionHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="location" size={20} color={colors.primary} style={{ marginRight: 8 }} />
-              <Text style={styles.sectionTitle}>Activity Overview</Text>
-            </View>
-            {itinerary.length > 0 && (
-              <TouchableOpacity onPress={goToItinerary}>
-                <Text style={styles.viewMoreText}>View All →</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          <View style={styles.overviewCard}>
-            {itinerary.length === 0 ? (
-              <TouchableOpacity style={styles.emptyOverview} onPress={goToItinerary}>
-                <Icon name="map" size={40} color={colors.textMuted + '50'} style={{ marginBottom: 10 }} />
-                <Text style={styles.emptyOverviewText}>No activities planned yet</Text>
-                <Text style={styles.emptyOverviewHint}>Tap to add activities</Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.overviewList}>
-                {itinerary.slice(0, 2).map((item, index) => (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={[styles.overviewItem, index < Math.min(itinerary.length, 2) - 1 && styles.overviewItemBorder]}
-                    onPress={goToItinerary}
-                  >
-                    <View style={styles.overviewDayBadge}>
-                      <Text style={styles.overviewDayText}>D{item.dayNumber}</Text>
-                    </View>
-                    <Text style={styles.overviewName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={styles.overviewTime}>{item.time || '--:--'}</Text>
-                  </TouchableOpacity>
-                ))}
-                {itinerary.length > 2 && (
-                  <TouchableOpacity style={styles.moreItemsButton} onPress={goToItinerary}>
-                    <Text style={styles.moreItems}>+{itinerary.length - 2} more activities →</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-          </View>
-        </Animated.View>
-
-        {/* Expense Logs */}
-        <Animated.View style={[styles.overviewSection, { opacity: fadeAnim }]}>
-          <View style={styles.sectionHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="expenses" size={20} color={colors.primary} style={{ marginRight: 8 }} />
-              <Text style={styles.sectionTitle}>Recent Expenses</Text>
-            </View>
-            {expenses.length > 0 && (
-              <TouchableOpacity onPress={goToExpenses}>
-                <Text style={styles.viewMoreText}>View All →</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          <View style={styles.overviewCard}>
-            {expenses.length === 0 ? (
-              <TouchableOpacity style={styles.emptyOverview} onPress={goToExpenses}>
-                <Icon name="money" size={40} color={colors.textMuted + '50'} style={{ marginBottom: 10 }} />
-                <Text style={styles.emptyOverviewText}>No expenses logged yet</Text>
-                <Text style={styles.emptyOverviewHint}>Tap to start tracking</Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.overviewList}>
-                {recentExpenses.map((expense, index) => {
-                  const categoryInfo = getCategoryInfo(expense.category);
-                  return (
-                    <TouchableOpacity
-                      key={expense.id}
-                      style={[styles.expenseItem, index < recentExpenses.length - 1 && styles.overviewItemBorder]}
-                      onPress={goToExpenses}
-                    >
-                      <View style={[styles.expenseIconBg, { backgroundColor: categoryInfo.color + '20' }]}>
-                        <Icon name={categoryInfo.icon} size={20} color={categoryInfo.color} />
-                      </View>
-                      <View style={styles.expenseInfo}>
-                        <Text style={styles.expenseName} numberOfLines={1}>{expense.title}</Text>
-                        <Text style={styles.expenseDate}>{typeof expense.date === 'string' ? expense.date : expense.date?.toLocaleDateString()}</Text>
-                      </View>
-                      <Text style={styles.expenseAmount}>-{formatCurrency(expense.amount)}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-                {expenses.length > 2 && (
-                  <TouchableOpacity style={styles.moreItemsButton} onPress={goToExpenses}>
-                    <Text style={styles.moreItems}>+{expenses.length - 2} more expenses →</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-          </View>
-        </Animated.View>
 
         {/* Participants - Keep this section */}
         {travelers.length > 0 && (
@@ -969,66 +805,87 @@ const createStyles = (colors) => StyleSheet.create({
   copyButton: { padding: 4 },
   copyButtonText: { fontSize: 18 },
 
-  // Quick Actions
-  quickActionsSection: { paddingHorizontal: 20, marginBottom: 20 },
-  quickActionsGrid: { flexDirection: 'row', gap: 10, marginTop: 12 },
-  quickActionCard: { flex: 1, backgroundColor: colors.card, borderRadius: 14, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
-  quickActionIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  quickActionEmoji: { fontSize: 20 },
-  quickActionLabel: { color: colors.text, fontSize: 11, fontWeight: '500', textAlign: 'center' },
+  // AI Hub
+  aiSection: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  aiCard: {
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+    overflow: 'hidden',
+    position: 'relative',
+    elevation: 4,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+  },
+  aiCardGlow: {
+    position: 'absolute',
+    top: -40,
+    right: -40,
+    width: 120,
+    height: 120,
+    backgroundColor: colors.primary,
+    opacity: 0.1,
+    borderRadius: 60,
+  },
+  aiIconContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  aiIconBg: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  aiContent: {
+    alignItems: 'center',
+  },
+  aiTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  aiDescription: {
+    fontSize: 15,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+    paddingHorizontal: 10,
+  },
+  aiButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 16,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  aiButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 
-  // Stats Grid
-  statsGrid: { flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginBottom: 20 },
-  statCard: { flex: 1, backgroundColor: colors.card, borderRadius: 20, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
-  statCardBudget: {},
-  statCardPacking: { alignItems: 'center' },
-  statCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  statCardIconBg: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
-  statCardIcon: { fontSize: 18 },
-  statCardTitle: { color: colors.textMuted, fontSize: 13, fontWeight: '600', marginLeft: 10 },
-  statCardValue: { color: colors.text, fontSize: 24, fontWeight: 'bold' },
-  progressContainer: { marginTop: 12 },
-  progressBar: { height: 6, backgroundColor: colors.cardLight, borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 3 },
-  progressText: { color: colors.textMuted, fontSize: 11, marginTop: 6 },
-  statCardFooter: { flexDirection: 'row', marginTop: 12, gap: 16 },
-  statMini: {},
-  statMiniLabel: { color: colors.textMuted, fontSize: 10 },
-  statMiniValue: { color: colors.text, fontSize: 14, fontWeight: '600' },
-  packingCircle: { width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginVertical: 8 },
-  packingPercent: { color: colors.primary, fontSize: 22, fontWeight: 'bold' },
-  packingStatus: { color: colors.textMuted, fontSize: 12, marginTop: 8 },
-
-  // Section
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
-  viewMoreText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
-
-  // Overview Section
-  overviewSection: { paddingHorizontal: 20, marginBottom: 20 },
-  overviewCard: { backgroundColor: colors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.primaryBorder },
-  emptyOverview: { alignItems: 'center', paddingVertical: 20 },
-  emptyOverviewEmoji: { fontSize: 32, marginBottom: 8 },
-  emptyOverviewText: { color: colors.textMuted, fontSize: 14 },
-  emptyOverviewHint: { color: colors.primary, fontSize: 12, marginTop: 4, fontWeight: '500' },
-  overviewList: { gap: 0 },
-  overviewItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  overviewItemBorder: { borderBottomWidth: 1, borderBottomColor: colors.primaryBorder },
-  overviewDayBadge: { backgroundColor: colors.primaryMuted, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginRight: 12 },
-  overviewDayText: { color: colors.primary, fontSize: 11, fontWeight: '700' },
-  overviewName: { flex: 1, color: colors.text, fontSize: 14 },
-  overviewTime: { color: colors.textMuted, fontSize: 12 },
-  moreItemsButton: { paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.primaryBorder, marginTop: 4 },
-  moreItems: { color: colors.primary, fontSize: 13, fontWeight: '600', textAlign: 'center' },
-
-  // Expense Items
-  expenseItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  expenseIconBg: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  expenseIcon: { fontSize: 18 },
-  expenseInfo: { flex: 1 },
-  expenseName: { color: colors.text, fontSize: 14, fontWeight: '500' },
-  expenseDate: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
-  expenseAmount: { color: '#EF4444', fontSize: 15, fontWeight: 'bold' },
 
   // Participants
   participantsSection: { paddingHorizontal: 20, marginBottom: 20 },

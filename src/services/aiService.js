@@ -41,37 +41,44 @@ const callGemini = async (prompt, isJson = true) => {
 
     // List of reliable models to try if discovery isn't used
     const fallbackModels = [
+        { ver: 'v1', name: 'gemini-1.5-flash' },
         { ver: 'v1beta', name: 'gemini-1.5-flash' },
         { ver: 'v1beta', name: 'gemini-1.5-flash-latest' },
-        { ver: 'v1', name: 'gemini-1.5-flash' },
+        { ver: 'v1', name: 'gemini-1.5-pro' },
+        { ver: 'v1beta', name: 'gemini-1.5-pro' },
         { ver: 'v1beta', name: 'gemini-pro' }
     ];
 
     let lastError = null;
 
-    // Nuclear Fix: Try to discover what models THIS KEY actually has access to
-    try {
-        console.log('[AI Discovery] Fetching available models for your key...');
-        const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-        const listRes = await fetch(listUrl);
-        if (listRes.ok) {
-            const listData = await listRes.json();
-            const supportModels = listData.models
-                .filter(m => m.supportedGenerationMethods.includes('generateContent'))
-                .map(m => m.name); // e.g., "models/gemini-1.5-flash"
+    // Nuclear Fix 2.0: Try to discover available models on both v1 and v1beta
+    const versions = ['v1', 'v1beta'];
+    for (const ver of versions) {
+        try {
+            console.log(`[AI Discovery] Attempting to list models on ${ver}...`);
+            const listUrl = `https://generativelanguage.googleapis.com/${ver}/models?key=${apiKey}`;
+            const listRes = await fetch(listUrl);
+            if (listRes.ok) {
+                const listData = await listRes.json();
+                const supportModels = listData.models
+                    .filter(m => m.supportedGenerationMethods.includes('generateContent'))
+                    .map(m => m.name); // e.g., "models/gemini-1.5-flash"
 
-            if (supportModels.length > 0) {
-                console.log(`[AI Discovery] Found ${supportModels.length} models. Using: ${supportModels[0]}`);
-                // Use the first discovered model
-                const url = `https://generativelanguage.googleapis.com/v1beta/${supportModels[0]}:generateContent?key=${apiKey}`;
-                return await executeGeminiRequest(url, prompt, isJson);
+                if (supportModels.length > 0) {
+                    // Prioritize gemini-1.5-flash if available, otherwise just use the first
+                    const preferred = supportModels.find(m => m.includes('1.5-flash')) || supportModels[0];
+                    console.log(`[AI Discovery] Found ${supportModels.length} models on ${ver}. Using: ${preferred}`);
+                    const url = `https://generativelanguage.googleapis.com/${ver}/${preferred}:generateContent?key=${apiKey}`;
+                    return await executeGeminiRequest(url, prompt, isJson);
+                }
             }
+        } catch (e) {
+            console.warn(`[AI Discovery] Discovery on ${ver} failed.`, e.message);
         }
-    } catch (e) {
-        console.warn('[AI Discovery] Discovery failed, falling back to brute force.', e.message);
     }
 
-    // Brute force fallback loop
+    // Brute force fallback loop if discovery fails
+    console.log('[AI Fallback] Discovery failed, entering brute force fallback mode...');
     for (const attempt of fallbackModels) {
         const url = `https://generativelanguage.googleapis.com/${attempt.ver}/models/${attempt.name}:generateContent?key=${apiKey}`;
         try {
@@ -79,12 +86,17 @@ const callGemini = async (prompt, isJson = true) => {
         } catch (err) {
             console.error(`[AI Attempt Failed] ${attempt.name} on ${attempt.ver}:`, err.message);
             lastError = err.message;
+            // Fatal errors (Auth) should stop the loop
+            if (err.message.includes('403') || err.message.includes('API_KEY_INVALID')) throw err;
         }
     }
 
     // If we get here, all attempts failed
-    let finalMsg = "No models available for this key.";
-    try { finalMsg = JSON.parse(lastError).error?.message || lastError; } catch (e) { /* ignore parse error */ }
+    let finalMsg = "AI Connection Failed: All models returned 404 or restricted access.";
+    try {
+        const parsed = JSON.parse(lastError);
+        finalMsg = parsed.error?.message || lastError;
+    } catch (e) { /* ignore parse error */ }
     throw new Error(finalMsg);
 };
 
@@ -140,6 +152,52 @@ export const generatePackingList = async (destination, month, duration, type) =>
     }
 };
 
+// Generate comprehensive personalized plan (Full Itinerary + Packing + Food)
+export const generateFullPersonalizedPlan = async (details) => {
+    console.log(`[AI Service] Generating Nuclear Plan for ${details.startLocation} to ${details.endLocation}`);
+
+    const prompt = `Act as a premium travel concierge. Create a comprehensive, billionaire-level travel plan based on these details:
+    - Start Location: ${details.startLocation}
+    - End Location: ${details.endLocation}
+    - Stops: ${JSON.stringify(details.stops)}
+    - Total Days: ${details.totalDays}
+    - Budget: ${details.budget}
+    - Dietary Preference: ${details.dietary}
+    - Travelers: ${details.travelers} (Ages: ${details.ages})
+    - Additional Notes: ${details.additionalNotes}
+
+    Return NO TEXT other than a JSON object with this exact structure:
+    {
+      "success": true,
+      "itinerary": [
+        {
+          "day": 1,
+          "title": "Day Title",
+          "activities": [
+            { "time": "hh:mm AM/PM", "title": "Activity Name", "description": "Brief description", "cost": "est cost" }
+          ]
+        }
+      ],
+      "packingList": [
+        { "category": "Clothing/Gear/Health", "items": ["Item name with reason"] }
+      ],
+      "foodRecommendations": [
+        { "name": "Dish/Restaurant Name", "description": "Why they should try it", "isVegFriendly": true }
+      ],
+      "budgetAnalysis": {
+        "summary": "Short breakdown of how to spend the budget",
+        "tips": ["Tip 1", "Tip 2"]
+      }
+    }`;
+
+    try {
+        return await callGemini(prompt);
+    } catch (error) {
+        console.error('[AI Service] Full Plan Error:', error);
+        return { success: false, error: error.message };
+    }
+};
+
 // Chat with assistant
 export const chatWithAssistant = async (message, tripContext = {}) => {
     const prompt = `You are RouteMate, a professional travel assistant. 
@@ -157,17 +215,18 @@ export const chatWithAssistant = async (message, tripContext = {}) => {
 
 // Internal helper for actual fetch execution
 const executeGeminiRequest = async (url, prompt, isJson) => {
+    const body = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 4096, // Increased for full master plans
+        }
+    };
+
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 2048,
-                ...(isJson && { responseMimeType: "application/json" })
-            }
-        })
+        body: JSON.stringify(body)
     });
 
     if (!response.ok) {
@@ -182,8 +241,19 @@ const executeGeminiRequest = async (url, prompt, isJson) => {
 
     const text = data.candidates[0].content.parts[0].text;
     if (isJson) {
-        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanJson);
+        try {
+            // Robust JSON extraction: Find the first '{' and last '}'
+            const startIdx = text.indexOf('{');
+            const endIdx = text.lastIndexOf('}');
+            if (startIdx !== -1 && endIdx !== -1) {
+                const jsonStr = text.substring(startIdx, endIdx + 1);
+                return JSON.parse(jsonStr);
+            }
+            throw new Error('No JSON brackets found');
+        } catch (e) {
+            console.error('[AI Parse Error] Failed to parse JSON from text:', text);
+            throw new Error(`AI generated text but it wasn't valid JSON. You can try copying the prompt manually.`);
+        }
     }
     return text;
 };
